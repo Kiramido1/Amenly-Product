@@ -4,6 +4,11 @@ import Hero3DScene from '../Hero3DScene'
 import Badge from '../ui/Badge'
 
 const HeroSection = () => {
+  const scrollToNext = () => {
+    const next = document.getElementById('features') || document.querySelector('section:nth-of-type(2)')
+    if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <section id="home" className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 overflow-hidden bg-black">
       {/* Background effects */}
@@ -80,6 +85,35 @@ const HeroSection = () => {
           </Button>
         </motion.div>
       </div>
+
+      {/* Scroll Indicator */}
+      <motion.button
+        onClick={scrollToNext}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+        className="absolute bottom-10 inset-x-0 mx-auto w-fit flex flex-col items-center gap-2 group cursor-pointer bg-transparent border-none outline-none"
+        aria-label="Scroll to know more"
+      >
+        <span className="text-white/60 text-xs font-light tracking-[0.2em] uppercase group-hover:text-white/90 transition-colors duration-300">
+          Scroll to know more
+        </span>
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex flex-col items-center gap-0.5"
+        >
+          <span className="block w-px h-6 bg-gradient-to-b from-white/0 via-white/60 to-white/0 group-hover:via-white/90 transition-colors duration-300" />
+          <svg
+            className="w-4 h-4 text-white/60 group-hover:text-white/90 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.div>
+      </motion.button>
     </section>
   )
 }

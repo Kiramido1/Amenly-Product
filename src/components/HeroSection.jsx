@@ -55,23 +55,26 @@ const HeroSection = () => {
             <span className="inline-block opacity-0 animate-word-reveal" style={{animationDelay: '0.5s'}}>Compliance.</span>
           </h1>
         </div>
+      </div>
 
-        {/* Scroll Indicator */}
-        <div 
-          onClick={scrollToNext}
-          className="mt-32 flex flex-col items-center gap-2 cursor-pointer opacity-0 animate-bounce-fade"
-          style={{animationDelay: '0.8s'}}
+      {/* Scroll Indicator */}
+      <div
+        onClick={scrollToNext}
+        className="absolute bottom-10 inset-x-0 mx-auto w-fit z-10 flex flex-col items-center gap-2 cursor-pointer group opacity-0 animate-bounce-fade"
+        style={{animationDelay: '0.8s'}}
+      >
+        <span className="text-white/60 text-xs font-light tracking-[0.2em] uppercase group-hover:text-white/90 transition-colors duration-300">
+          Scroll to know more
+        </span>
+        <span className="block w-px h-6 bg-gradient-to-b from-white/0 via-white/60 to-white/0 group-hover:via-white/90 transition-colors duration-300" />
+        <svg
+          className="w-4 h-4 text-white/60 group-hover:text-white/90 animate-bounce-slow transition-colors duration-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <span className="text-white text-sm font-medium tracking-wide">Scroll to know more</span>
-          <svg 
-            className="w-6 h-6 text-white animate-bounce-slow" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+        </svg>
       </div>
 
       <div className="absolute bottom-20 left-20 max-w-[340px] z-10 opacity-0 animate-slide-in-left" style={{animationDelay: '0.7s'}}>
