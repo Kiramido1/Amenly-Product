@@ -1,17 +1,10 @@
 import { motion } from 'framer-motion'
 import Button from '../Button'
 import Hero3DScene from '../Hero3DScene'
-import DissolveCanvas from '../DissolveCanvas'
-import { useScrollAnimation, useWordReveal } from '../../hooks/useScrollAnimation'
+import SimpleDissolve from '../SimpleDissolve'
+import ScrollRevealText from '../ScrollRevealText'
 
 const HeroSection = () => {
-  useScrollAnimation()
-  
-  const headlineRef = useWordReveal({
-    start: 'top 60%',
-    end: 'bottom 100%'
-  })
-  
   const scrollToNext = () => {
     const next = document.getElementById('features') || document.querySelector('section:nth-of-type(2)')
     if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -47,13 +40,8 @@ const HeroSection = () => {
         <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-amenly-medium/8 rounded-full blur-[120px]" />
       </div>
 
-      {/* Dissolve Canvas Effect */}
-      <DissolveCanvas 
-        color="#2c74b3" 
-        spread={0.5} 
-        speed={1} 
-        sectionId="home"
-      />
+      {/* Simple Dissolve Effect */}
+      <SimpleDissolve sectionId="home" />
 
       {/* Top Section - Fixed viewport */}
       <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center text-center px-6 sm:px-8 lg:px-12 z-10">
@@ -108,20 +96,10 @@ const HeroSection = () => {
 
       {/* Scroll-Reveal Content Section */}
       <div className="relative w-full min-h-[85vh] flex items-center justify-center px-6 sm:px-8 lg:px-12 z-10 pb-32">
-        <h2 
-          ref={headlineRef}
-          className="hero__headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight text-center max-w-6xl"
-        >
-          {[
-            'Secure', 'your', 'organization', 'with', 'intelligent', 'governance', 'and', 
-            'compliance', 'tools', 'that', 'understand', 'risks', 'monitor', 'systems', 
-            'and', 'make', 'better', 'decisions'
-          ].map((word, index) => (
-            <span key={`word-${index}`} className="word">
-              {word}{index < 17 ? ' ' : ''}
-            </span>
-          ))}
-        </h2>
+        <ScrollRevealText
+          text="Secure your organization with intelligent governance and compliance tools that understand risks monitor systems and make better decisions"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight text-center max-w-6xl text-white"
+        />
         
         {/* Scroll Indicator - inside content section */}
         <motion.button
