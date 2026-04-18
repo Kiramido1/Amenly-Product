@@ -4,15 +4,14 @@ import Button from '../Button'
 import Hero3DScene from '../Hero3DScene'
 import DissolveCanvas from '../DissolveCanvas'
 import { SplitText } from '../../utils/textSplit'
-import { useScrollAnimation, useWordReveal, useParallax } from '../../hooks/useScrollAnimation'
+import { useScrollAnimation, useWordReveal } from '../../hooks/useScrollAnimation'
 
 const HeroSection = () => {
   useScrollAnimation()
   
-  const containerRef = useRef(null)
-  const headlineRef = useWordReveal('.hero__headline', {
-    start: 'top 50%',
-    end: 'bottom 80%'
+  const headlineRef = useWordReveal({
+    start: 'top 60%',
+    end: 'bottom 100%'
   })
   
   const scrollToNext = () => {
@@ -22,7 +21,6 @@ const HeroSection = () => {
 
   return (
     <section 
-      ref={containerRef}
       id="home" 
       className="relative min-h-[185vh] flex flex-col items-center justify-start overflow-hidden bg-black"
     >
@@ -56,7 +54,7 @@ const HeroSection = () => {
         color="#2c74b3" 
         spread={0.5} 
         speed={1} 
-        containerRef={containerRef}
+        sectionId="home"
       />
 
       {/* Top Section - Fixed viewport */}

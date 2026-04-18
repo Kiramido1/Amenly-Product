@@ -16,7 +16,7 @@ export const useScrollAnimation = () => {
   }, [])
 }
 
-export const useWordReveal = (selector, options = {}) => {
+export const useWordReveal = (options = {}) => {
   const elementRef = useRef(null)
 
   useEffect(() => {
@@ -25,14 +25,21 @@ export const useWordReveal = (selector, options = {}) => {
     const element = elementRef.current
     const words = element.querySelectorAll('.word')
     
-    if (words.length === 0) return
+    if (words.length === 0) {
+      console.warn('No .word elements found for word reveal animation')
+      return
+    }
+
+    console.log(`Found ${words.length} words for animation`)
 
     gsap.set(words, { opacity: 0.1 })
 
     const trigger = ScrollTrigger.create({
       trigger: element,
-      start: options.start || 'top 25%',
+      start: options.start || 'top 60%',
       end: options.end || 'bottom 100%',
+      scrub: true,
+      markers: false, // Set to true for debugging
       onUpdate: (self) => {
         const progress = self.progress
         const totalWords = words.length
@@ -48,7 +55,7 @@ export const useWordReveal = (selector, options = {}) => {
           } else if (progress >= wordProgress) {
             const fadeProgress =
               (progress - wordProgress) / (nextWordProgress - wordProgress)
-            opacity = fadeProgress
+            opacity = 0.1 + (fadeProgress * 0.9)
           }
 
           gsap.to(word, {
@@ -66,26 +73,4 @@ export const useWordReveal = (selector, options = {}) => {
   }, [options.start, options.end])
 
   return elementRef
-}
-
-export const useParallax = (selector, yOffset, options = {}) => {
-  useEffect(() => {
-    const element = document.querySelector(selector)
-    if (!element) return
-
-    const animation = gsap.to(element, {
-      y: yOffset,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: options.trigger || element,
-        start: options.start || 'top top',
-        end: options.end || 'bottom top',
-        scrub: true,
-      },
-    })
-
-    return () => {
-      animation.kill()
-    }
-  }, [selector, yOffset, options.trigger, options.start, options.end])
 }

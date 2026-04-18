@@ -64,26 +64,28 @@ const hexToRgb = (hex) => {
         g: parseInt(result[2], 16) / 255,
         b: parseInt(result[3], 16) / 255,
       }
-    : { r: 0.17, g: 0.45, b: 0.7 } // Default to amenly-medium
+    : { r: 0.17, g: 0.45, b: 0.7 }
 }
 
 const DissolveCanvas = ({ 
   color = '#2c74b3', 
   spread = 0.5, 
   speed = 1,
-  containerRef 
+  sectionId = 'home'
 }) => {
   const canvasRef = useRef(null)
   const sceneRef = useRef(null)
   const rendererRef = useRef(null)
   const materialRef = useRef(null)
   const animationFrameRef = useRef(null)
+  const scrollProgressRef = useRef(0)
 
   useEffect(() => {
-    if (!canvasRef.current || !containerRef?.current) return
+    if (!canvasRef.current) return
 
     const canvas = canvasRef.current
-    const container = containerRef.current
+    const section = document.getElementById(sectionId)
+    if (!section) return
 
     // Setup Three.js
     const scene = new THREE.Scene()
@@ -98,8 +100,8 @@ const DissolveCanvas = ({
     rendererRef.current = renderer
 
     const resize = () => {
-      const width = container.offsetWidth
-      const height = container.offsetHeight
+      const width = section.offsetWidth
+      const height = section.offsetHeight
       renderer.setSize(width, height)
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       
@@ -120,7 +122,7 @@ const DissolveCanvas = ({
       uniforms: {
         uProgress: { value: 0 },
         uResolution: {
-          value: new THREE.Vector2(container.offsetWidth, container.offsetHeight),
+          value: new THREE.Vector2(section.offsetWidth, section.offsetHeight),
         },
         uColor: { value: new THREE.Vector3(rgb.r, rgb.g, rgb.b) },
         uSpread: { value: spread },
@@ -134,10 +136,8 @@ const DissolveCanvas = ({
     scene.add(mesh)
 
     // Animation loop
-    let scrollProgress = 0
-
     const animate = () => {
-      material.uniforms.uProgress.value = scrollProgress
+      material.uniforms.uProgress.value = scrollProgressRef.current
       renderer.render(scene, camera)
       animationFrameRef.current = requestAnimationFrame(animate)
     }
@@ -146,15 +146,25 @@ const DissolveCanvas = ({
 
     // Scroll handler
     const handleScroll = () => {
-      const containerHeight = container.offsetHeight
+      const rect = section.getBoundingClientRect()
+      const sectionHeight = section.offsetHeight
       const windowHeight = window.innerHeight
-      const maxScroll = containerHeight - windowHeight
-      const scroll = window.pageYOffset || document.documentElement.scrollTop
       
-      scrollProgress = Math.min((scroll / maxScroll) * speed, 1.1)
+      // Calculate scroll progress based on section position
+      const scrollStart = -rect.top
+      const maxScroll = sectionHeight - windowHeight
+      
+      if (scrollStart <= 0) {
+        scrollProgressRef.current = 0
+      } else if (scrollStart >= maxScroll) {
+        scrollProgressRef.current = 1.1
+      } else {
+        scrollProgressRef.current = Math.min((scrollStart / maxScroll) * speed, 1.1)
+      }
     }
 
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Initial call
 
     return () => {
       window.removeEventListener('resize', resize)
@@ -166,7 +176,7 @@ const DissolveCanvas = ({
       material.dispose()
       renderer.dispose()
     }
-  }, [color, spread, speed, containerRef])
+  }, [color, spread, speed, sectionId])
 
   return (
     <canvas
