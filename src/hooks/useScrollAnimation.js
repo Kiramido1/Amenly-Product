@@ -39,8 +39,9 @@ export const useWordReveal = (options = {}) => {
       start: options.start || 'top 60%',
       end: options.end || 'bottom 100%',
       scrub: true,
-      markers: false, // Set to true for debugging
+      markers: true, // Debugging enabled
       onUpdate: (self) => {
+        console.log('ScrollTrigger progress:', self.progress)
         const progress = self.progress
         const totalWords = words.length
 
