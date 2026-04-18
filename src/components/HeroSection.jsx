@@ -2,7 +2,11 @@ import { motion } from 'framer-motion'
 import ScrollRevealText from './ScrollRevealText'
 import SimpleDissolve from './SimpleDissolve'
 
+console.log('HeroSection loaded with scroll animations')
+
 const HeroSection = () => {
+  console.log('HeroSection rendering')
+  
   const scrollToNext = () => {
     if (window.lenis) {
       window.lenis.scrollTo('#features', {
