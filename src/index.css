@@ -742,3 +742,19 @@ body {
 .animate-gradient {
   animation: gradient 3s ease infinite;
 }
+
+/* Scroll-based word reveal animation */
+.word {
+  display: inline-block;
+  opacity: 0.1;
+  transition: opacity 0.1s ease-out;
+  will-change: opacity;
+}
+
+.hero__headline {
+  color: #ffffff;
+}
+
+.hero__headline .word {
+  margin-right: 0.25em;
+}

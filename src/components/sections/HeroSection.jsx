@@ -1,16 +1,31 @@
 import { motion } from 'framer-motion'
+import { useRef } from 'react'
 import Button from '../Button'
 import Hero3DScene from '../Hero3DScene'
-import Badge from '../ui/Badge'
+import DissolveCanvas from '../DissolveCanvas'
+import { SplitText } from '../../utils/textSplit'
+import { useScrollAnimation, useWordReveal, useParallax } from '../../hooks/useScrollAnimation'
 
 const HeroSection = () => {
+  useScrollAnimation()
+  
+  const containerRef = useRef(null)
+  const headlineRef = useWordReveal('.hero__headline', {
+    start: 'top 50%',
+    end: 'bottom 80%'
+  })
+  
   const scrollToNext = () => {
     const next = document.getElementById('features') || document.querySelector('section:nth-of-type(2)')
     if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
-    <section id="home" className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 overflow-hidden bg-black">
+    <section 
+      ref={containerRef}
+      id="home" 
+      className="relative min-h-[185vh] flex flex-col items-center justify-start overflow-hidden bg-black"
+    >
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(15)].map((_, i) => {
@@ -36,7 +51,16 @@ const HeroSection = () => {
         <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-amenly-medium/8 rounded-full blur-[120px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+      {/* Dissolve Canvas Effect */}
+      <DissolveCanvas 
+        color="#2c74b3" 
+        spread={0.5} 
+        speed={1} 
+        containerRef={containerRef}
+      />
+
+      {/* Top Section - Fixed viewport */}
+      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center text-center px-6 sm:px-8 lg:px-12 z-10">
         {/* Floating 3D Asset */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -84,6 +108,18 @@ const HeroSection = () => {
             Create an Account
           </Button>
         </motion.div>
+      </div>
+
+      {/* Scroll-Reveal Content Section */}
+      <div className="relative w-full h-[85vh] flex items-center justify-center px-6 sm:px-8 lg:px-12 z-10">
+        <h2 
+          ref={headlineRef}
+          className="hero__headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight text-center max-w-6xl"
+        >
+          <SplitText>
+            Secure your organization with intelligent governance and compliance tools that understand risks monitor systems and make better decisions
+          </SplitText>
+        </h2>
       </div>
 
       {/* Scroll Indicator */}
