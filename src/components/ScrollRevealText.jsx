@@ -7,11 +7,18 @@ const ScrollRevealText = ({ text, className = '' }) => {
   const words = text.split(' ')
 
   useEffect(() => {
+    console.log('ScrollRevealText mounted, words:', words.length)
+    
     const handleScroll = () => {
-      if (!containerRef.current) return
+      if (!containerRef.current) {
+        console.log('No container ref')
+        return
+      }
       
       const rect = containerRef.current.getBoundingClientRect()
       const windowHeight = window.innerHeight
+      
+      console.log('Scroll - rect.top:', rect.top, 'windowHeight:', windowHeight)
       
       // Calculate when element enters viewport (from bottom) to when it leaves (from top)
       const start = windowHeight
@@ -26,6 +33,7 @@ const ScrollRevealText = ({ text, className = '' }) => {
         scrollProgress = 1
       }
       
+      console.log('Progress:', scrollProgress)
       setProgress(scrollProgress)
     }
 
@@ -34,6 +42,8 @@ const ScrollRevealText = ({ text, className = '' }) => {
     
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  console.log('Rendering with progress:', progress)
 
   return (
     <h2 ref={containerRef} className={className}>

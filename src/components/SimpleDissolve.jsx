@@ -4,9 +4,14 @@ const SimpleDissolve = ({ sectionId = 'home' }) => {
   const [opacity, setOpacity] = useState(0)
 
   useEffect(() => {
+    console.log('SimpleDissolve mounted for section:', sectionId)
+    
     const handleScroll = () => {
       const section = document.getElementById(sectionId)
-      if (!section) return
+      if (!section) {
+        console.log('Section not found:', sectionId)
+        return
+      }
 
       const rect = section.getBoundingClientRect()
       const sectionHeight = section.offsetHeight
@@ -23,6 +28,7 @@ const SimpleDissolve = ({ sectionId = 'home' }) => {
         progress = 1
       }
 
+      console.log('Dissolve progress:', progress)
       setOpacity(progress)
     }
 
@@ -31,6 +37,8 @@ const SimpleDissolve = ({ sectionId = 'home' }) => {
 
     return () => window.removeEventListener('scroll', handleScroll)
   }, [sectionId])
+
+  console.log('Dissolve rendering with opacity:', opacity)
 
   return (
     <div
