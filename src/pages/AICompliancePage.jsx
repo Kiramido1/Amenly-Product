@@ -5,12 +5,9 @@ import ChatEngine from '../components/chat/ChatEngine'
 const AICompliancePage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-black relative overflow-hidden">
-      {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-[#0A0F1C] to-black" />
-      
-      {/* Ambient glow effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#2C74B3]/3 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-[#205295]/3 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+      {/* Subtle glow effects - very minimal */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2C74B3]/[0.02] rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#205295]/[0.02] rounded-full blur-[100px] pointer-events-none" />
 
       {/* Top navigation */}
       <header className="relative z-20 border-b border-white/[0.04]">
