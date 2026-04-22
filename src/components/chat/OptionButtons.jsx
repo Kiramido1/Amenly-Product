@@ -40,9 +40,11 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
                 : `border-white/[0.06] bg-white/[0.02] text-white/70 ${colorClass}`
               }`}
           >
-            {opt.icon && (
+            {opt.iconPath && (
               <div className="flex-shrink-0 text-current">
-                {opt.icon}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={opt.iconPath} />
+                </svg>
               </div>
             )}
             <div className="min-w-0 flex-1">
