@@ -83,20 +83,20 @@ const AICompliancePage = () => {
                   d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-white font-bold text-lg mb-1">AI Compliance Chat</h2>
+            <h2 className="text-white font-bold text-lg mb-1">Compliance Assessment</h2>
             <p className="text-white/40 text-xs leading-relaxed">
-              Guided assessment powered by Amenly's compliance engine.
+              Quick security posture check — takes about 5 minutes
             </p>
           </div>
 
           {/* Steps list */}
           <div className="space-y-1.5 mb-8">
             {[
-              { label: 'Welcome & Identity',      icon: '👋', desc: 'Name and role' },
-              { label: 'Company Information',      icon: '🏢', desc: 'Industry & size' },
-              { label: 'Framework Selection',      icon: '📋', desc: 'ISO, NIST, GDPR...' },
-              { label: 'Security Assessment',      icon: '🔍', desc: 'Targeted questions' },
-              { label: 'Risk Summary',             icon: '📊', desc: 'Score & report' },
+              { label: 'Getting Started',      icon: '👋', desc: 'Who you are' },
+              { label: 'About Your Company',   icon: '🏢', desc: 'What you do' },
+              { label: 'Pick a Framework',     icon: '📋', desc: 'ISO, NIST, or GDPR' },
+              { label: 'Quick Questions',      icon: '🔍', desc: '5 targeted questions' },
+              { label: 'Your Results',         icon: '📊', desc: 'Score and next steps' },
             ].map((s, i) => (
               <motion.div
                 key={i}
@@ -126,7 +126,7 @@ const AICompliancePage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
               <p className="text-[11px] text-white/50 leading-relaxed">
-                Your responses are stored locally and never sent to external servers without your consent.
+                Everything stays on your device. We don't send your answers anywhere unless you choose to generate a report.
               </p>
             </div>
           </motion.div>
@@ -151,8 +151,8 @@ const AICompliancePage = () => {
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-black shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white">Amenly AI</p>
-              <p className="text-[11px] text-white/40">Cybersecurity Compliance Consultant</p>
+              <p className="text-sm font-bold text-white">Amenly Assistant</p>
+              <p className="text-[11px] text-white/40">Security Compliance Advisor</p>
             </div>
           </motion.div>
 

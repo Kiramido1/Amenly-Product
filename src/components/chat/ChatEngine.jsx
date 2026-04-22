@@ -72,8 +72,8 @@ const ChatEngine = () => {
       } catch { /* ignore */ }
     }
     // Fresh start — send welcome message
-    sendAI("Hello! I'm **Amenly AI**, your cybersecurity compliance consultant. I'm here to guide you through a structured assessment of your organization's security posture.", () => {
-      sendAI("Before we begin, could you tell me your **name** and **role** within your organization? (e.g., \"Sarah, CISO\")")
+    sendAI("Hi there! I'm here to help you understand your organization's security posture. This will take about 5 minutes.", () => {
+      sendAI("Let's start with the basics — what's your name and role? (e.g., Sarah, CISO)")
     })
   }, [])
 
@@ -125,8 +125,8 @@ const ChatEngine = () => {
       const role = parts[1] || 'Team Member'
       setSession(s => ({ ...s, name, role }))
 
-      sendAI(`Great to meet you, **${name}**! Welcome to Amenly's compliance assessment.`, () => {
-        sendAI(`To tailor this assessment accurately, I need a few details about your organization. What does your company do? Please give me a brief description.`, () => {
+      sendAI(`Nice to meet you, **${name}**!`, () => {
+        sendAI(`To give you accurate results, I need to know a bit about your company. What does your organization do?`, () => {
           setStep(STEPS.COMPANY_INFO)
           setSubStep(0)
         })
@@ -141,7 +141,7 @@ const ChatEngine = () => {
       if (subStep === 0) {
         // Company description
         setSession(s => ({ ...s, companyDescription: val }))
-        sendAI(`Understood. Now, which industry best describes your organization?`, () => {
+        sendAI(`Got it. Which industry are you in?`, () => {
           setSubStep(1)
           setShowOptions({ type: 'industry', options: INDUSTRIES })
           setInputDisabled(true)
@@ -165,7 +165,7 @@ const ChatEngine = () => {
     if (step === STEPS.COMPANY_INFO && subStep === 1) {
       sendUser(option.label)
       setSession(s => ({ ...s, industry: option.label }))
-      sendAI(`Got it. One last detail — what is the approximate size of your organization?`, () => {
+      sendAI(`Thanks. How many people work at your company?`, () => {
         setShowOptions({ type: 'size', options: COMPANY_SIZES })
         setInputDisabled(true)
       })
@@ -177,7 +177,7 @@ const ChatEngine = () => {
     if (step === STEPS.COMPANY_INFO && subStep === 2) {
       sendUser(option.label)
       setSession(s => ({ ...s, companySize: option.label }))
-      sendAI(`Perfect. Now let's select the compliance framework you'd like to be assessed against.`, () => {
+      sendAI(`Perfect. Now pick the compliance framework you want to check against.`, () => {
         setStep(STEPS.FRAMEWORK)
         setSubStep(0)
         setShowOptions({ type: 'framework', options: FRAMEWORKS })
@@ -192,7 +192,7 @@ const ChatEngine = () => {
       setSession(s => ({ ...s, framework: option.id }))
       const questions = SECURITY_QUESTIONS[option.id] || []
       sendAI(
-        `Excellent choice. I'll now walk you through ${questions.length} targeted questions for **${option.label}**. Answer as accurately as possible — this directly impacts your risk score.`,
+        `Good choice. I'll ask you ${questions.length} quick questions about **${option.label}**. Just answer honestly — it helps us give you an accurate score.`,
         () => {
           setStep(STEPS.SECURITY_QUESTIONS)
           setQuestionIndex(0)
@@ -218,8 +218,8 @@ const ChatEngine = () => {
         askSecurityQuestion(nextIndex, framework)
       } else {
         // All questions answered — go to summary
-        sendAI(`Thank you for completing the assessment. I'm now compiling your results...`, () => {
-          sendAI(`Here is your compliance summary based on the information provided.`, () => {
+        sendAI(`Thanks for answering everything. Let me put together your results...`, () => {
+          sendAI(`Here's what we found based on your answers.`, () => {
             setStep(STEPS.SUMMARY)
             setInputDisabled(true)
           }, 1200)
@@ -257,8 +257,8 @@ const ChatEngine = () => {
     initialized.current = false
     setTimeout(() => {
       initialized.current = true
-      sendAI("Hello again! I'm **Amenly AI**, your cybersecurity compliance consultant. Let's start fresh.", () => {
-        sendAI("Could you tell me your **name** and **role** within your organization?")
+      sendAI("Let's start over. I'm here to help you check your security compliance.", () => {
+        sendAI("What's your name and role?")
       })
     }, 100)
   }
@@ -337,7 +337,7 @@ const ChatEngine = () => {
         {/* Restart link */}
         <div className="flex justify-between items-center mt-2.5 px-1">
           <p className="text-[11px] text-white/20">
-            Powered by Amenly AI · Cybersecurity Assessment Engine
+            Amenly Security Assessment
           </p>
           <button
             onClick={handleRestart}
@@ -346,7 +346,7 @@ const ChatEngine = () => {
             <svg className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Restart
+            Start Over
           </button>
         </div>
       </div>

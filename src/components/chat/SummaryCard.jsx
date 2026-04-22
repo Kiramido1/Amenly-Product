@@ -23,9 +23,9 @@ const SummaryCard = ({ session, onRestart }) => {
     'text-red-400'
 
   const scoreLabel =
-    score >= 70 ? 'Good Posture' :
-    score >= 40 ? 'Needs Improvement' :
-    'High Risk'
+    score >= 70 ? 'Strong' :
+    score >= 40 ? 'Needs Work' :
+    'At Risk'
 
   const answerLabel = { yes: 'Yes', partial: 'Partially', no: 'No' }
   const answerColor = {
@@ -44,7 +44,7 @@ const SummaryCard = ({ session, onRestart }) => {
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between bg-gradient-to-r from-[#2C74B3]/5 to-transparent">
         <div>
-          <p className="text-[11px] text-white/40 tracking-widest uppercase mb-1 font-semibold">Assessment Summary</p>
+          <p className="text-[11px] text-white/40 tracking-widest uppercase mb-1 font-semibold">Your Results</p>
           <h3 className="text-white font-bold text-base">{session.name} · {session.role}</h3>
           <p className="text-white/50 text-xs mt-0.5">{session.companyDescription} · {session.industry}</p>
         </div>
@@ -57,7 +57,7 @@ const SummaryCard = ({ session, onRestart }) => {
       {/* Framework badge */}
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2 bg-white/[0.02]">
         <span className="text-lg">{framework?.icon}</span>
-        <span className="text-sm text-white/70">Framework: <span className="text-white font-semibold">{framework?.label}</span></span>
+        <span className="text-sm text-white/70">Checked against <span className="text-white font-semibold">{framework?.label}</span></span>
         {session.companySize && (
           <span className="ml-auto text-xs text-white/40 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.08]">
             {session.companySize}
@@ -94,7 +94,7 @@ const SummaryCard = ({ session, onRestart }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Generate Risk Report
+          Get Full Report
         </motion.button>
         <motion.button
           onClick={onRestart}
@@ -105,7 +105,7 @@ const SummaryCard = ({ session, onRestart }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Restart
+          Start Over
         </motion.button>
       </div>
     </motion.div>

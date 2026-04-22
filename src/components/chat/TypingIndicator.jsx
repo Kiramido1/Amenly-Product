@@ -27,7 +27,7 @@ const TypingIndicator = () => (
           />
         ))}
       </div>
-      <p className="text-[10px] text-white/30 mt-1 tracking-wide">Amenly AI is typing...</p>
+      <p className="text-[10px] text-white/30 mt-1 tracking-wide">typing...</p>
     </div>
   </motion.div>
 )
