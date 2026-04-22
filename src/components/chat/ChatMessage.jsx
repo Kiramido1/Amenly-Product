@@ -32,7 +32,7 @@ const ChatMessage = ({ message }) => {
         className={`max-w-[70%] px-5 py-4 text-base leading-relaxed ${
           isAI
             ? 'bg-white/[0.03] border border-white/[0.06] text-white/90 rounded-2xl rounded-bl-md'
-            : 'bg-gradient-to-br from-[#2C74B3] to-[#205295] text-white rounded-2xl rounded-br-md shadow-lg shadow-[#2C74B3]/10'
+            : 'bg-gradient-to-br from-[#144272] to-[#0A2647] text-white rounded-2xl rounded-br-md shadow-lg shadow-[#144272]/10'
         }`}
       >
         {message.text}

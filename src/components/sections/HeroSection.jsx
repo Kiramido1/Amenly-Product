@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion'
 import Button from '../Button'
 import Hero3DScene from '../Hero3DScene'
-import SimpleDissolve from '../SimpleDissolve'
-import ScrollRevealText from '../ScrollRevealText'
+import Badge from '../ui/Badge'
 
 const HeroSection = () => {
   const scrollToNext = () => {
@@ -11,10 +10,7 @@ const HeroSection = () => {
   }
 
   return (
-    <section 
-      id="home" 
-      className="relative min-h-[185vh] flex flex-col items-center justify-start overflow-hidden bg-black"
-    >
+    <section id="home" className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 overflow-hidden bg-black">
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(15)].map((_, i) => {
@@ -40,11 +36,7 @@ const HeroSection = () => {
         <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-amenly-medium/8 rounded-full blur-[120px]" />
       </div>
 
-      {/* Simple Dissolve Effect */}
-      <SimpleDissolve sectionId="home" />
-
-      {/* Top Section - Fixed viewport */}
-      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center text-center px-6 sm:px-8 lg:px-12 z-10">
+      <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         {/* Floating 3D Asset */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -94,42 +86,34 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      {/* Scroll-Reveal Content Section */}
-      <div className="relative w-full min-h-[85vh] flex items-center justify-center px-6 sm:px-8 lg:px-12 z-10 pb-32">
-        <ScrollRevealText
-          text="Secure your organization with intelligent governance and compliance tools that understand risks monitor systems and make better decisions"
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight text-center max-w-6xl text-white"
-        />
-        
-        {/* Scroll Indicator - inside content section */}
-        <motion.button
-          onClick={scrollToNext}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.2 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 group cursor-pointer bg-transparent border-none outline-none"
-          aria-label="Scroll to know more"
+      {/* Scroll Indicator */}
+      <motion.button
+        onClick={scrollToNext}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+        className="absolute bottom-10 inset-x-0 mx-auto w-fit flex flex-col items-center gap-2 group cursor-pointer bg-transparent border-none outline-none"
+        aria-label="Scroll to know more"
+      >
+        <span className="text-white/60 text-xs font-light tracking-[0.2em] uppercase group-hover:text-white/90 transition-colors duration-300">
+          Scroll to know more
+        </span>
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex flex-col items-center gap-0.5"
         >
-          <span className="text-white/60 text-xs font-light tracking-[0.2em] uppercase group-hover:text-white/90 transition-colors duration-300">
-            Scroll to know more
-          </span>
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex flex-col items-center gap-0.5"
+          <span className="block w-px h-6 bg-gradient-to-b from-white/0 via-white/60 to-white/0 group-hover:via-white/90 transition-colors duration-300" />
+          <svg
+            className="w-4 h-4 text-white/60 group-hover:text-white/90 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <span className="block w-px h-6 bg-gradient-to-b from-white/0 via-white/60 to-white/0 group-hover:via-white/90 transition-colors duration-300" />
-            <svg
-              className="w-4 h-4 text-white/60 group-hover:text-white/90 transition-colors duration-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-            </svg>
-          </motion.div>
-        </motion.button>
-      </div>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.div>
+      </motion.button>
     </section>
   )
 }

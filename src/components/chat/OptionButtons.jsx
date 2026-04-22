@@ -36,7 +36,7 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
             className={`flex items-center gap-3 px-5 py-4 rounded-xl border text-left text-base font-medium
               transition-all duration-200 cursor-pointer
               ${isSelected
-                ? 'border-[#2C74B3]/50 bg-[#2C74B3]/10 text-white shadow-lg shadow-[#2C74B3]/10'
+                ? 'border-[#144272]/50 bg-[#144272]/10 text-white shadow-lg shadow-[#144272]/10'
                 : `border-white/[0.06] bg-white/[0.02] text-white/70 ${colorClass}`
               }`}
           >

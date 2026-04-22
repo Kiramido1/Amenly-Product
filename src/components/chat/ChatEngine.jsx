@@ -343,12 +343,11 @@ const ChatEngine = () => {
           <motion.button
             type="submit"
             disabled={inputDisabled || !inputValue.trim()}
-            whileHover={inputDisabled || !inputValue.trim() ? {} : { scale: 1.05 }}
-            whileTap={inputDisabled || !inputValue.trim() ? {} : { scale: 0.95 }}
-            className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] 
+            whileHover={inputDisabled || !inputValue.trim() ? {} : { scale: 1.02 }}
+            whileTap={inputDisabled || !inputValue.trim() ? {} : { scale: 0.98 }}
+            className="w-12 h-12 rounded-lg bg-[#144272] hover:bg-[#0A2647]
               disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center 
-              transition-all duration-200 flex-shrink-0 shadow-lg shadow-[#2C74B3]/20
-              hover:shadow-xl hover:shadow-[#2C74B3]/30"
+              transition-all duration-200 flex-shrink-0"
           >
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
