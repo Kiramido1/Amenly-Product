@@ -272,61 +272,83 @@ const ChatEngine = () => {
       <ProgressBar currentStep={currentStepIndex} totalSteps={5} />
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-1 scrollbar-thin scrollbar-thumb-white/10">
-        <AnimatePresence initial={false}>
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-1">
+        <AnimatePresence initial={false} mode="popLayout">
           {messages.map(msg => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
         </AnimatePresence>
 
         {/* Typing indicator */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isTyping && <TypingIndicator key="typing" />}
         </AnimatePresence>
 
         {/* Summary card */}
-        {step === STEPS.SUMMARY && (
-          <SummaryCard session={session} onRestart={handleRestart} />
-        )}
+        <AnimatePresence mode="wait">
+          {step === STEPS.SUMMARY && (
+            <SummaryCard session={session} onRestart={handleRestart} />
+          )}
+        </AnimatePresence>
 
         {/* Option buttons */}
-        {showOptions && !isTyping && (
-          <OptionButtons
-            options={showOptions.options}
-            onSelect={handleOptionSelect}
-            columns={showOptions.type === 'yesno' ? 3 : 2}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {showOptions && !isTyping && (
+            <OptionButtons
+              options={showOptions.options}
+              onSelect={handleOptionSelect}
+              columns={showOptions.type === 'yesno' ? 3 : 2}
+            />
+          )}
+        </AnimatePresence>
 
         <div ref={bottomRef} />
       </div>
 
       {/* Input bar */}
-      <div className="border-t border-white/[0.06] bg-black/40 backdrop-blur-xl px-4 sm:px-6 py-4">
+      <div className="border-t border-white/[0.04] bg-black/20 backdrop-blur-xl px-6 py-4">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            disabled={inputDisabled}
-            placeholder={
-              inputDisabled
-                ? 'Please select an option above...'
-                : 'Type your response...'
-            }
-            className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white
-              placeholder:text-white/25 outline-none focus:border-[#2C74B3]/50 focus:bg-white/[0.05]
-              disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm"
-          />
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              disabled={inputDisabled}
+              placeholder={
+                inputDisabled
+                  ? 'Select an option above'
+                  : 'Type your answer...'
+              }
+              className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 pr-12 text-sm text-white
+                placeholder:text-white/20 outline-none focus:border-[#2C74B3]/40 focus:bg-white/[0.03]
+                disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            />
+            {inputValue && !inputDisabled && (
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                type="button"
+                onClick={() => setInputValue('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-3 h-3 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </motion.button>
+            )}
+          </div>
+          
           <motion.button
             type="submit"
             disabled={inputDisabled || !inputValue.trim()}
-            whileHover={{ scale: inputDisabled || !inputValue.trim() ? 1 : 1.05 }}
-            whileTap={{ scale: inputDisabled || !inputValue.trim() ? 1 : 0.95 }}
-            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] hover:from-[#205295] hover:to-[#144272]
-              disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all flex-shrink-0
-              shadow-[0_0_20px_rgba(44,116,179,0.3)] hover:shadow-[0_0_30px_rgba(44,116,179,0.5)]"
+            whileHover={inputDisabled || !inputValue.trim() ? {} : { scale: 1.05 }}
+            whileTap={inputDisabled || !inputValue.trim() ? {} : { scale: 0.95 }}
+            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] 
+              disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center 
+              transition-all duration-200 flex-shrink-0 shadow-lg shadow-[#2C74B3]/20
+              hover:shadow-xl hover:shadow-[#2C74B3]/30"
           >
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -334,19 +356,19 @@ const ChatEngine = () => {
           </motion.button>
         </form>
 
-        {/* Restart link */}
-        <div className="flex justify-between items-center mt-2.5 px-1">
-          <p className="text-[11px] text-white/20">
+        {/* Footer */}
+        <div className="flex justify-between items-center mt-3 px-1">
+          <p className="text-[10px] text-white/15 tracking-wide">
             Amenly Security Assessment
           </p>
           <button
             onClick={handleRestart}
-            className="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1.5 group"
+            className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1.5 group"
           >
             <svg className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Start Over
+            <span>Start Over</span>
           </button>
         </div>
       </div>
