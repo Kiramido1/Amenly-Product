@@ -48,24 +48,24 @@ const AICompliancePage = () => {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex items-stretch overflow-hidden">
-        <div className="w-full max-w-7xl mx-auto flex gap-6 p-6">
+        <div className="w-full flex gap-0 h-full">
           
           {/* Left sidebar - Steps overview */}
           <motion.aside
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="hidden lg:block w-72 flex-shrink-0"
+            className="hidden lg:block w-64 flex-shrink-0 border-r border-white/[0.04] bg-black/20"
           >
-            <div className="sticky top-6 space-y-6">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
               {/* Header */}
               <div>
                 <div className="inline-flex items-center gap-2 mb-3">
                   <div className="w-1 h-1 rounded-full bg-[#2C74B3]" />
                   <span className="text-[10px] text-white/40 uppercase tracking-[0.15em] font-semibold">Assessment</span>
                 </div>
-                <h2 className="text-white font-bold text-xl mb-2">Security Check</h2>
-                <p className="text-white/40 text-sm leading-relaxed">
+                <h2 className="text-white font-bold text-lg mb-2">Security Check</h2>
+                <p className="text-white/40 text-xs leading-relaxed">
                   5-minute compliance assessment
                 </p>
               </div>
@@ -88,15 +88,15 @@ const AICompliancePage = () => {
                   >
                     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-white/[0.02] cursor-default">
                       <div className="relative flex-shrink-0">
-                        <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center transition-all duration-200 group-hover:border-[#2C74B3]/30 group-hover:bg-[#2C74B3]/5">
-                          <svg className="w-4 h-4 text-white/40 group-hover:text-[#2C74B3] transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center transition-all duration-200 group-hover:border-[#2C74B3]/30 group-hover:bg-[#2C74B3]/5">
+                          <svg className="w-3.5 h-3.5 text-white/40 group-hover:text-[#2C74B3] transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={step.icon} />
                           </svg>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white/70 group-hover:text-white transition-colors duration-200">{step.label}</p>
-                        <p className="text-xs text-white/30 mt-0.5">{step.desc}</p>
+                        <p className="text-xs font-medium text-white/70 group-hover:text-white transition-colors duration-200">{step.label}</p>
+                        <p className="text-[11px] text-white/30 mt-0.5">{step.desc}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -108,13 +108,13 @@ const AICompliancePage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.3 }}
-                className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]"
+                className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04]"
               >
                 <div className="flex items-start gap-2.5">
-                  <svg className="w-4 h-4 text-[#2C74B3] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-[#2C74B3] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  <p className="text-xs text-white/40 leading-relaxed">
+                  <p className="text-[11px] text-white/40 leading-relaxed">
                     All data stays on your device. Nothing is sent to our servers unless you request a report.
                   </p>
                 </div>
@@ -127,9 +127,9 @@ const AICompliancePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="flex-1 flex flex-col min-w-0"
+            className="flex-1 flex flex-col min-w-0 h-full"
           >
-            <div className="flex-1 flex flex-col bg-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl shadow-black/20">
+            <div className="flex-1 flex flex-col bg-white/[0.02] backdrop-blur-xl border-l border-white/[0.04] overflow-hidden">
               <ChatEngine />
             </div>
           </motion.main>

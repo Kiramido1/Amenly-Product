@@ -320,7 +320,7 @@ const ChatEngine = () => {
                   ? 'Select an option above'
                   : 'Type your answer...'
               }
-              className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 pr-12 text-sm text-white
+              className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl px-5 py-4 pr-12 text-base text-white
                 placeholder:text-white/20 outline-none focus:border-[#2C74B3]/40 focus:bg-white/[0.03]
                 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             />
@@ -345,12 +345,12 @@ const ChatEngine = () => {
             disabled={inputDisabled || !inputValue.trim()}
             whileHover={inputDisabled || !inputValue.trim() ? {} : { scale: 1.05 }}
             whileTap={inputDisabled || !inputValue.trim() ? {} : { scale: 0.95 }}
-            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] 
+            className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] 
               disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center 
               transition-all duration-200 flex-shrink-0 shadow-lg shadow-[#2C74B3]/20
               hover:shadow-xl hover:shadow-[#2C74B3]/30"
           >
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </motion.button>

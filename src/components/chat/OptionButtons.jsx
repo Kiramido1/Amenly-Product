@@ -33,7 +33,7 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(opt)}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left text-sm font-medium
+            className={`flex items-center gap-3 px-5 py-4 rounded-xl border text-left text-base font-medium
               transition-all duration-200 cursor-pointer
               ${isSelected
                 ? 'border-[#2C74B3]/50 bg-[#2C74B3]/10 text-white shadow-lg shadow-[#2C74B3]/10'
@@ -42,7 +42,7 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
           >
             {opt.iconPath && (
               <div className="flex-shrink-0 text-current">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={opt.iconPath} />
                 </svg>
               </div>
@@ -50,7 +50,7 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">{opt.label}</p>
               {opt.description && (
-                <p className="text-xs text-white/30 mt-0.5 truncate">{opt.description}</p>
+                <p className="text-sm text-white/30 mt-0.5 truncate">{opt.description}</p>
               )}
             </div>
             {isSelected && (
