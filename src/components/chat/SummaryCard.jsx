@@ -39,62 +39,74 @@ const SummaryCard = ({ session, onRestart }) => {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="my-4 rounded-2xl border border-white/10 bg-[#0D1B2E] overflow-hidden"
+      className="my-4 rounded-2xl border border-white/[0.08] glass-card overflow-hidden shadow-[0_0_40px_rgba(44,116,179,0.15)]"
     >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between bg-gradient-to-r from-[#2C74B3]/5 to-transparent">
         <div>
-          <p className="text-[11px] text-white/40 tracking-widest uppercase mb-1">Assessment Summary</p>
-          <h3 className="text-white font-semibold text-base">{session.name} · {session.role}</h3>
+          <p className="text-[11px] text-white/40 tracking-widest uppercase mb-1 font-semibold">Assessment Summary</p>
+          <h3 className="text-white font-bold text-base">{session.name} · {session.role}</h3>
           <p className="text-white/50 text-xs mt-0.5">{session.companyDescription} · {session.industry}</p>
         </div>
         <div className="text-right">
           <p className={`text-3xl font-bold ${scoreColor}`}>{score}%</p>
-          <p className={`text-xs font-medium ${scoreColor}`}>{scoreLabel}</p>
+          <p className={`text-xs font-semibold ${scoreColor}`}>{scoreLabel}</p>
         </div>
       </div>
 
       {/* Framework badge */}
-      <div className="px-5 py-3 border-b border-white/8 flex items-center gap-2">
-        <span className="text-base">{framework?.icon}</span>
-        <span className="text-sm text-white/70">Framework: <span className="text-white font-medium">{framework?.label}</span></span>
+      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2 bg-white/[0.02]">
+        <span className="text-lg">{framework?.icon}</span>
+        <span className="text-sm text-white/70">Framework: <span className="text-white font-semibold">{framework?.label}</span></span>
         {session.companySize && (
-          <span className="ml-auto text-xs text-white/40 bg-white/5 px-2 py-0.5 rounded-full border border-white/8">
+          <span className="ml-auto text-xs text-white/40 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.08]">
             {session.companySize}
           </span>
         )}
       </div>
 
       {/* Q&A list */}
-      <div className="px-5 py-4 space-y-3">
+      <div className="px-5 py-4 space-y-3 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
         {questions.map((q, i) => (
-          <div key={q.id} className="flex items-start gap-3">
-            <span className="text-[11px] text-white/30 mt-0.5 w-4 flex-shrink-0">{i + 1}.</span>
+          <motion.div
+            key={q.id}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02] transition-colors"
+          >
+            <span className="text-[11px] text-white/30 mt-0.5 w-5 flex-shrink-0 font-semibold">{i + 1}.</span>
             <p className="text-xs text-white/60 flex-1 leading-relaxed">{q.question}</p>
-            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border flex-shrink-0 ${answerColor[answers[q.id]] || 'text-white/30 bg-white/5 border-white/10'}`}>
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${answerColor[answers[q.id]] || 'text-white/30 bg-white/[0.03] border-white/[0.08]'}`}>
               {answerLabel[answers[q.id]] || '—'}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* CTA */}
-      <div className="px-5 py-4 border-t border-white/8 flex flex-col sm:flex-row gap-3">
-        <button className="flex-1 py-2.5 bg-[#2C74B3] hover:bg-[#205295] text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+      <div className="px-5 py-4 border-t border-white/[0.06] flex flex-col sm:flex-row gap-3 bg-white/[0.02]">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex-1 py-3 bg-gradient-to-r from-[#2C74B3] to-[#205295] hover:from-[#205295] hover:to-[#144272] text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(44,116,179,0.3)] hover:shadow-[0_0_35px_rgba(44,116,179,0.5)]"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Generate Risk Report
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={onRestart}
-          className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm rounded-xl transition-colors border border-white/8 flex items-center justify-center gap-2"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="px-5 py-3 bg-white/[0.05] hover:bg-white/[0.08] text-white/60 hover:text-white text-sm font-semibold rounded-xl transition-all border border-white/[0.08] hover:border-white/[0.15] flex items-center justify-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Restart
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   )

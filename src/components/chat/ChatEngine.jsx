@@ -302,7 +302,7 @@ const ChatEngine = () => {
       </div>
 
       {/* Input bar */}
-      <div className="border-t border-white/8 bg-[#080E1A] px-4 sm:px-6 py-4">
+      <div className="border-t border-white/[0.06] bg-black/40 backdrop-blur-xl px-4 sm:px-6 py-4">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
           <input
             ref={inputRef}
@@ -315,32 +315,35 @@ const ChatEngine = () => {
                 ? 'Please select an option above...'
                 : 'Type your response...'
             }
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white
-              placeholder:text-white/25 outline-none focus:border-[#2C74B3]/60 focus:bg-white/8
-              disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white
+              placeholder:text-white/25 outline-none focus:border-[#2C74B3]/50 focus:bg-white/[0.05]
+              disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm"
           />
-          <button
+          <motion.button
             type="submit"
             disabled={inputDisabled || !inputValue.trim()}
-            className="w-10 h-10 rounded-xl bg-[#2C74B3] hover:bg-[#205295] disabled:opacity-30
-              disabled:cursor-not-allowed flex items-center justify-center transition-colors flex-shrink-0"
+            whileHover={{ scale: inputDisabled || !inputValue.trim() ? 1 : 1.05 }}
+            whileTap={{ scale: inputDisabled || !inputValue.trim() ? 1 : 0.95 }}
+            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2C74B3] to-[#205295] hover:from-[#205295] hover:to-[#144272]
+              disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all flex-shrink-0
+              shadow-[0_0_20px_rgba(44,116,179,0.3)] hover:shadow-[0_0_30px_rgba(44,116,179,0.5)]"
           >
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
-          </button>
+          </motion.button>
         </form>
 
         {/* Restart link */}
-        <div className="flex justify-between items-center mt-2 px-1">
+        <div className="flex justify-between items-center mt-2.5 px-1">
           <p className="text-[11px] text-white/20">
             Powered by Amenly AI · Cybersecurity Assessment Engine
           </p>
           <button
             onClick={handleRestart}
-            className="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1"
+            className="text-[11px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1.5 group"
           >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Restart
