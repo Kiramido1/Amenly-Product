@@ -56,7 +56,7 @@ const SummaryCard = ({ session, onRestart }) => {
 
       {/* Framework badge */}
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2 bg-white/[0.02]">
-        <span className="text-lg">{framework?.icon}</span>
+        <div className="text-[#2C74B3]">{framework?.icon}</div>
         <span className="text-sm text-white/70">Checked against <span className="text-white font-semibold">{framework?.label}</span></span>
         {session.companySize && (
           <span className="ml-auto text-xs text-white/40 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.08]">

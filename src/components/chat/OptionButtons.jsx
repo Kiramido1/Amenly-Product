@@ -42,7 +42,11 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
                 : `border-white/[0.08] bg-white/[0.02] text-white/70 ${colorClass}`
               }`}
           >
-            {opt.icon && <span className="text-lg flex-shrink-0">{opt.icon}</span>}
+            {opt.icon && (
+              <div className="flex-shrink-0 text-[#2C74B3]">
+                {opt.icon}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">{opt.label}</p>
               {opt.description && (

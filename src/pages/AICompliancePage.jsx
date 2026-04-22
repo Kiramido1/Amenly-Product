@@ -92,11 +92,51 @@ const AICompliancePage = () => {
           {/* Steps list */}
           <div className="space-y-1.5 mb-8">
             {[
-              { label: 'Getting Started',      icon: '👋', desc: 'Who you are' },
-              { label: 'About Your Company',   icon: '🏢', desc: 'What you do' },
-              { label: 'Pick a Framework',     icon: '📋', desc: 'ISO, NIST, or GDPR' },
-              { label: 'Quick Questions',      icon: '🔍', desc: '5 targeted questions' },
-              { label: 'Your Results',         icon: '📊', desc: 'Score and next steps' },
+              {
+                label: 'Getting Started',
+                desc: 'Who you are',
+                icon: (
+                  <svg className="w-5 h-5 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )
+              },
+              {
+                label: 'About Your Company',
+                desc: 'What you do',
+                icon: (
+                  <svg className="w-5 h-5 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                )
+              },
+              {
+                label: 'Pick a Framework',
+                desc: 'ISO, NIST, or GDPR',
+                icon: (
+                  <svg className="w-5 h-5 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )
+              },
+              {
+                label: 'Quick Questions',
+                desc: '5 targeted questions',
+                icon: (
+                  <svg className="w-5 h-5 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                )
+              },
+              {
+                label: 'Your Results',
+                desc: 'Score and next steps',
+                icon: (
+                  <svg className="w-5 h-5 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                )
+              },
             ].map((s, i) => (
               <motion.div
                 key={i}
@@ -105,7 +145,7 @@ const AICompliancePage = () => {
                 transition={{ delay: 0.2 + i * 0.05 }}
                 className="flex items-start gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/[0.05] group"
               >
-                <span className="text-base mt-0.5 group-hover:scale-110 transition-transform">{s.icon}</span>
+                <div className="mt-0.5 group-hover:scale-110 transition-transform">{s.icon}</div>
                 <div>
                   <p className="text-xs text-white/70 font-semibold group-hover:text-white transition-colors">{s.label}</p>
                   <p className="text-[11px] text-white/30 mt-0.5">{s.desc}</p>

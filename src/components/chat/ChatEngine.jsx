@@ -188,7 +188,7 @@ const ChatEngine = () => {
 
     // Framework selection
     if (step === STEPS.FRAMEWORK) {
-      sendUser(`${option.icon} ${option.label}`)
+      sendUser(option.label)
       setSession(s => ({ ...s, framework: option.id }))
       const questions = SECURITY_QUESTIONS[option.id] || []
       sendAI(
