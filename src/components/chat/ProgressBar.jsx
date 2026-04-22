@@ -16,7 +16,7 @@ const ProgressBar = ({ currentStep, totalSteps = 5 }) => {
           <span className="text-xs text-white/30 font-medium">
             Step {currentStep + 1} of {totalSteps}
           </span>
-          <span className="text-xs text-[#2C74B3] font-semibold">
+          <span className="text-xs text-[#144272] font-semibold">
             {STEP_LABELS[currentStep]}
           </span>
         </div>
@@ -26,7 +26,7 @@ const ProgressBar = ({ currentStep, totalSteps = 5 }) => {
       {/* Track */}
       <div className="relative h-1 bg-white/[0.04] rounded-full overflow-hidden">
         <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#2C74B3] to-[#205295] rounded-full"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#144272] to-[#0A2647] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${percent}%` }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -45,7 +45,7 @@ const ProgressBar = ({ currentStep, totalSteps = 5 }) => {
               }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
               className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-                i <= currentStep ? 'bg-[#2C74B3]' : 'bg-white/10'
+                i <= currentStep ? 'bg-[#144272]' : 'bg-white/10'
               }`}
             />
           </div>
