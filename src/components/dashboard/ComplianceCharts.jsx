@@ -33,7 +33,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     <div style={{ backgroundColor: '#000000', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px 14px', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)' }}>
       {label && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', marginBottom: '6px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{label}</p>}
       {payload.map((entry, i) => (
-        <p key={i} style={{ color: entry.color || '#3b82f6', fontSize: '12px', fontWeight: 700, marginBottom: '2px' }}>
+        <p key={i} style={{ color: entry.color || '#2C74B3', fontSize: '12px', fontWeight: 700, marginBottom: '2px' }}>
           {entry.name}: {entry.value}{typeof entry.value === 'number' && entry.name !== 'Risk' ? '%' : ''}
         </p>
       ))}
@@ -72,9 +72,9 @@ const DepartmentBars = () => (
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
         <XAxis type="number" domain={[0, 100]} tick={{ fill: TEXT_COLOR, fontSize: 9 }} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey="department" tick={{ fill: TEXT_COLOR, fontSize: 9 }} axisLine={false} tickLine={false} width={75} />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59,130,246,0.1)' }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(44,116,179,0.1)' }} />
         <Bar dataKey="score" name="Compliance" radius={[0, 4, 4, 0]} maxBarSize={18}>
-          {departmentCompliance.map((entry, i) => <Cell key={i} fill={entry.score >= 80 ? '#3b82f6' : entry.score >= 60 ? '#8b5cf6' : '#ef4444'} fillOpacity={0.8} />)}
+          {departmentCompliance.map((entry, i) => <Cell key={i} fill={entry.score >= 80 ? '#2C74B3' : entry.score >= 60 ? '#205295' : '#ef4444'} fillOpacity={0.8} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -91,8 +91,8 @@ const RiskTrendChart = () => (
             <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="compGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+            <stop offset="0%" stopColor="#2C74B3" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="#205295" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
@@ -100,7 +100,7 @@ const RiskTrendChart = () => (
         <YAxis tick={{ fill: TEXT_COLOR, fontSize: 9 }} axisLine={false} tickLine={false} domain={[0, 100]} />
         <Tooltip content={<CustomTooltip />} />
         <Area type="monotone" dataKey="risk" name="Risk" stroke="#ef4444" fill="url(#riskGrad)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#ef4444', stroke: '#000000', strokeWidth: 2 }} />
-        <Area type="monotone" dataKey="compliance" name="Compliance" stroke="#3b82f6" fill="url(#compGrad)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#3b82f6', stroke: '#000000', strokeWidth: 2 }} />
+        <Area type="monotone" dataKey="compliance" name="Compliance" stroke="#2C74B3" fill="url(#compGrad)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#2C74B3', stroke: '#000000', strokeWidth: 2 }} />
       </AreaChart>
     </ResponsiveContainer>
   </div>

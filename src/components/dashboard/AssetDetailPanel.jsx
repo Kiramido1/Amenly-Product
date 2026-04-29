@@ -235,14 +235,14 @@ const PanelContent = ({ asset, onClose }) => {
         >
           <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2 font-bold">Compliance</p>
           <div className="flex items-end gap-2 mb-3">
-            <span className="text-3xl font-bold text-blue-400">{asset.compliance_score}</span>
+            <span className="text-3xl font-bold text-amenly-light">{asset.compliance_score}</span>
             <span className="text-xs text-white/40 mb-1.5">%</span>
           </div>
           <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+              className="h-full rounded-full bg-gradient-to-r from-amenly-medium to-amenly-light"
               style={{
-                boxShadow: '0 0 10px rgba(59,130,246,0.6)',
+                boxShadow: '0 0 10px rgba(44,116,179,0.6)',
               }}
               initial={{ width: 0 }}
               animate={{ width: `${asset.compliance_score}%` }}

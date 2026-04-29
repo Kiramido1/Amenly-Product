@@ -24,9 +24,9 @@ const AnimatedCounter = ({ target, duration = 1.8, suffix = '' }) => {
 }
 
 const cards = [
-  { label: 'Compliance Score', value: summaryStats.overallCompliance, suffix: '%', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', accent: '#3b82f6', hasRing: true, glow: true },
+  { label: 'Compliance Score', value: summaryStats.overallCompliance, suffix: '%', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', accent: '#2C74B3', hasRing: true, glow: true },
   { label: 'Risk Average', value: summaryStats.riskAverage, suffix: '/100', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z', accent: summaryStats.riskAverage <= 35 ? '#10b981' : summaryStats.riskAverage <= 60 ? '#94A3B8' : '#ef4444', hasRing: false, glow: false },
-  { label: 'Total Assets', value: summaryStats.totalAssets, suffix: '', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', accent: '#8b5cf6', hasRing: false, glow: false },
+  { label: 'Total Assets', value: summaryStats.totalAssets, suffix: '', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', accent: '#2C74B3', hasRing: false, glow: false },
   { label: 'Critical Assets', value: summaryStats.criticalAssets, suffix: '', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z', accent: '#ef4444', hasRing: false, glow: true, pulse: true },
 ]
 
@@ -153,15 +153,15 @@ const StatsCards = () => (
           <motion.div 
             className="w-8 h-8 rounded-md flex items-center justify-center backdrop-blur-sm flex-shrink-0" 
             style={{
-              backgroundColor: fw.score >= 85 ? 'rgba(59,130,246,0.15)' : fw.score >= 70 ? 'rgba(139,92,246,0.15)' : 'rgba(239,68,68,0.15)',
-              border: `1px solid ${fw.score >= 85 ? 'rgba(59,130,246,0.3)' : fw.score >= 70 ? 'rgba(139,92,246,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              backgroundColor: fw.score >= 85 ? 'rgba(44,116,179,0.15)' : fw.score >= 70 ? 'rgba(32,82,149,0.15)' : 'rgba(239,68,68,0.15)',
+              border: `1px solid ${fw.score >= 85 ? 'rgba(44,116,179,0.3)' : fw.score >= 70 ? 'rgba(32,82,149,0.3)' : 'rgba(239,68,68,0.3)'}`,
             }}
             whileHover={{ rotate: 360 }}
             transition={{ duration: 0.6 }}
           >
             <svg 
               className="w-4 h-4" 
-              style={{ color: fw.score >= 85 ? '#3b82f6' : fw.score >= 70 ? '#8b5cf6' : '#ef4444' }}
+              style={{ color: fw.score >= 85 ? '#2C74B3' : fw.score >= 70 ? '#205295' : '#ef4444' }}
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -174,7 +174,7 @@ const StatsCards = () => (
               <span className="text-[11px] font-semibold text-white/70 truncate">{fw.label}</span>
               <span 
                 className="text-[11px] font-bold" 
-                style={{ color: fw.score >= 85 ? '#3b82f6' : fw.score >= 70 ? '#8b5cf6' : '#ef4444' }}
+                style={{ color: fw.score >= 85 ? '#2C74B3' : fw.score >= 70 ? '#205295' : '#ef4444' }}
               >
                 {fw.score}%
               </span>
@@ -183,8 +183,8 @@ const StatsCards = () => (
               <motion.div
                 className="h-full rounded-full"
                 style={{ 
-                  backgroundColor: fw.score >= 85 ? '#3b82f6' : fw.score >= 70 ? '#8b5cf6' : '#ef4444',
-                  boxShadow: `0 0 10px ${fw.score >= 85 ? 'rgba(59,130,246,0.4)' : fw.score >= 70 ? 'rgba(139,92,246,0.4)' : 'rgba(239,68,68,0.4)'}`,
+                  backgroundColor: fw.score >= 85 ? '#2C74B3' : fw.score >= 70 ? '#205295' : '#ef4444',
+                  boxShadow: `0 0 10px ${fw.score >= 85 ? 'rgba(44,116,179,0.4)' : fw.score >= 70 ? 'rgba(32,82,149,0.4)' : 'rgba(239,68,68,0.4)'}`,
                 }}
                 initial={{ width: 0 }}
                 animate={{ width: `${fw.score}%` }}

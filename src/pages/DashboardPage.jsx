@@ -13,7 +13,7 @@ const RegulationTracker = lazy(() => import('../components/dashboard/RegulationT
 // Optimized loading fallback - no animations
 const LoadingFallback = memo(() => (
   <div className="flex items-center justify-center py-16">
-    <div className="w-6 h-6 border-2 border-white/10 border-t-blue-500/50 rounded-full animate-spin" />
+    <div className="w-6 h-6 border-2 border-white/10 border-t-amenly-light/50 rounded-full animate-spin" />
   </div>
 ))
 
@@ -40,14 +40,14 @@ const StaticBackground = memo(() => (
     <div className="absolute inset-0 bg-gradient-to-br from-black via-[#0a0a0a] to-black" />
     
     {/* Static glows - no blur for performance */}
-    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-500/3 rounded-full" style={{ filter: 'blur(100px)' }} />
-    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/3 rounded-full" style={{ filter: 'blur(80px)' }} />
+    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-amenly-light/3 rounded-full" style={{ filter: 'blur(100px)' }} />
+    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-amenly-dark/3 rounded-full" style={{ filter: 'blur(80px)' }} />
     
     {/* Static grid pattern */}
     <div 
       className="absolute inset-0 opacity-[0.015]" 
       style={{ 
-        backgroundImage: 'linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)', 
+        backgroundImage: 'linear-gradient(rgba(44,116,179,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(44,116,179,0.5) 1px, transparent 1px)', 
         backgroundSize: '80px 80px' 
       }} 
     />

@@ -230,7 +230,7 @@ const AssetNode = ({ asset, index }) => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[10px] text-white/50 uppercase tracking-wider">Compliance</span>
-                <span className="text-[12px] font-bold text-blue-400">{asset.compliance_score}%</span>
+                <span className="text-[12px] font-bold text-amenly-light">{asset.compliance_score}%</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[10px] text-white/50 uppercase tracking-wider">Department</span>

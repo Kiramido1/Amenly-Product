@@ -19,7 +19,7 @@ const insights = [
     type: 'info', 
     iconType: 'calendar',
     message: 'Next audit in 3 days – 2 requirements incomplete',
-    color: '#8b5cf6'
+    color: '#2C74B3'
   },
   { 
     type: 'success', 
@@ -87,7 +87,7 @@ const AIInsightBar = () => {
 
       <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 bg-black/40 backdrop-blur-xl border-y border-white/5">
         {/* AI Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amenly-light/10 to-amenly-medium/10 border border-amenly-light/20">
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
@@ -99,11 +99,11 @@ const AIInsightBar = () => {
               ease: 'easeInOut',
             }}
           >
-            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-amenly-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </motion.div>
-          <span className="text-[10px] font-bold text-purple-300 tracking-wider uppercase">AI Insight</span>
+          <span className="text-[10px] font-bold text-amenly-light tracking-wider uppercase">AI Insight</span>
         </div>
 
         {/* Message */}

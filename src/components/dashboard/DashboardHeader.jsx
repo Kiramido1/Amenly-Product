@@ -21,14 +21,14 @@ const DashboardHeader = () => {
       className="relative z-30 bg-black/80 backdrop-blur-2xl border-b border-white/5"
     >
       {/* Subtle glow line at top */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amenly-light/30 to-transparent" />
       
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
           <div className="relative flex-shrink-0">
             <motion.div 
-              className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" 
+              className="absolute inset-0 bg-amenly-light/20 blur-xl rounded-full" 
               animate={{
                 opacity: [0.3, 0.6, 0.3],
               }}
@@ -42,7 +42,7 @@ const DashboardHeader = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-white font-bold text-base sm:text-lg tracking-tight leading-none">Amenly</span>
-            <span className="text-blue-400/60 text-[8px] sm:text-[9px] font-medium tracking-[0.2em] uppercase">AI-Powered Compliance Platform</span>
+            <span className="text-amenly-light/60 text-[8px] sm:text-[9px] font-medium tracking-[0.2em] uppercase">AI-Powered Compliance Platform</span>
           </div>
         </Link>
 
@@ -63,9 +63,9 @@ const DashboardHeader = () => {
               {filterStatus === f.key && (
                 <motion.div
                   layoutId="activeFilter"
-                  className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg border border-blue-500/30"
+                  className="absolute inset-0 bg-gradient-to-r from-amenly-light/20 to-amenly-medium/20 rounded-lg border border-amenly-light/30"
                   style={{
-                    boxShadow: '0 0 20px rgba(59,130,246,0.2)',
+                    boxShadow: '0 0 20px rgba(44,116,179,0.2)',
                   }}
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
@@ -103,7 +103,7 @@ const DashboardHeader = () => {
           {/* Assessment Button */}
           <Link 
             to="/ai-compliance" 
-            className="group flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 text-white/70 hover:text-white text-[11px] font-medium backdrop-blur-sm"
+            className="group flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-amenly-light/10 to-amenly-medium/10 hover:from-amenly-light/20 hover:to-amenly-medium/20 border border-amenly-light/30 hover:border-amenly-light/50 transition-all duration-300 text-white/70 hover:text-white text-[11px] font-medium backdrop-blur-sm"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -114,7 +114,7 @@ const DashboardHeader = () => {
       </div>
       
       {/* Bottom glow line */}
-      <div className="h-[1px] bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+      <div className="h-[1px] bg-gradient-to-r from-transparent via-amenly-light/20 to-transparent" />
     </motion.header>
   )
 }
