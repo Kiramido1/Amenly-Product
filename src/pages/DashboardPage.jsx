@@ -1,50 +1,123 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { lazy, Suspense, memo } from 'react'
+import { DashboardProvider } from '../context/DashboardContext'
+import ErrorBoundary from '../components/ErrorBoundary'
+
+const DashboardHeader = lazy(() => import('../components/dashboard/DashboardHeader'))
+const AIInsightBar = lazy(() => import('../components/dashboard/AIInsightBar'))
+const StatsCards = lazy(() => import('../components/dashboard/StatsCards'))
+const InfrastructureMap = lazy(() => import('../components/dashboard/InfrastructureMap'))
+const AssetDetailPanel = lazy(() => import('../components/dashboard/AssetDetailPanel'))
+const ComplianceCharts = lazy(() => import('../components/dashboard/ComplianceCharts'))
+const RegulationTracker = lazy(() => import('../components/dashboard/RegulationTracker'))
+
+// Optimized loading fallback - no animations
+const LoadingFallback = memo(() => (
+  <div className="flex items-center justify-center py-16">
+    <div className="w-6 h-6 border-2 border-white/10 border-t-blue-500/50 rounded-full animate-spin" />
+  </div>
+))
+
+// Optimized skeleton - no animations
+const SkeletonCards = memo(() => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-[110px] rounded-xl bg-black/40 border border-white/10" />
+      ))}
+    </div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-[52px] rounded-xl bg-black/30 border border-white/10" />
+      ))}
+    </div>
+  </div>
+))
+
+// Static background - no animations
+const StaticBackground = memo(() => (
+  <div className="fixed inset-0 pointer-events-none z-0">
+    {/* Deep black base */}
+    <div className="absolute inset-0 bg-gradient-to-br from-black via-[#0a0a0a] to-black" />
+    
+    {/* Static glows - no blur for performance */}
+    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-500/3 rounded-full" style={{ filter: 'blur(100px)' }} />
+    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/3 rounded-full" style={{ filter: 'blur(80px)' }} />
+    
+    {/* Static grid pattern */}
+    <div 
+      className="absolute inset-0 opacity-[0.015]" 
+      style={{ 
+        backgroundImage: 'linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)', 
+        backgroundSize: '80px 80px' 
+      }} 
+    />
+  </div>
+))
 
 const DashboardPage = () => {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center max-w-lg"
-      >
-        <Link to="/" className="inline-flex items-center gap-3 mb-10">
-          <img
-            src="/flux-2-max-20251222_b_Prompt__NanoBanana__-removebg-preview.png"
-            alt="Amenly Logo"
-            className="h-10 w-auto"
-          />
-          <span className="text-xl font-bold text-white">Amenly</span>
-        </Link>
+    <DashboardProvider>
+      <div className="min-h-screen flex flex-col bg-[#050505] relative overflow-hidden">
+        {/* Static Background - no animations */}
+        <StaticBackground />
 
-        <div className="w-16 h-16 rounded-2xl bg-[#2C74B3]/20 border border-[#2C74B3]/30 flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-[#2C74B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
+        {/* Header */}
+        <div className="relative z-20">
+          <ErrorBoundary>
+            <Suspense fallback={<div className="h-14 bg-black/95" />}>
+              <DashboardHeader />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">Dashboard</h1>
-        <p className="text-gray-400 mb-8 leading-relaxed">
-          Your compliance dashboard is coming soon. Log in to access your security governance tools.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/login">
-            <button className="px-6 py-2.5 bg-[#2C74B3] hover:bg-[#205295] text-white rounded-full text-sm font-medium transition-colors">
-              Log In
-            </button>
-          </Link>
-          <Link to="/">
-            <button className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-full text-sm font-medium transition-colors border border-white/10">
-              Back to Home
-            </button>
-          </Link>
+        {/* AI Insight Bar */}
+        <div className="relative z-20">
+          <ErrorBoundary>
+            <Suspense fallback={<div className="h-12 bg-black/40" />}>
+              <AIInsightBar />
+            </Suspense>
+          </ErrorBoundary>
         </div>
-      </motion.div>
-    </div>
+
+        {/* Content */}
+        <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-chat">
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4">
+            <ErrorBoundary>
+              <Suspense fallback={<SkeletonCards />}>
+                <StatsCards />
+              </Suspense>
+            </ErrorBoundary>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <InfrastructureMap />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <RegulationTracker />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <ComplianceCharts />
+              </Suspense>
+            </ErrorBoundary>
+            <div className="h-4" />
+          </div>
+        </main>
+
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <AssetDetailPanel />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </DashboardProvider>
   )
 }
 
-export default DashboardPage
+export default memo(DashboardPage)

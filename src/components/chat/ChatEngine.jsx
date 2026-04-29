@@ -272,7 +272,7 @@ const ChatEngine = () => {
       <ProgressBar currentStep={currentStepIndex} totalSteps={5} />
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-8 space-y-1">
         <AnimatePresence initial={false} mode="popLayout">
           {messages.map(msg => (
             <ChatMessage key={msg.id} message={msg} />
@@ -306,9 +306,9 @@ const ChatEngine = () => {
       </div>
 
       {/* Input bar */}
-      <div className="border-t border-white/[0.04] bg-black/20 backdrop-blur-xl px-6 py-4">
+      <div className="border-t border-white/[0.04] bg-black/20 backdrop-blur-xl px-4 sm:px-6 py-4">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-w-0">
             <input
               ref={inputRef}
               type="text"
@@ -356,13 +356,13 @@ const ChatEngine = () => {
         </form>
 
         {/* Footer */}
-        <div className="flex justify-between items-center mt-3 px-1">
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-3 px-1 gap-2">
           <p className="text-[10px] text-white/15 tracking-wide">
             Amenly Security Assessment
           </p>
           <button
             onClick={handleRestart}
-            className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1.5 group"
+            className="text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1.5 group whitespace-nowrap"
           >
             <svg className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

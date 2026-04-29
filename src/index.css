@@ -742,3 +742,220 @@ body {
 .animate-gradient {
   animation: gradient 3s ease infinite;
 }
+
+/* ========================================
+   ACCESSIBILITY & PRODUCTION ENHANCEMENTS
+   ======================================== */
+
+/* Focus Indicators for Accessibility */
+*:focus-visible {
+  outline: 2px solid #144272 !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Screen Reader Only Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only:focus,
+.sr-only:active {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Reduced Motion Support - WCAG Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Disable all custom animations */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+}
+
+/* Mobile Viewport Height Fix */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* iOS Safari Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Custom Scrollbar for Chat */
+.scrollbar-chat::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-chat::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+
+.scrollbar-chat::-webkit-scrollbar-thumb {
+  background: rgba(20, 66, 114, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-chat::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 66, 114, 0.5);
+}
+
+/* Firefox scrollbar */
+.scrollbar-chat {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 66, 114, 0.3) rgba(255, 255, 255, 0.02);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  * {
+    border-color: currentColor !important;
+  }
+  
+  .text-white\/40 {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+  
+  .text-white\/30 {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* ========================================
+   OVERFLOW & TEXT WRAPPING FIXES
+   ======================================== */
+
+/* Ensure all text wraps properly and doesn't overflow */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Prevent horizontal overflow globally */
+body, html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure all containers respect boundaries */
+* {
+  min-width: 0;
+}
+
+/* Fix for long URLs and code blocks */
+pre, code {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* ========================================
+   DASHBOARD-SPECIFIC STYLES
+   ======================================== */
+
+/* Dashboard grid pattern background */
+.dashboard-grid {
+  background-image:
+    linear-gradient(rgba(44, 116, 179, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(44, 116, 179, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Neon glow utilities */
+.neon-glow-green {
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.neon-glow-yellow {
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.3), 0 0 20px rgba(148, 163, 184, 0.1);
+}
+
+.neon-glow-red {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+/* Asset pulse animation for critical nodes */
+@keyframes assetPulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.6), 0 0 32px rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+  }
+}
+
+.animate-asset-pulse {
+  animation: assetPulse 2s ease-in-out infinite;
+}
+
+/* Dashboard scrollbar override */
+.dashboard-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dashboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-scroll::-webkit-scrollbar-thumb {
+  background: rgba(44, 116, 179, 0.2);
+  border-radius: 2px;
+}
+
+.dashboard-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(44, 116, 179, 0.4);
+}
+

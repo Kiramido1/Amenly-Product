@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
-import AICompliancePage from './pages/AICompliancePage'
+import AIComplianceChat from './pages/AIComplianceChat'
 import AboutPage from './pages/AboutPage'
 import NotFoundPage from './pages/NotFoundPage'
 import LoadingScreen from './components/LoadingScreen'
@@ -31,7 +31,7 @@ function App() {
           <Route path="/login" element={<AuthPage initialMode="login" />} />
           <Route path="/signup" element={<AuthPage initialMode="signup" />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/ai-compliance" element={<AICompliancePage />} />
+          <Route path="/ai-compliance" element={<AIComplianceChat />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

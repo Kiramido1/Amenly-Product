@@ -17,7 +17,9 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`grid gap-2.5 mt-4 mb-6 ${
-        columns === 3 ? 'grid-cols-3' : columns === 2 ? 'grid-cols-2' : 'grid-cols-1'
+        columns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 
+        columns === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+        'grid-cols-1'
       }`}
     >
       {options.map((opt, i) => {
@@ -34,7 +36,7 @@ const OptionButtons = ({ options, onSelect, selected, columns = 2 }) => {
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(opt)}
             className={`flex items-center gap-3 px-5 py-4 rounded-xl border text-left text-base font-medium
-              transition-all duration-200 cursor-pointer
+              transition-all duration-200 cursor-pointer overflow-hidden
               ${isSelected
                 ? 'border-[#144272]/50 bg-[#144272]/10 text-white shadow-lg shadow-[#144272]/10'
                 : `border-white/[0.06] bg-white/[0.02] text-white/70 ${colorClass}`

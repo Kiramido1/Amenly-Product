@@ -4,11 +4,8 @@ import FeaturesSection from '../components/FeaturesSection'
 import HowItWorksSection from '../components/HowItWorksSection'
 import CTASection from '../components/CTASection'
 import Footer from '../components/Footer'
-import { useSmoothScroll } from '../hooks/useSmoothScroll'
 
 const LandingPage = () => {
-  useSmoothScroll()
-
   return (
     <div className="bg-black">
       <Navbar />

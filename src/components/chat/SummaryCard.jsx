@@ -43,47 +43,47 @@ const SummaryCard = ({ session, onRestart }) => {
     >
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between bg-gradient-to-r from-[#2C74B3]/5 to-transparent">
-        <div>
+        <div className="flex-1 min-w-0 pr-4">
           <p className="text-[11px] text-white/40 tracking-widest uppercase mb-1 font-semibold">Your Results</p>
-          <h3 className="text-white font-bold text-base">{session.name} · {session.role}</h3>
-          <p className="text-white/50 text-xs mt-0.5">{session.companyDescription} · {session.industry}</p>
+          <h3 className="text-white font-bold text-base truncate">{session.name} · {session.role}</h3>
+          <p className="text-white/50 text-xs mt-0.5 truncate">{session.companyDescription} · {session.industry}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <p className={`text-3xl font-bold ${scoreColor}`}>{score}%</p>
           <p className={`text-xs font-semibold ${scoreColor}`}>{scoreLabel}</p>
         </div>
       </div>
 
       {/* Framework badge */}
-      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2 bg-white/[0.02]">
+      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2 bg-white/[0.02] overflow-hidden">
         {framework?.iconPath && (
-          <div className="text-[#2C74B3]">
+          <div className="text-[#2C74B3] flex-shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={framework.iconPath} />
             </svg>
           </div>
         )}
-        <span className="text-sm text-white/70">Checked against <span className="text-white font-semibold">{framework?.label}</span></span>
+        <span className="text-sm text-white/70 truncate flex-1">Checked against <span className="text-white font-semibold">{framework?.label}</span></span>
         {session.companySize && (
-          <span className="ml-auto text-xs text-white/40 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.08]">
+          <span className="ml-auto text-xs text-white/40 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.08] flex-shrink-0 whitespace-nowrap">
             {session.companySize}
           </span>
         )}
       </div>
 
       {/* Q&A list */}
-      <div className="px-5 py-4 space-y-3 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+      <div className="px-5 py-4 space-y-3 max-h-80 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10">
         {questions.map((q, i) => (
           <motion.div
             key={q.id}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02] transition-colors"
+            className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02] transition-colors overflow-hidden"
           >
             <span className="text-[11px] text-white/30 mt-0.5 w-5 flex-shrink-0 font-semibold">{i + 1}.</span>
-            <p className="text-xs text-white/60 flex-1 leading-relaxed">{q.question}</p>
-            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${answerColor[answers[q.id]] || 'text-white/30 bg-white/[0.03] border-white/[0.08]'}`}>
+            <p className="text-xs text-white/60 flex-1 leading-relaxed break-words min-w-0">{q.question}</p>
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 whitespace-nowrap ${answerColor[answers[q.id]] || 'text-white/30 bg-white/[0.03] border-white/[0.08]'}`}>
               {answerLabel[answers[q.id]] || '—'}
             </span>
           </motion.div>
