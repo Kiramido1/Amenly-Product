@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { initSmoothScroll } from './utils/smoothScroll.js'
 import './index.css'
 
 // Scroll reveal animations
@@ -24,12 +25,25 @@ const initScrollReveal = () => {
   revealOnScroll()
 }
 
-setTimeout(initScrollReveal, 100)
+// Initialize after DOM is ready
+setTimeout(() => {
+  // Add Lenis classes to html
+  document.documentElement.classList.add('lenis', 'lenis-smooth')
+  
+  // Initialize Lenis-style smooth scroll
+  initSmoothScroll()
+  initScrollReveal()
+}, 100)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
         <App />
       </BrowserRouter>
     </ErrorBoundary>

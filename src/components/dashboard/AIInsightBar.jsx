@@ -64,17 +64,13 @@ const AIInsightBar = () => {
       <div 
         className="absolute inset-0 opacity-30"
         style={{
-          background: `linear-gradient(90deg, transparent, ${current.color}15, transparent)`
+          backgroundImage: `linear-gradient(90deg, transparent, ${current.color}15, transparent)`
         }}
       />
       
       {/* Animated border */}
       <motion.div
         className="absolute inset-0"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${current.color}40, transparent)`,
-          backgroundSize: '200% 100%',
-        }}
         animate={{
           backgroundPosition: ['200% 0', '-200% 0'],
         }}
@@ -82,6 +78,10 @@ const AIInsightBar = () => {
           duration: 3,
           repeat: Infinity,
           ease: 'linear',
+        }}
+        style={{
+          backgroundImage: `linear-gradient(90deg, transparent, ${current.color}40, transparent)`,
+          backgroundSize: '200% 100%',
         }}
       />
 

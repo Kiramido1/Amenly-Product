@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import Footer from '../components/Footer'
 
 const team = [
   { name: 'Ahmed Hassan', role: 'CEO & Co-Founder', initials: 'AH' },
@@ -84,6 +85,9 @@ const AboutPage = () => {
           </p>
         </motion.div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

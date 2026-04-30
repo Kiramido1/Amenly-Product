@@ -8,6 +8,7 @@ import AIComplianceChat from './pages/AIComplianceChat'
 import AboutPage from './pages/AboutPage'
 import NotFoundPage from './pages/NotFoundPage'
 import LoadingScreen from './components/LoadingScreen'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const [loading, setLoading] = useState(true)
@@ -18,7 +19,7 @@ function App() {
   }, [])
 
   return (
-    <>
+    <ErrorBoundary>
       <AnimatePresence mode="wait">
         {loading && (
           <LoadingScreen onLoadingComplete={() => setLoading(false)} />
@@ -36,7 +37,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       )}
-    </>
+    </ErrorBoundary>
   )
 }
 

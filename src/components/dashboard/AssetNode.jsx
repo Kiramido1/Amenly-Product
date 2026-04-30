@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useRef, useMemo } from 'react'
+import { memo, useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { ASSET_TYPE_META, STATUS_META } from '../../data/mockAssets'
@@ -16,8 +16,7 @@ const AssetNode = ({ asset, index }) => {
   const isHovered = hoveredAsset === asset.id
   const isCritical = asset.status === 'critical'
   const isWarning = asset.status === 'warning'
-
-  // Memoize risk color calculation
+  
   const riskColor = useMemo(() => {
     return asset.risk_score > 60 ? '#ef4444' : asset.risk_score > 30 ? '#94A3B8' : '#10b981'
   }, [asset.risk_score])
@@ -58,8 +57,16 @@ const AssetNode = ({ asset, index }) => {
     setTooltipPos(null)
   }, [setHovered])
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((e) => {
+    e.stopPropagation()
     selectAsset(asset)
+  }, [asset, selectAsset])
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      selectAsset(asset)
+    }
   }, [asset, selectAsset])
 
   // Memoize animation variants
@@ -94,19 +101,23 @@ const AssetNode = ({ asset, index }) => {
   }, [isCritical, isWarning])
 
   return (
-    <div
+    <button
       ref={nodeRef}
-      className="absolute cursor-pointer group"
+      type="button"
+      className="cursor-pointer group focus:outline-none focus:ring-2 focus:ring-amenly-light focus:ring-offset-2 focus:ring-offset-black rounded-xl"
       style={{
-        left: `${asset.gridX}%`,
-        top: `${asset.gridY}%`,
         transform: 'translate(-50%, -50%)',
         zIndex: isHovered ? 20 : 10,
         willChange: isHovered ? 'transform' : 'auto',
+        pointerEvents: 'auto',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      aria-label={`${asset.name}, ${typeMeta.label}, Risk score ${asset.risk_score}, Status ${statusMeta.label}, Department ${asset.department}`}
+      role="button"
+      tabIndex={0}
     >
       {/* Outer glow ring - optimized */}
       <motion.div
@@ -254,7 +265,7 @@ const AssetNode = ({ asset, index }) => {
         </div>,
         document.body
       )}
-    </div>
+    </button>
   )
 }
 

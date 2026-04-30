@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { assets, connections, ASSET_TYPE_META } from '../../data/mockAssets'
 import { useDashboard } from '../../context/DashboardContext'
 import AssetNode from './AssetNode'
+import AssetListView from './AssetListView'
 
 // Memoized legend component - never re-renders
 const MapLegend = memo(() => {
@@ -104,12 +105,20 @@ const InfrastructureMap = () => {
   }, [])
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="relative rounded-xl border border-white/10 bg-black/60 flex flex-col"
       style={{ boxShadow: '0 4px 24px -4px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)' }}
     >
-      {/* Header - no animations */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/10 bg-gradient-to-r from-black/40 to-transparent">
+      {/* Header - with animation */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/10 bg-gradient-to-r from-black/40 to-transparent"
+      >
         <div className="flex items-center gap-3">
           <div 
             className="w-9 h-9 rounded-lg bg-gradient-to-br from-amenly-light/20 to-amenly-medium/20 border border-amenly-light/30 flex items-center justify-center"
@@ -119,9 +128,9 @@ const InfrastructureMap = () => {
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Infrastructure Map</h3>
+            <h3 className="text-sm font-bold text-white">Infrastructure <span className="hidden sm:inline">Map</span></h3>
             <p className="text-[10px] text-white/40">
-              <span className="text-amenly-light font-semibold">{filteredAssets.length}</span> of {assets.length} assets visible
+              <span className="text-amenly-light font-semibold">{filteredAssets.length}</span> of {assets.length} assets
             </p>
           </div>
         </div>
@@ -132,41 +141,97 @@ const InfrastructureMap = () => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amenly-light opacity-75" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amenly-light" />
           </span>
-          <span className="text-[9px] font-bold text-amenly-light uppercase tracking-wider">Monitoring</span>
+          <span className="text-[9px] font-bold text-amenly-light uppercase tracking-wider hidden sm:inline">Monitoring</span>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Map area */}
-      <div className="relative w-full overflow-hidden" style={{ paddingBottom: '42%' }}>
-        {/* Static grid pattern background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(44,116,179,0.05) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(44,116,179,0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-          }}
-        />
+      {/* Desktop: Map view */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="hidden md:block"
+      >
+        {/* Map area */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="relative w-full overflow-hidden" 
+          style={{ paddingBottom: '42%' }}
+        >
+          {/* Static grid pattern background */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(44,116,179,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(44,116,179,0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px',
+            }}
+          />
 
-        {/* Static radial gradient overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(44,116,179,0.08)_0%,_transparent_70%)]" />
+          {/* Static radial gradient overlay */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(44,116,179,0.08)_0%,_transparent_70%)]" 
+          />
 
-        {/* Connection lines */}
-        <ConnectionLines assetMap={assetMap} filteredIds={filteredIds} />
+          {/* Connection lines */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <ConnectionLines assetMap={assetMap} filteredIds={filteredIds} />
+          </motion.div>
 
-        {/* Asset nodes */}
-        <div className="absolute inset-0" style={{ zIndex: 5 }}>
-          {filteredAssets.map((asset, i) => (
-            <AssetNode key={asset.id} asset={asset} index={i} />
-          ))}
-        </div>
-      </div>
+          {/* Asset nodes */}
+          <div className="absolute inset-0" style={{ zIndex: 5 }}>
+            {filteredAssets.map((asset, i) => (
+              <motion.div
+                key={asset.id}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: 0.7 + (i * 0.03),
+                  ease: [0.34, 1.56, 0.64, 1]
+                }}
+                style={{ position: 'absolute', left: `${asset.gridX}%`, top: `${asset.gridY}%` }}
+              >
+                <AssetNode asset={asset} index={i} />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
-      {/* Legend */}
-      <MapLegend />
-    </div>
+        {/* Legend */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 1 }}
+        >
+          <MapLegend />
+        </motion.div>
+      </motion.div>
+
+      {/* Mobile: List view */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="md:hidden p-4 max-h-[600px] overflow-y-auto scrollbar-chat"
+      >
+        <AssetListView />
+      </motion.div>
+    </motion.div>
   )
 }
 

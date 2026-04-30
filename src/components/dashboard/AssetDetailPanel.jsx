@@ -16,7 +16,8 @@ const AssetDetailPanel = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closePanel}
-            className="fixed inset-0 bg-black/70 backdrop-blur-md z-40"
+            className="fixed inset-0 bg-black/70 backdrop-blur-md"
+            style={{ zIndex: 9998 }}
           />
 
           {/* Panel */}
@@ -25,9 +26,10 @@ const AssetDetailPanel = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[460px] bg-black/95 backdrop-blur-2xl border-l border-white/10 z-50 overflow-y-auto scrollbar-chat"
+            className="fixed top-0 right-0 h-full w-full sm:w-[460px] bg-black/95 backdrop-blur-2xl border-l border-white/10 overflow-y-auto scrollbar-chat"
             style={{
               boxShadow: '-10px 0 40px rgba(0,0,0,0.8)',
+              zIndex: 9999,
             }}
           >
             <PanelContent asset={selectedAsset} onClose={closePanel} />

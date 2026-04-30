@@ -44,7 +44,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 const CompliancePie = () => (
   <div className="flex items-center gap-6">
     <div className="w-[130px] h-[130px] sm:w-[150px] sm:h-[150px] flex-shrink-0">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={130} minHeight={130}>
         <PieChart>
           <Pie data={compliancePieData} cx="50%" cy="50%" innerRadius="62%" outerRadius="88%" paddingAngle={4} dataKey="value" stroke="none">
             {compliancePieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -67,7 +67,7 @@ const CompliancePie = () => (
 
 const DepartmentBars = () => (
   <div className="h-[200px] sm:h-[220px]">
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" minHeight={200}>
       <BarChart data={departmentCompliance} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
         <XAxis type="number" domain={[0, 100]} tick={{ fill: TEXT_COLOR, fontSize: 9 }} axisLine={false} tickLine={false} />
@@ -83,7 +83,7 @@ const DepartmentBars = () => (
 
 const RiskTrendChart = () => (
   <div className="h-[200px] sm:h-[220px]">
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" minHeight={200}>
       <AreaChart data={riskTrend} margin={{ left: -10, right: 10, top: 5, bottom: 0 }}>
         <defs>
           <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">

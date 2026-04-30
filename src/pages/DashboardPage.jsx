@@ -1,14 +1,43 @@
 import { lazy, Suspense, memo } from 'react'
 import { DashboardProvider } from '../context/DashboardContext'
 import ErrorBoundary from '../components/ErrorBoundary'
+import Footer from '../components/Footer'
 
-const DashboardHeader = lazy(() => import('../components/dashboard/DashboardHeader'))
-const AIInsightBar = lazy(() => import('../components/dashboard/AIInsightBar'))
-const StatsCards = lazy(() => import('../components/dashboard/StatsCards'))
-const InfrastructureMap = lazy(() => import('../components/dashboard/InfrastructureMap'))
-const AssetDetailPanel = lazy(() => import('../components/dashboard/AssetDetailPanel'))
-const ComplianceCharts = lazy(() => import('../components/dashboard/ComplianceCharts'))
-const RegulationTracker = lazy(() => import('../components/dashboard/RegulationTracker'))
+// Lazy load components with error handling
+const DashboardHeader = lazy(() => import('../components/dashboard/DashboardHeader').catch(err => {
+  console.error('Failed to load DashboardHeader:', err)
+  return { default: () => <div className="h-14 bg-black/95" /> }
+}))
+
+const AIInsightBar = lazy(() => import('../components/dashboard/AIInsightBar').catch(err => {
+  console.error('Failed to load AIInsightBar:', err)
+  return { default: () => <div className="h-12 bg-black/40" /> }
+}))
+
+const StatsCards = lazy(() => import('../components/dashboard/StatsCards').catch(err => {
+  console.error('Failed to load StatsCards:', err)
+  return { default: () => <div className="h-32 bg-black/40" /> }
+}))
+
+const InfrastructureMap = lazy(() => import('../components/dashboard/InfrastructureMap').catch(err => {
+  console.error('Failed to load InfrastructureMap:', err)
+  return { default: () => <div className="h-96 bg-black/40 rounded-lg flex items-center justify-center text-white/50">Map unavailable</div> }
+}))
+
+const AssetDetailPanel = lazy(() => import('../components/dashboard/AssetDetailPanel').catch(err => {
+  console.error('Failed to load AssetDetailPanel:', err)
+  return { default: () => null }
+}))
+
+const ComplianceCharts = lazy(() => import('../components/dashboard/ComplianceCharts').catch(err => {
+  console.error('Failed to load ComplianceCharts:', err)
+  return { default: () => <div className="h-64 bg-black/40 rounded-lg" /> }
+}))
+
+const RegulationTracker = lazy(() => import('../components/dashboard/RegulationTracker').catch(err => {
+  console.error('Failed to load RegulationTracker:', err)
+  return { default: () => <div className="h-96 bg-black/40 rounded-lg" /> }
+}))
 
 // Optimized loading fallback - no animations
 const LoadingFallback = memo(() => (
@@ -106,8 +135,10 @@ const DashboardPage = () => {
                 <ComplianceCharts />
               </Suspense>
             </ErrorBoundary>
-            <div className="h-4" />
           </div>
+
+          {/* Footer */}
+          <Footer />
         </main>
 
         <ErrorBoundary>

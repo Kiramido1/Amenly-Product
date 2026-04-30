@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { STEPS, STEP_META } from '../data/chatFlowData'
 import ErrorBoundary from '../components/ErrorBoundary'
+import Footer from '../components/Footer'
 
 const WelcomeScreen = lazy(() => import('../components/compliance/WelcomeScreen'))
 const StepForm = lazy(() => import('../components/compliance/StepForm'))
@@ -216,8 +217,8 @@ const AIComplianceChat = () => {
       </motion.header>
 
       {/* Main content */}
-      <div id="main-content" className="relative z-10 flex-1 flex overflow-hidden" style={{ height: 'calc(100dvh - 73px)' }}>
-        <div className="w-full max-w-[1400px] mx-auto flex h-full overflow-hidden">
+      <div id="main-content" className="relative z-10 flex-1 flex flex-col overflow-hidden">
+        <div className="w-full max-w-[1400px] mx-auto flex flex-1 overflow-hidden">
 
           {/* Main area */}
           <motion.main className={`flex-1 flex flex-col min-w-0 h-full transition-all duration-300 ${showPanel ? '' : ''}`}>
@@ -279,6 +280,9 @@ const AIComplianceChat = () => {
             </>
           )}
         </div>
+
+        {/* Footer */}
+        <Footer />
       </div>
 
       {/* Restart button (when complete) */}

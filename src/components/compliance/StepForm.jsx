@@ -136,11 +136,12 @@ const StepForm = ({ onComplete, onBack }) => {
                 type="submit"
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                className="w-full py-4 bg-gradient-to-r from-[#2C74B3] to-[#144272] text-white font-semibold rounded-xl shadow-lg shadow-[#144272]/15 hover:shadow-[#144272]/25 transition-all duration-400 flex items-center justify-center gap-2 border border-white/[0.06]"
+                className="w-full py-4 text-white font-semibold rounded-lg backdrop-blur-md border border-[#2C74B3]/30 hover:border-[#2C74B3]/60 transition-all duration-300 flex items-center justify-center gap-2"
+                style={{ background: 'rgba(10, 38, 71, 0.8)' }}
               >
                 Continue
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </motion.button>
             </form>

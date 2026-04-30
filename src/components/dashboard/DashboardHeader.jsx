@@ -59,6 +59,8 @@ const DashboardHeader = () => {
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              aria-label={`Filter by ${f.label} assets`}
+              aria-pressed={filterStatus === f.key}
             >
               {filterStatus === f.key && (
                 <motion.div

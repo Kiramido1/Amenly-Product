@@ -48,12 +48,15 @@ export function DashboardProvider({ children }) {
     dispatch({ type: 'SET_HOVERED', payload: id })
   }, [])
 
-  // Optimize real-time updates - use requestAnimationFrame
+  // Optimize real-time updates - use requestAnimationFrame with proper cleanup
   useEffect(() => {
-    let rafId
+    let rafId = null
     let lastUpdate = Date.now()
+    let isMounted = true
     
     const updateMetrics = () => {
+      if (!isMounted) return
+      
       const now = Date.now()
       // Only update every 5 seconds
       if (now - lastUpdate >= 5000) {
@@ -64,11 +67,20 @@ export function DashboardProvider({ children }) {
         }))
         lastUpdate = now
       }
-      rafId = requestAnimationFrame(updateMetrics)
+      
+      if (isMounted) {
+        rafId = requestAnimationFrame(updateMetrics)
+      }
     }
     
     rafId = requestAnimationFrame(updateMetrics)
-    return () => cancelAnimationFrame(rafId)
+    
+    return () => {
+      isMounted = false
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
+    }
   }, [])
 
   // Memoize context value to prevent unnecessary re-renders

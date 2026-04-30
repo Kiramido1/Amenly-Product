@@ -1,4 +1,5 @@
 import React from 'react'
+import Button from './Button'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -24,12 +25,13 @@ class ErrorBoundary extends React.Component {
             <p className="text-silver mb-6">
               The page encountered an error. Please refresh to try again.
             </p>
-            <button
+            <Button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-amenly-light text-white rounded-lg hover:bg-amenly-medium transition-colors"
+              variant="primary"
+              size="md"
             >
               Refresh Page
-            </button>
+            </Button>
             {this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-silver cursor-pointer hover:text-white">

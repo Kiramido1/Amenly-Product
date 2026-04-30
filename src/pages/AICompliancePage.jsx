@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ChatEngine from '../components/chat/ChatEngine'
 import ErrorBoundary from '../components/ErrorBoundary'
+import Footer from '../components/Footer'
 
 const AICompliancePage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -173,8 +174,8 @@ const AICompliancePage = () => {
       </motion.header>
 
       {/* Main content */}
-      <div className="relative z-10 flex-1 flex items-stretch overflow-hidden" style={{ height: 'calc(100dvh - 73px)' }}>
-        <div className="w-full max-w-[1400px] mx-auto flex gap-0 h-full overflow-hidden">
+      <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+        <div className="w-full max-w-[1400px] mx-auto flex gap-0 flex-1 overflow-hidden">
           
           {/* Mobile Overlay */}
           <AnimatePresence>
@@ -309,6 +310,9 @@ const AICompliancePage = () => {
             </div>
           </motion.main>
         </div>
+
+        {/* Footer */}
+        <Footer />
       </div>
 
       {/* Screen reader live region for announcements */}

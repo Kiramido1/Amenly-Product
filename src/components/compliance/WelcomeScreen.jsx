@@ -134,22 +134,17 @@ const WelcomeScreen = ({ onStart }) => {
         <motion.div variants={itemVariants}>
           <motion.button
             onClick={onStart}
-            whileHover={{ scale: 1.02, y: -1 }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative px-8 py-4 bg-gradient-to-r from-amenly-light to-amenly-dark text-white font-semibold text-base rounded-xl shadow-[0_0_30px_rgba(44,116,179,0.3)] hover:shadow-[0_0_50px_rgba(44,116,179,0.5)] hover:scale-[1.02] transition-all duration-500 overflow-hidden border border-white/[0.1]"
+            className="group relative px-8 py-4 text-white font-semibold text-base rounded-lg backdrop-blur-md border border-[#2C74B3]/30 hover:border-[#2C74B3]/60 transition-all duration-300 overflow-hidden flex items-center justify-center gap-3 mx-auto"
+            style={{ background: 'rgba(10, 38, 71, 0.8)' }}
             aria-label="Start compliance assessment"
             id="start-assessment-btn"
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/[0.15] to-white/0"
-              initial={{ x: '-100%' }}
-              whileHover={{ x: '100%' }}
-              transition={{ duration: 0.8, ease: 'easeInOut' }}
-            />
             <span className="relative z-10 flex items-center gap-3">
               Start Assessment
-              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
           </motion.button>

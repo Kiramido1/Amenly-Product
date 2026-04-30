@@ -63,7 +63,9 @@ const RegulationTracker = () => {
               {/* Country header - clickable */}
               <button
                 onClick={() => setExpandedId(isExpanded ? null : reg.id)}
-                className="w-full p-3.5 text-left"
+                className="w-full p-3.5 text-left focus:outline-none focus:ring-2 focus:ring-amenly-light focus:ring-offset-2 focus:ring-offset-black rounded-lg"
+                aria-label={`${reg.label} regulation details, ${reg.status}, ${reg.progress}% complete`}
+                aria-expanded={isExpanded}
               >
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex items-center gap-2.5">

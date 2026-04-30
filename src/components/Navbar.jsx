@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import Button from './Button'
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -88,16 +89,10 @@ const Navbar = () => {
 
             {/* Right side */}
             <div className="flex items-center space-x-4">
-              <button
-                aria-label="Switch language"
-                className="text-white/80 hover:text-white text-sm font-medium px-3 py-1.5 rounded-full border border-white/20 hover:border-white/40 transition-colors"
-              >
-                EN
-              </button>
               <Link to="/login" className="hidden sm:block">
-                <button className="text-sm font-medium px-5 py-2 bg-amenly-light hover:bg-amenly-medium text-white rounded-full transition-colors whitespace-nowrap">
+                <Button size="sm" variant="primary">
                   Log In
-                </button>
+                </Button>
               </Link>
 
               {/* Mobile hamburger */}
@@ -136,9 +131,9 @@ const Navbar = () => {
                     </Link>
                   ))}
                   <Link to="/login" onClick={() => setMobileOpen(false)}>
-                    <button className="w-full text-sm font-medium px-6 py-2 bg-amenly-light hover:bg-amenly-medium text-white rounded-full transition-colors mt-1">
+                    <Button fullWidth size="md" variant="primary">
                       Log In
-                    </button>
+                    </Button>
                   </Link>
                 </div>
               </motion.div>

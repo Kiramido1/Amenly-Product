@@ -13,6 +13,7 @@ import ProgressBar from './ProgressBar'
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'amenly_chat_session'
+const MAX_INPUT_LENGTH = 500
 
 const stepIndex = {
   [STEPS.WELCOME]:            0,
@@ -28,6 +29,27 @@ const initialSession = {
   securityAnswers: {},
 }
 
+// Validate session data structure
+const isValidSession = (data) => {
+  if (!data || typeof data !== 'object') return false
+  if (!Array.isArray(data.messages)) return false
+  if (!data.session || typeof data.session !== 'object') return false
+  if (!data.step || !Object.values(STEPS).includes(data.step)) return false
+  return true
+}
+
+// Sanitize text input
+const sanitizeInput = (text) => {
+  if (typeof text !== 'string') return ''
+  // Remove potentially dangerous characters
+  return text
+    .trim()
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .slice(0, MAX_INPUT_LENGTH) // Enforce max length
+}
+
 // ─── component ──────────────────────────────────────────────────────────────
 
 const ChatEngine = () => {
@@ -40,10 +62,19 @@ const ChatEngine = () => {
   const [inputDisabled, setInputDisabled] = useState(false)
   const [showOptions, setShowOptions] = useState(null) // { type, options }
   const [questionIndex, setQuestionIndex] = useState(0)
+  const [error, setError]             = useState(null)
 
   const bottomRef  = useRef(null)
   const inputRef   = useRef(null)
   const initialized = useRef(false)
+  const isMountedRef = useRef(true)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // ── auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -58,36 +89,58 @@ const ChatEngine = () => {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
       try {
-        const { messages: m, session: s, step: st, subStep: ss, questionIndex: qi } = JSON.parse(saved)
-        setMessages(m || [])
-        setSession(s || initialSession)
-        setStep(st || STEPS.WELCOME)
-        setSubStep(ss || 0)
-        setQuestionIndex(qi || 0)
-        // If we're mid-flow, disable input until options are shown
-        if (st === STEPS.FRAMEWORK || st === STEPS.SECURITY_QUESTIONS) {
-          setInputDisabled(true)
+        const parsed = JSON.parse(saved)
+        
+        // Validate session structure
+        if (isValidSession(parsed)) {
+          const { messages: m, session: s, step: st, subStep: ss, questionIndex: qi } = parsed
+          setMessages(m || [])
+          setSession(s || initialSession)
+          setStep(st || STEPS.WELCOME)
+          setSubStep(ss || 0)
+          setQuestionIndex(qi || 0)
+          
+          // If we're mid-flow, disable input until options are shown
+          if (st === STEPS.FRAMEWORK || st === STEPS.SECURITY_QUESTIONS) {
+            setInputDisabled(true)
+          }
+          return
+        } else {
+          console.warn('Invalid session data, starting fresh')
+          localStorage.removeItem(STORAGE_KEY)
         }
-        return
-      } catch { /* ignore */ }
+      } catch (error) {
+        console.error('Failed to restore session:', error)
+        localStorage.removeItem(STORAGE_KEY)
+      }
     }
+    
     // Fresh start — send welcome message
-    sendAI("Hi there! I'm here to help you understand your organization's security posture. This will take about 5 minutes.", () => {
-      sendAI("Let's start with the basics — what's your name and role? (e.g., Sarah, CISO)")
-    })
+    if (isMountedRef.current) {
+      sendAI("Hi there! I'm here to help you understand your organization's security posture. This will take about 5 minutes.", () => {
+        sendAI("Let's start with the basics — what's your name and role? (e.g., Sarah, CISO)")
+      })
+    }
   }, [])
 
   // ── persist to localStorage ────────────────────────────────────────────────
   useEffect(() => {
-    if (!initialized.current) return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, session, step, subStep, questionIndex }))
+    if (!initialized.current || !isMountedRef.current) return
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, session, step, subStep, questionIndex }))
+    } catch (error) {
+      console.error('Failed to persist session:', error)
+    }
   }, [messages, session, step, subStep, questionIndex])
 
   // ── send AI message with typing delay ─────────────────────────────────────
   const sendAI = useCallback((text, onDone, delay = 900) => {
+    if (!isMountedRef.current) return
     setIsTyping(true)
     setInputDisabled(true)
+    setError(null)
     setTimeout(() => {
+      if (!isMountedRef.current) return
       setIsTyping(false)
       setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text }])
       setInputDisabled(false)
@@ -110,9 +163,25 @@ const ChatEngine = () => {
   const handleSubmit = (e) => {
     e?.preventDefault()
     const val = inputValue.trim()
+    
+    // Validation
     if (!val || inputDisabled) return
+    
+    if (val.length > MAX_INPUT_LENGTH) {
+      setError(`Input too long (max ${MAX_INPUT_LENGTH} characters)`)
+      return
+    }
+    
+    // Sanitize input
+    const sanitized = sanitizeInput(val)
+    if (!sanitized) {
+      setError('Invalid input')
+      return
+    }
+    
     setInputValue('')
-    processTextInput(val)
+    setError(null)
+    processTextInput(sanitized)
   }
 
   const processTextInput = (val) => {
@@ -246,7 +315,12 @@ const ChatEngine = () => {
 
   // ── restart conversation ───────────────────────────────────────────────────
   const handleRestart = () => {
-    localStorage.removeItem(STORAGE_KEY)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch (error) {
+      console.error('Failed to clear session:', error)
+    }
+    
     setMessages([])
     setSession(initialSession)
     setStep(STEPS.WELCOME)
@@ -254,8 +328,11 @@ const ChatEngine = () => {
     setQuestionIndex(0)
     setShowOptions(null)
     setInputDisabled(false)
+    setError(null)
     initialized.current = false
+    
     setTimeout(() => {
+      if (!isMountedRef.current) return
       initialized.current = true
       sendAI("Let's start over. I'm here to help you check your security compliance.", () => {
         sendAI("What's your name and role?")
@@ -307,6 +384,32 @@ const ChatEngine = () => {
 
       {/* Input bar */}
       <div className="border-t border-white/[0.04] bg-black/20 backdrop-blur-xl px-4 sm:px-6 py-4">
+        {/* Error message */}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-3 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-red-400">{error}</span>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-400 hover:text-red-300 transition-colors"
+                aria-label="Dismiss error"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
           <div className="flex-1 relative min-w-0">
             <input
