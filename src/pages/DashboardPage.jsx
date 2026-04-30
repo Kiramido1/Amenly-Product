@@ -4,38 +4,31 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import Footer from '../components/Footer'
 
 // Lazy load components with error handling
-const DashboardHeader = lazy(() => import('../components/dashboard/DashboardHeader').catch(err => {
-  console.error('Failed to load DashboardHeader:', err)
+const DashboardHeader = lazy(() => import('../components/dashboard/DashboardHeader').catch(() => {
   return { default: () => <div className="h-14 bg-black/95" /> }
 }))
 
-const AIInsightBar = lazy(() => import('../components/dashboard/AIInsightBar').catch(err => {
-  console.error('Failed to load AIInsightBar:', err)
+const AIInsightBar = lazy(() => import('../components/dashboard/AIInsightBar').catch(() => {
   return { default: () => <div className="h-12 bg-black/40" /> }
 }))
 
-const StatsCards = lazy(() => import('../components/dashboard/StatsCards').catch(err => {
-  console.error('Failed to load StatsCards:', err)
+const StatsCards = lazy(() => import('../components/dashboard/StatsCards').catch(() => {
   return { default: () => <div className="h-32 bg-black/40" /> }
 }))
 
-const InfrastructureMap = lazy(() => import('../components/dashboard/InfrastructureMap').catch(err => {
-  console.error('Failed to load InfrastructureMap:', err)
+const InfrastructureMap = lazy(() => import('../components/dashboard/InfrastructureMap').catch(() => {
   return { default: () => <div className="h-96 bg-black/40 rounded-lg flex items-center justify-center text-white/50">Map unavailable</div> }
 }))
 
-const AssetDetailPanel = lazy(() => import('../components/dashboard/AssetDetailPanel').catch(err => {
-  console.error('Failed to load AssetDetailPanel:', err)
+const AssetDetailPanel = lazy(() => import('../components/dashboard/AssetDetailPanel').catch(() => {
   return { default: () => null }
 }))
 
-const ComplianceCharts = lazy(() => import('../components/dashboard/ComplianceCharts').catch(err => {
-  console.error('Failed to load ComplianceCharts:', err)
+const ComplianceCharts = lazy(() => import('../components/dashboard/ComplianceCharts').catch(() => {
   return { default: () => <div className="h-64 bg-black/40 rounded-lg" /> }
 }))
 
-const RegulationTracker = lazy(() => import('../components/dashboard/RegulationTracker').catch(err => {
-  console.error('Failed to load RegulationTracker:', err)
+const RegulationTracker = lazy(() => import('../components/dashboard/RegulationTracker').catch(() => {
   return { default: () => <div className="h-96 bg-black/40 rounded-lg" /> }
 }))
 

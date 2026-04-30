@@ -106,11 +106,11 @@ const ChatEngine = () => {
           }
           return
         } else {
-          console.warn('Invalid session data, starting fresh')
+          // Invalid session data, start fresh
           localStorage.removeItem(STORAGE_KEY)
         }
       } catch (error) {
-        console.error('Failed to restore session:', error)
+        // Failed to restore session, start fresh
         localStorage.removeItem(STORAGE_KEY)
       }
     }
@@ -129,7 +129,7 @@ const ChatEngine = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, session, step, subStep, questionIndex }))
     } catch (error) {
-      console.error('Failed to persist session:', error)
+      // Failed to persist session - continue without saving
     }
   }, [messages, session, step, subStep, questionIndex])
 
@@ -318,7 +318,7 @@ const ChatEngine = () => {
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch (error) {
-      console.error('Failed to clear session:', error)
+      // Failed to clear session - continue anyway
     }
     
     setMessages([])

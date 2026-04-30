@@ -6,7 +6,7 @@ const CTASection = () => {
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section className="relative min-h-screen py-32 lg:py-40 overflow-hidden bg-black">
+    <section className="relative py-20 sm:py-24 lg:py-28 overflow-hidden bg-black">
       
       {/* Gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-[#2C74B3]/10 to-transparent rounded-full blur-3xl" />

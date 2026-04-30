@@ -1032,6 +1032,21 @@ pre, code {
   background-size: 60px 60px;
 }
 
+/* Performance optimization for dashboard */
+.dashboard-scroll {
+  will-change: scroll-position;
+  transform: translateZ(0);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize animations */
+[class*="animate-"],
+[class*="motion-"] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
 /* Neon glow utilities */
 .neon-glow-green {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.1);
@@ -1059,6 +1074,7 @@ pre, code {
 
 .animate-asset-pulse {
   animation: assetPulse 2s ease-in-out infinite;
+  will-change: transform, box-shadow;
 }
 
 /* Dashboard scrollbar override */
@@ -1077,5 +1093,22 @@ pre, code {
 
 .dashboard-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(44, 116, 179, 0.4);
+}
+
+/* Optimize SVG rendering */
+svg {
+  shape-rendering: geometricPrecision;
+}
+
+/* Optimize chart rendering */
+.recharts-wrapper {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Optimize framer-motion */
+[data-framer-component-type] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 

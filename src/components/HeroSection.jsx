@@ -1,4 +1,3 @@
-import Button from './Button'
 import { useState, useEffect } from 'react'
 
 const HeroSection = () => {
@@ -12,20 +11,20 @@ const HeroSection = () => {
   }, [])
 
   const scrollToNext = () => {
-    if (window.lenis) {
-      window.lenis.scrollTo('#features', {
-        offset: 0,
-        duration: 2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-      })
+    const featuresSection = document.getElementById('features')
+    if (!featuresSection) return
+    
+    const targetY = featuresSection.getBoundingClientRect().top + window.scrollY
+    
+    if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+      // Use Lenis smooth scroll
+      window.lenis.scrollTo(targetY)
     } else {
-      const featuresSection = document.getElementById('features')
-      if (featuresSection) {
-        featuresSection.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        })
-      }
+      // Fallback to native smooth scroll
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      })
     }
   }
 
@@ -97,8 +96,17 @@ const HeroSection = () => {
       {/* Scroll Indicator */}
       <div
         onClick={scrollToNext}
-        className="absolute bottom-10 inset-x-0 mx-auto w-fit z-10 flex flex-col items-center gap-2 cursor-pointer group opacity-0 animate-bounce-fade"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            scrollToNext()
+          }
+        }}
+        className="absolute bottom-10 inset-x-0 mx-auto w-fit z-50 flex flex-col items-center gap-2 cursor-pointer group opacity-0 animate-bounce-fade pointer-events-auto"
         style={{animationDelay: '1.5s'}}
+        aria-label="Scroll to features section"
       >
         <span className="text-white/60 text-xs font-light tracking-[0.2em] uppercase group-hover:text-white/90 transition-colors duration-300">
           Scroll to know more

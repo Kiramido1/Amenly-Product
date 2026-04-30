@@ -181,6 +181,9 @@ export const initSmoothScroll = () => {
     infinite: false
   })
   
+  // Expose to window for easy access
+  window.lenis = scrollInstance
+  
   return scrollInstance
 }
 

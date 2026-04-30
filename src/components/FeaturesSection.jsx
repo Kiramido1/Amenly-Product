@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import React from 'react'
+import { memo } from 'react'
 
 const features = [
   {
@@ -56,7 +56,7 @@ const features = [
   },
 ]
 
-const FeatureCard = ({ feature, index }) => {
+const FeatureCard = memo(({ feature, index }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -137,12 +137,12 @@ const FeatureCard = ({ feature, index }) => {
       </motion.div>
     </motion.div>
   )
-}
+})
 
 const FeaturesSection = () => {
   // Updated with more padding - should be visible now
   return (
-    <section id="features" className="relative min-h-screen py-32 lg:py-40 overflow-hidden bg-gradient-to-b from-black via-[#0A2647]/20 to-black">
+    <section id="features" className="relative py-20 sm:py-24 lg:py-28 overflow-hidden bg-gradient-to-b from-black via-[#0A2647]/20 to-black">
       {/* Simple background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#2C74B3]/10 via-transparent to-transparent" />
 
@@ -286,4 +286,4 @@ const FeaturesSection = () => {
   )
 }
 
-export default FeaturesSection
+export default memo(FeaturesSection)
