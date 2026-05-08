@@ -16,7 +16,9 @@ Amenly is a comprehensive Governance, Risk, and Compliance (GRC) platform that l
 
 ## 🚀 How to Run
 
-### Quick Start (Recommended)
+### Quick Start
+
+#### 🐧 Linux / macOS
 
 ```bash
 # 1. Clone the repository
@@ -27,18 +29,37 @@ cd Amenly-Product/backend
 make run
 ```
 
+#### 🪟 Windows
+
+```powershell
+# 1. Clone the repository
+git clone https://github.com/Kiramido1/Amenly-Product.git
+cd Amenly-Product\backend
+
+# 2. Install Poetry (if not installed)
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+
+# 3. Install dependencies
+poetry install --no-root
+
+# 4. Run the server
+poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
+```
+
 **That's it!** 🎉 The backend will be running at:
 - 🌐 **API**: http://localhost:8001
 - 📚 **Docs**: http://localhost:8001/docs
 - ❤️ **Health**: http://localhost:8001/health
 
-### What `make run` Does:
+### What Happens:
 1. ✅ Installs Poetry (if needed)
 2. ✅ Installs all dependencies (~1 minute)
 3. ✅ Starts the server on port 8001
 4. ✅ Shows you the URLs
 
 ### Stop the Server:
+
+#### 🐧 Linux / macOS
 ```bash
 # Press Ctrl+C in the terminal
 # Or in another terminal:
@@ -46,10 +67,25 @@ cd backend
 make stop
 ```
 
+#### 🪟 Windows
+```powershell
+# Press Ctrl+C in the terminal
+# Or find and kill the process:
+Get-Process | Where-Object {$_.ProcessName -like "*python*"} | Stop-Process
+```
+
 ### Development Mode (with hot reload):
+
+#### 🐧 Linux / macOS
 ```bash
 cd backend
 make dev
+```
+
+#### 🪟 Windows
+```powershell
+cd backend
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
 ### ✨ Key Features
