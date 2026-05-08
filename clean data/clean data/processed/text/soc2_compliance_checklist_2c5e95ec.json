@@ -1,0 +1,31 @@
+{
+  "document_id": "soc2_compliance_checklist_2c5e95ec",
+  "source_document_id": "soc2_compliance_checklist",
+  "relative_path": "SOC 2\\SOC2-Compliance-Checklist.pdf",
+  "file_type": "pdf",
+  "framework": "soc2",
+  "country": "",
+  "source_type": "implementation_guide",
+  "is_official": "false",
+  "file_hash": "2c5e95ecaeb17409623b0adf8b234dcd7942ed5e5c80d9d7a7683b680c2e6952",
+  "processed_at_utc": "2026-05-08T05:23:34.934897+00:00",
+  "pages": [
+    {
+      "page_number": 1,
+      "char_count": 0,
+      "text": ""
+    },
+    {
+      "page_number": 2,
+      "char_count": 0,
+      "text": ""
+    },
+    {
+      "page_number": 3,
+      "char_count": 0,
+      "text": ""
+    }
+  ],
+  "total_pages": 3,
+  "extraction_quality_score": 0.0
+}

@@ -1,0 +1,56 @@
+{
+  "document_id": "s3_security_your_checklist_for_soc2_compliance",
+  "source_document_id": "s3_security_your_checklist_for_soc2_compliance",
+  "relative_path": "SOC 2\\S3-Security_Your-Checklist-for-SOC2-Compliance.pdf",
+  "file_type": "pdf",
+  "framework": "soc2",
+  "country": "",
+  "source_type": "implementation_guide",
+  "is_official": "false",
+  "file_hash": "137ff82e3eb4c13befd8522d9f86844dcabbedd1bde7a2282051c383e86da1f4",
+  "processed_at_utc": "2026-05-08T05:23:34.889946+00:00",
+  "pages": [
+    {
+      "page_number": 1,
+      "char_count": 35,
+      "text": "YOUR CHECKLIST FOR SOC 2 COMPLIANCE"
+    },
+    {
+      "page_number": 2,
+      "char_count": 1220,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 2 \nSystem and Organization Controls 2 (SOC 2) Compliance \nis often required for organizations handling, processing, \nand or storing sensitive data. \nSOC 2 Reports are designed to assess and validate the \nsecurity, availability, processing integrity, confidentiality, \nand privacy of a service organization’s systems and data \ninfrastructure. These reports are based on the five Trust \nServices Criteria (Security, Availability, Processing Integrity, \nConfidentiality, Privacy) and tailored to an organization’s \ninformation and data security practices. \nThe specific controls included in a SOC 2 Report address \nareas such as access management, risk assessment, \nincident management, system and application monitoring, \nand disaster recovery response. But controls included \ncan vary depending on the services provided by the \norganization and the overall scope of the assessment. \nBecoming SOC 2 compliant involves a structured process \nto demonstrate your organization meets the defined \nsecurity and privacy standards for managing and securing \nsensitive data. \nFollowing is a summary checklist you can reference as you \nprepare to become SOC 2 compliant."
+    },
+    {
+      "page_number": 3,
+      "char_count": 1284,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 3 \nSOC 2 is based on five Trust Service Criteria (TSC): \n\t»\nSecurity: Protection against unauthorized access \n(both physical and logical). \n\t»\nAvailability: Systems should be available for \noperation and used as agreed. \n\t»\nProcessing Integrity: System processing must be \ncomplete, accurate, timely, and authorized. \n\t»\nConfidentiality: Sensitive data must be protected \nper agreements or policies. \n\t»\nPrivacy: Personal information must be collected, \nused, retained, and disclosed in conformity with \nprivacy laws and regulations. \nEach of these criteria should be addressed within your \norganization to demonstrate secure management \nstandards of your data. \nConduct an internal assessment to determine your \norganization’s current security and privacy practices and \nidentify gaps against SOC 2 standards. A gap analysis/\nreadiness assessment can help you understand where \nimprovements are needed. \nDetermine which areas of your organization will be \nincluded in the SOC 2 assessment. You might choose \nto focus on specific departments (e.g., IT and HR) \nor specific systems (e.g., customer databases and \nsoftware applications). \n1. UNDERSTAND THE SOC 2 \nFRAMEWORK \n2.\tASSESS CURRENT PRACTICES \n3.\tDEFINE YOUR SCOPE"
+    },
+    {
+      "page_number": 4,
+      "char_count": 1563,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 4 \nEstablish policies and procedures to ensure that the Trust \nService Criteria are met. These may include: \n\t»\nAccess Control: Policies to restrict unauthorized access to \ndata. \n\t»\nIncident Response: Procedures for managing security \nbreaches and other incidents. \n\t»\nData Encryption: Protecting sensitive data through \nencryption. \n\t»\nNetwork and Application Monitoring and Logging: \nEnsuring systems and applications are regularly monitored \nand logs are maintained for auditing purposes. \n\t»\nEmployee Training: Training staff on security and privacy \nrequirements. \n\t»\nThird-Party Risk Management: Ensuring that vendors and \npartners adhere to appropriate security frameworks (e.g., \nPCI DSS, SOC 2, etc.). \n4.\tIMPLEMENT NECESSARY \nCONTROLS AND POLICIES \nDocumentation is critical for SOC 2 compliance. \nYou’ll need to create clear and comprehensive records of your \ncontrols, policies, procedures, and any actions taken to meet \nthe criteria. This will be crucial for the assessment process. \nBefore undergoing the official assessment, conduct a mock \ninternal assessment and review. This can help you identify any \nremaining gaps in your controls or documentation and provide \nan opportunity to address them before the formal assessment. \nIt may be advisable to contract with a qualified assessing \norganization to perform a SOC2 readiness assessment to help \nyou identify and report on control gaps. \n5.\tTHOROUGH DOCUMENTATION \n6.\tCONDUCT AN INTERNAL \nASSESSMENT OR SOC 2 \nREADINESS ASSESSMENT"
+    },
+    {
+      "page_number": 5,
+      "char_count": 1283,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 5 \nDuring the assessment, the auditor will review your \norganization’s systems, policies, procedures, and controls \nto ensure they are designed and operating effectively. \nThere are two types of SOC 2 reports: \n\t»\nType I: Evaluates the design of controls at a specific \npoint in time. \n\t»\nType II: Evaluates both the design and the operating \neffectiveness of controls over a longer period (usually \n6-12 months). \nAfter the assessment, the auditor will provide a signed \nSOC 2 report, typically called an Opinion Letter. Review \nthis report thoroughly to ensure that it accurately reflects \nyour organization’s compliance status. This report can \nthen be shared with stakeholders, clients, and partners to \ndemonstrate your commitment to security and privacy. \nSOC 2 compliance is not a one-time process. It requires \ncontinuous monitoring and improvement of your \norganization’s controls and practices to ensure they \nremain effective. You should regularly review and \nupdate your security policies and controls – especially \nin response to changes in the threat landscape or your \norganization’s operations. \n7. UNDERGO THE SOC 2 ASSESSMENT \n8.\tREVIEW THE SOC 2 REPORT \n9.\tMAINTAIN AND CONTINUOUSLY \nIMPROVE COMPLIANCE"
+    },
+    {
+      "page_number": 6,
+      "char_count": 1588,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 6 \nKEY CONSIDERATIONS FOR SOC 2 COMPLIANCE\nUse tools to automate certain security tasks \nlike monitoring, patching, and data backups. \nContinuously assess and mitigate risks to \nyour systems, applications, and data. \nEnsure any third-party vendors and contractors adhere to \nappropriate security frameworks (e.g., PCI DSS, SOC 2, etc.). \nIn summary, following the steps above will \nhelp prepare your organization to work toward \nbecoming SOC 2 compliant, enhancing your \norganization’s security and privacy posture. \nIf you’re planning to perform a certified SOC \naudit, you’ll also need a partner who can \nmake the process as simple and effortless as \npossible. S3 Security fits the bill – applying \nthe same principles, protocols and practices \nthat have led to thousands of other successful \ncompliance assessments and made us a leader in \ncybersecurity.\n \nOur senior leadership collaborate with your \nteam and one of America’s Top 100 CPA firms to \nassesses the systems, policies and procedures in \nplace to safeguard data across your information \narchitecture and digital ecosystem. Together, \nwe then evaluate the evidence you’ve provided \nregarding controls in each category to deliver \nyour certified SOC 2 report. \nContinuous training and communication about security \npolicies for all organization staff members. \n\t»\nAutomation \n\t»\nRisk Management \n\t»\nThird-Party Security \n\t»\nEmployee Awareness \nINFO@S3SECURITY.COM\nWondering which SOC report is right for you? \nContact us for a quick, obligation-free consultation."
+    },
+    {
+      "page_number": 7,
+      "char_count": 1251,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 7 \nS3 SECURITY SOC 2 GUIDE \nEXAMPLES OF TSP CONTROLS\nThese are measures that ensure systems are protected against unauthorized access, \nboth physical and logical. \n\t»\nAccess Controls: Authentication and authorization procedures (e.g., Multi-factor \nauthentication (MFA), role-based access control (RBAC)). \n\t»\nFirewall Configuration: Firewall rules are in place to protect network boundaries \nand restrict unauthorized access. \n\t»\nIntrusion Detection/Prevention Systems (IDS/IPS): Tools to detect and prevent \nunauthorized access to the system. \n\t»\nEncryption: Encryption of data both at rest and in transit to ensure data \nprotection and confidentiality. \nThese focus on ensuring that the system is available for operation and use as agreed \nupon by the service provider. \n\t»\nIncident Response Plans: Procedures for responding to system downtimes, \nincluding recovery measures and communication plans. \n\t»\nMonitoring and Alerts: Systems in place to monitor the availability of the service \nand detect outages or performance issues. \n\t»\nBackup Procedures: Regular backups of critical systems and data, with periodic \ntesting of recovery processes. \nSecurity Controls \nAvailability Controls"
+    },
+    {
+      "page_number": 8,
+      "char_count": 1590,
+      "text": "Y O U R C H E C K L I S T F O R S O C 2 C O M P L I A N C E | 8 \nThese controls ensure that system processing is complete, accurate, timely, \nand authorized. \n\t»\nData Validation: Checks to ensure data input and processing are \naccurate, complete, and consistent. \n\t»\nChange Management Procedures: Controls to ensure that all changes \nto the system are properly reviewed, tested, and documented. \n\t»\nError Handling and Logging: Automated and manual controls to detect \nand correct errors in processing. \nThese ensure that data classified as confidential is protected from unauthorized \ndisclosure. \n\t»\nData Classification and Handling: Policies and procedures to classify and \nhandle data based on sensitivity (e.g., PII, financial data). \n\t»\nAccess Control to Confidential Data: Restricting access to sensitive information \nbased on roles, ensuring only authorized personnel can access specific data. \n\t»\nEncryption of Sensitive Data: Ensuring that sensitive data, like customer \ninformation, is encrypted during storage and transmission. \nThese controls focus on how personal information is collected, used, retained, \nand disclosed. \n\t»\nPrivacy Policy: A documented policy outlining how personal information \nis handled, including collection, storage, sharing, and deletion practices. \n\t»\nData Minimization: Collecting only the necessary amount of personal \ndata for the intended purpose. \n\t»\nThird-Party Risk Management: Ensuring that third-party service \nproviders also adhere to privacy policies and practices. \nProcessing Integrity Controls \nConfidentiality Controls \nPrivacy Controls"
+    }
+  ],
+  "total_pages": 8,
+  "extraction_quality_score": 0.768
+}
