@@ -39,13 +39,21 @@ update: ## Update dependencies
 
 run: install ## Run the backend server (production mode)
 	@echo "$(BLUE)Starting Amenly Backend Server...$(NC)"
-	@echo "$(YELLOW)Note: Using port 8001 to avoid conflicts$(NC)"
+	@echo "$(YELLOW)Note: Using port 8001$(NC)"
+	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
+	@sleep 1
 	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 
 dev: install-dev ## Run the backend in development mode with hot reload
 	@echo "$(BLUE)Starting Amenly Backend in Development Mode...$(NC)"
-	@echo "$(YELLOW)Note: Using port 8001 to avoid conflicts$(NC)"
+	@echo "$(YELLOW)Note: Using port 8001$(NC)"
+	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
+	@sleep 1
 	@poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+
+stop: ## Stop the running backend server
+	@echo "$(BLUE)Stopping backend server on port 8001...$(NC)"
+	@-lsof -ti:8001 | xargs kill -9 2>/dev/null && echo "$(GREEN)✓ Server stopped$(NC)" || echo "$(YELLOW)No server running on port 8001$(NC)"
 
 test: install-dev ## Run tests with coverage
 	@echo "$(BLUE)Running tests...$(NC)"
