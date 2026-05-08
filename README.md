@@ -14,6 +14,44 @@
 
 Amenly is a comprehensive Governance, Risk, and Compliance (GRC) platform that leverages artificial intelligence to help organizations manage their compliance frameworks, assess risks, and maintain security posture.
 
+## 🚀 How to Run
+
+### Quick Start (Recommended)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Kiramido1/Amenly-Product.git
+cd Amenly-Product/backend
+
+# 2. Run the backend (installs everything automatically)
+make run
+```
+
+**That's it!** 🎉 The backend will be running at:
+- 🌐 **API**: http://localhost:8001
+- 📚 **Docs**: http://localhost:8001/docs
+- ❤️ **Health**: http://localhost:8001/health
+
+### What `make run` Does:
+1. ✅ Installs Poetry (if needed)
+2. ✅ Installs all dependencies (~1 minute)
+3. ✅ Starts the server on port 8001
+4. ✅ Shows you the URLs
+
+### Stop the Server:
+```bash
+# Press Ctrl+C in the terminal
+# Or in another terminal:
+cd backend
+make stop
+```
+
+### Development Mode (with hot reload):
+```bash
+cd backend
+make dev
+```
+
 ### ✨ Key Features
 
 - 🔐 **Advanced Authentication** - JWT-based auth with Redis token revocation
