@@ -3,9 +3,14 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.api.v1.router import api_router
 from app.database import base  # Ensure all models are loaded
+
+# Initialize logger
+logger = get_logger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -18,6 +23,12 @@ app = FastAPI(
 # Centralized Error Handling
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(
+        "validation_error",
+        path=request.url.path,
+        method=request.method,
+        errors=exc.errors(),
+    )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
@@ -30,6 +41,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "unhandled_exception",
+        path=request.url.path,
+        method=request.method,
+        error=str(exc),
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -60,9 +78,27 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Application startup event"""
+    logger.info(
+        "application_startup",
+        project=settings.PROJECT_NAME,
+        debug=settings.DEBUG,
+        version="1.0.1",
+    )
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Application shutdown event"""
+    logger.info("application_shutdown")
+
+
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": time.time(), "version": "1.0.0"}
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": time.time(), "version": "1.0.1"}
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
