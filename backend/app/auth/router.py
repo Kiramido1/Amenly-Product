@@ -83,11 +83,8 @@ async def refresh_token(
     auth_service = AuthService(db)
     user = await auth_service.get_user_by_id(token_data.sub)
     
-    # Revoke old access token explicitly before creating new one
-    await token_manager.revoke_old_access_token(user.id, "")
-    
-    # Create new tokens
-    tokens = await auth_service.create_tokens(user.id, revoke_old=False)
+    # Create new tokens with revoke_old=True to atomically revoke old and store new
+    tokens = await auth_service.create_tokens(user.id, revoke_old=True)
 
     return {**tokens, "user": UserResponse.model_validate(user)}
 
@@ -118,4 +115,51 @@ async def logout(current_user: User = Depends(get_current_active_user)) -> Any:
         "success": True,
         "message": "Logged out successfully",
         "data": None,
+    }
+
+
+@router.get("/debug/token-status", response_model=GenericResponse)
+async def debug_token_status(current_user: User = Depends(get_current_active_user)) -> Any:
+    """
+    Debug endpoint to check token status in Redis.
+    Only available in development mode.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    from app.auth.token_manager import token_manager
+    import redis.asyncio as redis
+    
+    redis_client = await token_manager._get_redis()
+    if not redis_client:
+        return {
+            "success": False,
+            "message": "Redis not available",
+            "data": None
+        }
+    
+    # Get all keys for this user
+    access_key = f"active_token:access:{current_user.id}"
+    refresh_key = f"active_token:refresh:{current_user.id}"
+    
+    access_token = await redis_client.get(access_key)
+    refresh_token = await redis_client.get(refresh_key)
+    
+    # Get all blacklist keys
+    blacklist_keys = []
+    async for key in redis_client.scan_iter("blacklist:*"):
+        blacklist_keys.append(key)
+    
+    return {
+        "success": True,
+        "message": "Token status retrieved",
+        "data": {
+            "user_id": str(current_user.id),
+            "has_active_access_token": bool(access_token),
+            "has_active_refresh_token": bool(refresh_token),
+            "access_token_preview": access_token[:50] + "..." if access_token else None,
+            "refresh_token_preview": refresh_token[:50] + "..." if refresh_token else None,
+            "blacklisted_tokens_count": len(blacklist_keys),
+            "blacklist_keys": blacklist_keys[:10]  # Show first 10
+        }
     }
