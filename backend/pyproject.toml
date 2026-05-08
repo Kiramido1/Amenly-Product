@@ -28,9 +28,9 @@ structlog = "^24.1.0"
 prometheus-client = "^0.20.0"
 qdrant-client = "^1.9.1"
 openai = "^1.30.5"
-langchain = "^0.2.1"
-langchain-community = "^0.2.1"
-langchain-openai = "^0.1.7"
+langchain = "^0.3.0"
+langchain-community = "^0.3.0"
+langchain-openai = "^0.2.0"
 gunicorn = "^22.0.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -59,7 +59,7 @@ build-backend = "poetry.core.masonry.api"
 # Black configuration
 [tool.black]
 line-length = 100
-target-version = ['py312']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -137,7 +137,7 @@ exclude_lines = [
 
 # Mypy configuration
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -160,7 +160,7 @@ ignore_errors = true
 # Ruff configuration
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings

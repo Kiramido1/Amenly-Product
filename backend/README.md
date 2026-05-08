@@ -3,15 +3,15 @@
 > Enterprise-grade GRC Platform Backend powered by FastAPI and Poetry
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python)](https://www.python.org)
-[![Poetry](https://img.shields.io/badge/Poetry-1.8.0-60A5FA?style=flat&logo=poetry)](https://python-poetry.org)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat&logo=python)](https://www.python.org)
+[![Poetry](https://img.shields.io/badge/Poetry-2.4.0-60A5FA?style=flat&logo=poetry)](https://python-poetry.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Python 3.12+**
+- **Python 3.13+**
 - **Poetry** (will be installed automatically if not present)
 - **PostgreSQL** (Supabase)
 - **Redis**

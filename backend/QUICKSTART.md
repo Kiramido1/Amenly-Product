@@ -19,7 +19,7 @@ That's it! The backend will:
 ### 1. Prerequisites
 
 Make sure you have:
-- ✅ Python 3.12+ installed
+- ✅ Python 3.13+ installed
 - ✅ Git installed
 - ✅ Terminal/Command Line access
 
