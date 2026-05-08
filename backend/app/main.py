@@ -95,6 +95,23 @@ async def shutdown_event():
     logger.info("application_shutdown")
 
 
+@app.get("/")
+async def root():
+    """Root endpoint - Welcome message"""
+    return {
+        "message": "Welcome to Amenly Backend! 🛡️",
+        "description": "AI-Powered GRC Platform API",
+        "version": "1.0.1",
+        "status": "running",
+        "endpoints": {
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "health": "/health",
+            "api": settings.API_V1_STR,
+        },
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
