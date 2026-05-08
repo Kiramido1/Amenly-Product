@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Amenly"
     API_V1_STR: str = "/api/v1"
+    DEBUG: bool = False
     SECRET_KEY: str = "your-secret-key-here"  # Change in production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 100  # 100 minutes
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
         port = 5432
         if "pooler.supabase.com" in server:
             port = 6543
-            
+
         return f"postgresql+asyncpg://{user}:{password}@{server}:{port}/{db}"
 
     # Supabase

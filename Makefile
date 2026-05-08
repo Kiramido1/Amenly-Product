@@ -25,7 +25,10 @@ db-shell:
 	docker compose exec db psql -U postgres -d amenly
 
 test:
-	docker compose exec backend pytest
+	docker compose exec backend bash -c "PYTHONPATH=. pytest tests/"
+
+test-cov:
+	docker compose exec backend bash -c "PYTHONPATH=. pytest --cov=app --cov-report=term-missing --cov-report=html:tests/reports/coverage-html"
 
 clean:
 	docker compose down -v

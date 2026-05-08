@@ -8,6 +8,7 @@ from app.auth.security import verify_password, create_access_token, create_refre
 from app.models.enums import UserRole
 from app.models.identity import User
 
+
 class AuthService:
     def __init__(self, session: AsyncSession):
         self.repo = AuthRepository(session)
@@ -19,18 +20,22 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User with this email already exists",
             )
-        
+
         # Create organization
         org = await self.repo.create_organization(user_in.organization_name)
-        
+
         # Create dept and position if provided
         dept_id = None
         pos_id = None
         if user_in.department_name:
-            dept = await self.repo.get_or_create_department(org.id, user_in.department_name)
+            dept = await self.repo.get_or_create_department(
+                org.id, user_in.department_name
+            )
             dept_id = dept.id
             if user_in.position_name:
-                pos = await self.repo.get_or_create_position(dept.id, user_in.position_name)
+                pos = await self.repo.get_or_create_position(
+                    dept.id, user_in.position_name
+                )
                 pos_id = pos.id
 
         user_data = {
@@ -39,10 +44,10 @@ class AuthService:
             "full_name": user_in.full_name,
             "organization_id": org.id,
             "position_id": pos_id,
-            "role": UserRole.ORG_ADMIN, # First user is admin
-            "is_active": True
+            "role": UserRole.ORG_ADMIN,  # First user is admin
+            "is_active": True,
         }
-        
+
         return await self.repo.create_user(user_data)
 
     async def authenticate_user(self, login_in: UserLogin) -> User:
@@ -63,7 +68,7 @@ class AuthService:
         return {
             "access_token": create_access_token(user_id),
             "refresh_token": create_refresh_token(user_id),
-            "token_type": "bearer"
+            "token_type": "bearer",
         }
 
     async def get_users_list(
@@ -77,5 +82,10 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
+            )
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Inactive user",
             )
         return user

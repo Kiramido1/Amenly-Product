@@ -3,11 +3,9 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.api.v1.router import api_router
-from app.auth.router import limiter
+from app.database import base  # Ensure all models are loaded
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -16,9 +14,6 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# SlowAPI setup
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Centralized Error Handling
 @app.exception_handler(RequestValidationError)
@@ -28,9 +23,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "success": False,
             "message": "Validation Error",
-            "errors": exc.errors()
+            "errors": exc.errors(),
         },
     )
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -39,9 +35,10 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "success": False,
             "message": "Internal Server Error",
-            "detail": str(exc) if settings.DEBUG else "An unexpected error occurred"
+            "detail": str(exc) if settings.DEBUG else "An unexpected error occurred",
         },
     )
+
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -65,14 +62,12 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "timestamp": time.time(),
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "timestamp": time.time(), "version": "1.0.0"}
+
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
