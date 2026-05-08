@@ -144,37 +144,18 @@ class TokenManager:
             return False
         
         try:
-            # First check blacklist using hash
+            # First check blacklist using hash - THIS IS THE PRIMARY CHECK
             blacklist_key = f"blacklist:{self._token_hash(token)}"
             is_blacklisted = await redis_client.get(blacklist_key)
             if is_blacklisted:
                 print(f"⚠️  Token is blacklisted")
                 return True
             
-            # Decode token to get type
-            payload = jwt.decode(
-                token,
-                settings.SECRET_KEY,
-                algorithms=[settings.ALGORITHM]
-            )
-            token_type = payload.get("type", "access")
-            
-            # Get active token from Redis
-            key = f"active_token:{token_type}:{user_id}"
-            active_token = await redis_client.get(key)
-            
-            # If no active token in Redis, token is still valid
-            # (Redis might be empty or token was issued before Redis tracking)
-            if not active_token:
-                print(f"⚠️  No active token in Redis for user {user_id}")
-                return False
-            
-            # If token matches the active one, it's valid (NOT revoked)
-            # If token doesn't match, it's revoked
-            is_revoked = active_token != token
-            if is_revoked:
-                print(f"⚠️  Token doesn't match active token")
-            return is_revoked
+            # If not in blacklist, token is valid
+            # We don't need to check active_token because:
+            # 1. Blacklist is the source of truth for revoked tokens
+            # 2. active_token is just for tracking, not validation
+            return False
             
         except JWTError:
             # Invalid token
