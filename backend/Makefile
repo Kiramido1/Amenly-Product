@@ -188,6 +188,10 @@ show: ## Show installed packages
 info: ## Show Poetry environment info
 	@poetry env info
 
+check-install: ## Check installation status
+	@echo "$(BLUE)Checking installation...$(NC)"
+	@./scripts/check_installation.sh
+
 version: ## Show current version
 	@echo "$(BLUE)Amenly Backend Version:$(NC)"
 	@poetry version
