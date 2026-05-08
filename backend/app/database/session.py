@@ -1,15 +1,20 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
+# Use NullPool for Supabase pgbouncer compatibility
+# Disable prepared statements using execution_options
 engine = create_async_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,
+    poolclass=NullPool,  # Disable connection pooling for pgbouncer
     future=True,
     echo=False,
-    connect_args={"statement_cache_size": 0},
+    execution_options={
+        "postgresql_prepared_statement_cache_size": 0,  # Disable prepared statement cache
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(

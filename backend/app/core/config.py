@@ -50,7 +50,8 @@ class Settings(BaseSettings):
         if "pooler.supabase.com" in server:
             port = 6543
 
-        return f"postgresql+asyncpg://{user}:{password}@{server}:{port}/{db}"
+        # Use psycopg instead of asyncpg for better pgbouncer compatibility
+        return f"postgresql+psycopg://{user}:{password}@{server}:{port}/{db}"
 
     # Supabase
     SUPABASE_URL: str = ""

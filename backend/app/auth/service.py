@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.repository import AuthRepository
 from app.auth.schemas import UserRegister, UserLogin, Token
 from app.auth.security import verify_password, create_access_token, create_refresh_token
+from app.auth.token_manager import token_manager
 from app.models.enums import UserRole
 from app.models.identity import User
 
@@ -64,10 +65,32 @@ class AuthService:
             )
         return user
 
-    def create_tokens(self, user_id: UUID) -> dict:
+    async def create_tokens(self, user_id: UUID, revoke_old: bool = True) -> dict:
+        """
+        Create new access and refresh tokens
+        
+        Args:
+            user_id: User UUID
+            revoke_old: If True, revoke old access token when creating new one
+            
+        Returns:
+            Dictionary with access_token, refresh_token, and token_type
+        """
+        access_token = create_access_token(user_id)
+        refresh_token = create_refresh_token(user_id)
+        
+        # Revoke old access token and store new one
+        if revoke_old:
+            await token_manager.revoke_old_access_token(user_id, access_token)
+        else:
+            await token_manager.store_active_token(user_id, access_token, "access")
+        
+        # Store refresh token
+        await token_manager.store_active_token(user_id, refresh_token, "refresh")
+        
         return {
-            "access_token": create_access_token(user_id),
-            "refresh_token": create_refresh_token(user_id),
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
         }
 

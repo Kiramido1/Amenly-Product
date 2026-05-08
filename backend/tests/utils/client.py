@@ -1,6 +1,7 @@
 from httpx import AsyncClient
 from typing import Optional
 
+
 class TestClient:
     def __init__(self, client: AsyncClient, token: Optional[str] = None):
         self.client = client

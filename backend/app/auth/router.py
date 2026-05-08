@@ -14,6 +14,7 @@ from app.auth.schemas import (
 )
 from app.auth.dependencies import get_current_active_user
 from app.schemas.identity import UserResponse
+from app.models.identity import User
 from app.core.config import settings
 
 router = APIRouter()
@@ -28,7 +29,7 @@ async def register(user_in: UserRegister, db: AsyncSession = Depends(get_db)) ->
     """
     auth_service = AuthService(db)
     user = await auth_service.register_user(user_in)
-    tokens = auth_service.create_tokens(user.id)
+    tokens = await auth_service.create_tokens(user.id, revoke_old=False)
 
     return {
         "success": True,
@@ -44,7 +45,7 @@ async def login(login_in: UserLogin, db: AsyncSession = Depends(get_db)) -> Any:
     """
     auth_service = AuthService(db)
     user = await auth_service.authenticate_user(login_in)
-    tokens = auth_service.create_tokens(user.id)
+    tokens = await auth_service.create_tokens(user.id, revoke_old=True)
 
     return {**tokens, "user": UserResponse.model_validate(user)}
 
@@ -55,9 +56,11 @@ async def refresh_token(
 ) -> Any:
     """
     Refresh access token using refresh token.
+    Old access token will be revoked.
     """
     from jose import jwt, JWTError
     from app.auth.schemas import TokenData
+    from app.auth.token_manager import token_manager
 
     try:
         payload = jwt.decode(
@@ -68,12 +71,20 @@ async def refresh_token(
         token_data = TokenData(**payload)
         if token_data.type != "refresh":
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-    except (JWTError, Exception):
+        
+        # Check if refresh token is revoked
+        is_revoked = await token_manager.is_token_revoked(refresh_in.refresh_token, token_data.sub)
+        if is_revoked:
+            raise HTTPException(status_code=401, detail="Refresh token has been revoked")
+            
+    except (JWTError, Exception) as e:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     auth_service = AuthService(db)
     user = await auth_service.get_user_by_id(token_data.sub)
-    tokens = auth_service.create_tokens(user.id)
+    
+    # Create new tokens and revoke old access token
+    tokens = await auth_service.create_tokens(user.id, revoke_old=True)
 
     return {**tokens, "user": UserResponse.model_validate(user)}
 
@@ -87,4 +98,21 @@ async def get_me(current_user: Any = Depends(get_current_active_user)) -> Any:
         "success": True,
         "message": "Profile retrieved successfully",
         "data": {"user": UserResponse.model_validate(current_user)},
+    }
+
+
+@router.post("/logout", response_model=GenericResponse)
+async def logout(current_user: User = Depends(get_current_active_user)) -> Any:
+    """
+    Logout user by revoking all active tokens.
+    """
+    from app.auth.token_manager import token_manager
+    
+    # Revoke all user tokens
+    await token_manager.revoke_user_tokens(current_user.id)
+    
+    return {
+        "success": True,
+        "message": "Logged out successfully",
+        "data": None,
     }

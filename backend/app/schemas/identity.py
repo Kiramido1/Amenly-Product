@@ -103,7 +103,6 @@ class PositionResponse(PositionBase):
 
 class UserResponse(UserBase):
     id: UUID
-    is_superuser: bool
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = None

@@ -9,8 +9,8 @@ from app.database import base  # Ensure all models are loaded
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Amenly AI GRC Platform - Advanced Authentication System",
-    version="1.0.0",
+    description="Amenly AI GRC Platform - Production API",
+    version="1.0.1",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 

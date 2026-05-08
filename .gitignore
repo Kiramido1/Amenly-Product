@@ -5,6 +5,8 @@ __pycache__/
 *.so
 .Python
 env/
+venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -22,6 +24,15 @@ wheels/
 *.egg
 .pytest_cache/
 .mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.pyc
+
+# Test files
+test_*.py
+*_test.py
+tests/reports/
 
 # Node.js
 node_modules/
@@ -38,6 +49,7 @@ out/
 .env.test.local
 .env.production.local
 *.env
+!.env.example
 
 # Docker
 .docker/
@@ -48,6 +60,7 @@ docker-compose.override.yml
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
 # Logs
 *.log
@@ -56,3 +69,22 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Credentials
+*credentials*.json
+*.pem
+*.key
