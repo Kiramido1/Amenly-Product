@@ -1,6 +1,6 @@
 from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,17 +11,16 @@ from app.auth.service import AuthService
 from app.models.identity import User
 from app.models.enums import UserRole
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login"
-)
+token_auth_scheme = HTTPBearer()
+
 
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(reusable_oauth2)
+    token: HTTPAuthorizationCredentials = Depends(token_auth_scheme),
 ) -> User:
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = TokenData(**payload)
         if token_data.type != "access":
@@ -34,7 +33,7 @@ async def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    
+
     auth_service = AuthService(db)
     user = await auth_service.repo.get_user_by_id(token_data.sub)
     if not user:
@@ -43,6 +42,7 @@ async def get_current_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return user
 
+
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
@@ -50,15 +50,17 @@ async def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+
 async def require_org_admin(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
     if current_user.role != UserRole.ORG_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="The user doesn't have enough privileges"
+            detail="The user doesn't have enough privileges",
         )
     return current_user
+
 
 async def require_superuser(
     current_user: User = Depends(get_current_active_user),
@@ -66,6 +68,6 @@ async def require_superuser(
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="The user doesn't have enough privileges"
+            detail="The user doesn't have enough privileges",
         )
     return current_user
