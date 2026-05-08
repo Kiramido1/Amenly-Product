@@ -20,8 +20,11 @@ install: ## Install dependencies using Poetry
 	@if ! command -v poetry &> /dev/null; then \
 		echo "$(RED)Poetry not found. Installing Poetry...$(NC)"; \
 		curl -sSL https://install.python-poetry.org | python3 -; \
+		export PATH="$$HOME/.local/bin:$$PATH"; \
+		echo "$$PATH"; \
 	fi
-	@poetry install
+	@echo "$(YELLOW)Note: First installation may take 5-10 minutes...$(NC)"
+	@poetry install --no-root
 	@echo "$(GREEN)✓ Dependencies installed successfully$(NC)"
 
 install-dev: ## Install dependencies including dev tools
@@ -36,11 +39,13 @@ update: ## Update dependencies
 
 run: install ## Run the backend server (production mode)
 	@echo "$(BLUE)Starting Amenly Backend Server...$(NC)"
-	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+	@echo "$(YELLOW)Note: Using port 8001 to avoid conflicts$(NC)"
+	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 
 dev: install-dev ## Run the backend in development mode with hot reload
 	@echo "$(BLUE)Starting Amenly Backend in Development Mode...$(NC)"
-	@poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	@echo "$(YELLOW)Note: Using port 8001 to avoid conflicts$(NC)"
+	@poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 test: install-dev ## Run tests with coverage
 	@echo "$(BLUE)Running tests...$(NC)"

@@ -48,10 +48,6 @@ pre-commit = "^3.7.0"
 ipython = "^8.24.0"
 ipdb = "^0.13.13"
 
-[tool.poetry.scripts]
-dev = "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
-start = "gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000"
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
