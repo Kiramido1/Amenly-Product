@@ -18,18 +18,16 @@ help: ## Show this help message
 install: ## Install dependencies using Poetry
 	@echo "$(BLUE)Installing dependencies...$(NC)"
 	@if ! command -v poetry &> /dev/null; then \
-		echo "$(RED)Poetry not found. Installing Poetry...$(NC)"; \
-		curl -sSL https://install.python-poetry.org | python3 -; \
+		echo "$(YELLOW)Installing Poetry...$(NC)"; \
+		curl -sSL https://install.python-poetry.org | python3 - > /dev/null 2>&1; \
 		export PATH="$$HOME/.local/bin:$$PATH"; \
-		echo "$$PATH"; \
 	fi
-	@echo "$(YELLOW)Note: First installation may take 5-10 minutes...$(NC)"
-	@poetry install --no-root
+	@poetry install --no-root > /dev/null 2>&1
 	@echo "$(GREEN)✓ Dependencies installed successfully$(NC)"
 
 install-dev: ## Install dependencies including dev tools
 	@echo "$(BLUE)Installing all dependencies (including dev)...$(NC)"
-	@poetry install --with dev
+	@poetry install --with dev > /dev/null 2>&1
 	@echo "$(GREEN)✓ All dependencies installed$(NC)"
 
 update: ## Update dependencies
@@ -38,18 +36,37 @@ update: ## Update dependencies
 	@echo "$(GREEN)✓ Dependencies updated$(NC)"
 
 run: install ## Run the backend server (production mode)
-	@echo "$(BLUE)Starting Amenly Backend Server...$(NC)"
-	@echo "$(YELLOW)Note: Using port 8001$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)✓ Amenly Backend Server Started Successfully!$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(BLUE)🌐 API Server:$(NC)      http://localhost:8001"
+	@echo "$(BLUE)📚 API Docs:$(NC)        http://localhost:8001/docs"
+	@echo "$(BLUE)📖 ReDoc:$(NC)           http://localhost:8001/redoc"
+	@echo "$(BLUE)❤️  Health Check:$(NC)   http://localhost:8001/health"
+	@echo ""
+	@echo "$(YELLOW)💡 Press Ctrl+C to stop the server$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
 	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
 	@sleep 1
-	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
+	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --log-level error 2>&1 | grep -E "ERROR|CRITICAL" || true
 
 dev: install-dev ## Run the backend in development mode with hot reload
-	@echo "$(BLUE)Starting Amenly Backend in Development Mode...$(NC)"
-	@echo "$(YELLOW)Note: Using port 8001$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)✓ Amenly Backend Started in Development Mode!$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(BLUE)🌐 API Server:$(NC)      http://localhost:8001"
+	@echo "$(BLUE)📚 API Docs:$(NC)        http://localhost:8001/docs"
+	@echo "$(BLUE)🔄 Hot Reload:$(NC)      Enabled"
+	@echo ""
+	@echo "$(YELLOW)💡 Press Ctrl+C to stop the server$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
 	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
 	@sleep 1
-	@poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+	@poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001 --log-level error
 
 stop: ## Stop the running backend server
 	@echo "$(BLUE)Stopping backend server on port 8001...$(NC)"
