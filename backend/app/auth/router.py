@@ -83,8 +83,11 @@ async def refresh_token(
     auth_service = AuthService(db)
     user = await auth_service.get_user_by_id(token_data.sub)
     
-    # Create new tokens and revoke old access token
-    tokens = await auth_service.create_tokens(user.id, revoke_old=True)
+    # Revoke old access token explicitly before creating new one
+    await token_manager.revoke_old_access_token(user.id, "")
+    
+    # Create new tokens
+    tokens = await auth_service.create_tokens(user.id, revoke_old=False)
 
     return {**tokens, "user": UserResponse.model_validate(user)}
 

@@ -184,13 +184,13 @@ class TokenManager:
             print(f"Error checking token revocation: {e}")
             return False
     
-    async def revoke_old_access_token(self, user_id: UUID, new_access_token: str) -> None:
+    async def revoke_old_access_token(self, user_id: UUID, new_access_token: str = "") -> None:
         """
         Revoke old access token when issuing a new one
         
         Args:
             user_id: User UUID
-            new_access_token: New JWT access token
+            new_access_token: New JWT access token (optional, if empty just revoke old)
         """
         redis_client = await self._get_redis()
         if not redis_client:
@@ -211,8 +211,12 @@ class TokenManager:
                 )
                 print(f"✅ Revoked old access token for user {user_id}")
             
-            # Store new token
-            await self.store_active_token(user_id, new_access_token, "access")
+            # Store new token if provided
+            if new_access_token:
+                await self.store_active_token(user_id, new_access_token, "access")
+            else:
+                # Just delete the active token key
+                await redis_client.delete(key)
             
         except Exception as e:
             print(f"Error revoking old token: {e}")
