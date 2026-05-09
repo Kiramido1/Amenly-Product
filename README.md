@@ -67,7 +67,9 @@
 
 ## 🚀 How to Run
 
-### Quick Start
+### ⚡ Super Quick Start (Recommended)
+
+**One command to start everything!** 🎉
 
 #### 🐧 Linux / macOS
 
@@ -76,8 +78,39 @@
 git clone https://github.com/Kiramido1/Amenly-Product.git
 cd Amenly-Product/backend
 
-# 2. Run the backend (installs everything automatically)
+# 2. Start Ollama (in a separate terminal)
+ollama serve
+
+# 3. Run everything (Backend + Qdrant + Auto-checks)
 make run
+```
+
+**What happens automatically:**
+1. ✅ Checks if Ollama is running
+2. ✅ Starts Qdrant Docker container (creates if needed)
+3. ✅ Verifies all services are accessible
+4. ✅ Installs dependencies (if needed)
+5. ✅ Starts the backend server with 4 workers
+
+**Output:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ All Services Started Successfully!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 API Server:       http://localhost:8001
+📚 API Docs:         http://localhost:8001/docs
+📖 ReDoc:            http://localhost:8001/redoc
+❤️  Health Check:    http://localhost:8001/health
+🤖 RAG Health:       http://localhost:8001/api/v1/rag/health
+
+🔧 Services:
+   • Ollama:  http://localhost:11434
+   • Qdrant:  http://localhost:6333
+
+💡 Press Ctrl+C to stop the server
+💡 To stop all services: make stop-all
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 #### 🪟 Windows
@@ -87,45 +120,78 @@ make run
 git clone https://github.com/Kiramido1/Amenly-Product.git
 cd Amenly-Product\backend
 
-# 2. Install Poetry (if not installed)
+# 2. Start Ollama (in a separate terminal)
+ollama serve
+
+# 3. Start Qdrant (Docker required)
+docker run -d --name qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant:latest
+
+# 4. Install Poetry (if not installed)
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
 
-# 3. Install dependencies
+# 5. Install dependencies
 poetry install --no-root
 
-# 4. Run the server
+# 6. Run the server
 poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 ```
 
-**That's it!** 🎉 The backend will be running at:
-- 🌐 **API**: http://localhost:8001
-- 📚 **Docs**: http://localhost:8001/docs
-- ❤️ **Health**: http://localhost:8001/health
+---
 
-### What Happens:
-1. ✅ Installs Poetry (if needed)
-2. ✅ Installs all dependencies (~1 minute)
-3. ✅ Starts the server on port 8001
-4. ✅ Shows you the URLs
+### 🛠️ Service Management Commands
 
-### Stop the Server:
-
-#### 🐧 Linux / macOS
+#### Check Service Status
 ```bash
-# Press Ctrl+C in the terminal
-# Or in another terminal:
+cd backend
+make status
+```
+
+**Output:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Amenly Services Status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Backend Server (Port 8001)
+   ✓ Running
+   ✓ Healthy
+
+2. Ollama (Port 11434)
+   ✓ Running
+   ✓ Models: 2
+
+3. Qdrant (Port 6333)
+   ✓ Running
+   ✓ Accessible
+   ✓ Collections: 1
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+#### Stop All Services
+```bash
+cd backend
+make stop-all
+```
+
+Stops:
+- ✅ Backend Server (port 8001)
+- ✅ Qdrant Docker container
+
+**Note:** Ollama runs separately and needs to be stopped manually if needed:
+```bash
+pkill ollama
+```
+
+#### Stop Backend Only
+```bash
 cd backend
 make stop
 ```
 
-#### 🪟 Windows
-```powershell
-# Press Ctrl+C in the terminal
-# Or find and kill the process:
-Get-Process | Where-Object {$_.ProcessName -like "*python*"} | Stop-Process
-```
+---
 
-### Development Mode (with hot reload):
+### 🔧 Development Mode (with hot reload)
 
 #### 🐧 Linux / macOS
 ```bash
@@ -138,6 +204,118 @@ make dev
 cd backend
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
+
+**Features:**
+- 🔄 **Hot Reload** - Code changes reload automatically
+- 📝 **Debug Mode** - Detailed error messages
+- 🚀 **Fast Iteration** - No need to restart manually
+
+---
+
+### 📋 Prerequisites
+
+Before running, ensure you have:
+
+#### Required
+- **Python 3.13+** - Programming language
+- **Docker** - For Qdrant container
+- **Ollama** - For AI/LLM features
+  ```bash
+  # Install Ollama
+  curl -fsSL https://ollama.ai/install.sh | sh
+  
+  # Pull required models
+  ollama pull qwen2.5:1.5b
+  ollama pull nomic-embed-text
+  ```
+
+#### Optional
+- **Poetry 2.4.0+** - Dependency management (auto-installed by `make run`)
+- **Git** - Version control
+
+---
+
+### 🚨 Troubleshooting Quick Start
+
+#### Issue: "Ollama is not running"
+```bash
+# Solution: Start Ollama in a separate terminal
+ollama serve
+```
+
+#### Issue: "Qdrant is not accessible"
+```bash
+# Solution: Check Docker
+docker ps -a | grep qdrant
+
+# Restart Qdrant
+docker start qdrant-container
+
+# Or let make run create it automatically
+make run
+```
+
+#### Issue: "Port 8001 already in use"
+```bash
+# Solution: Stop existing backend
+make stop
+
+# Or kill the process
+lsof -ti:8001 | xargs kill -9
+```
+
+#### Issue: "Network is unreachable" (RAG queries)
+```bash
+# Solution: Ensure all services are running
+make status
+
+# Restart everything
+make stop-all
+make run
+```
+
+---
+
+### 🏗️ Service Architecture Overview
+
+Amenly consists of **3 main services** that work together:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     🌐 Backend Server                            │
+│                  FastAPI + Gunicorn (Port 8001)                  │
+│                  • REST API Endpoints                            │
+│                  • Authentication & Authorization                │
+│                  • Business Logic                                │
+└────────────┬────────────────────────────────┬────────────────────┘
+             │                                │
+    ┌────────▼────────┐              ┌───────▼────────┐
+    │  🤖 Ollama      │              │  📊 Qdrant     │
+    │  Port: 11434    │              │  Port: 6333    │
+    │  • LLM Model    │              │  • Vector DB   │
+    │  • Embeddings   │              │  • Semantic    │
+    │  • AI Queries   │              │    Search      │
+    └─────────────────┘              └────────────────┘
+```
+
+#### Service Dependencies
+
+| Service | Required By | Auto-Started | Port |
+|---------|-------------|--------------|------|
+| **Ollama** | Backend (RAG) | ❌ Manual | 11434 |
+| **Qdrant** | Backend (RAG) | ✅ Auto | 6333 |
+| **Backend** | - | ✅ Auto | 8001 |
+
+**How `make run` works:**
+
+1. ✅ **Checks Ollama** - Verifies Ollama is running (exits if not)
+2. ✅ **Starts Qdrant** - Auto-starts Docker container (creates if needed)
+3. ✅ **Verifies Services** - Ensures all services are accessible
+4. ✅ **Starts Backend** - Launches FastAPI with 4 workers
+
+**Result:** All services running and connected! 🎉
+
+---
 
 ## ✨ Key Features
 
@@ -190,7 +368,10 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 - **Caching** - Redis for performance optimization
 
 ### 🛠️ Developer Experience
-- **One-Command Setup** - `make run` to start everything
+- **One-Command Setup** - `make run` starts everything automatically
+- **Automatic Service Management** ⭐ NEW - Auto-starts Qdrant, checks Ollama, verifies connections
+- **Service Status Monitoring** ⭐ NEW - `make status` shows all services health
+- **Smart Service Control** ⭐ NEW - `make stop-all` stops all services cleanly
 - **Hot Reload** - Automatic code reloading in development
 - **Comprehensive Testing** - 46 tests, 100% passing, 96% coverage
 - **Code Quality Tools** - Black, isort, ruff, mypy, flake8
@@ -567,32 +748,81 @@ BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8001"]
 
 ### Available Commands (Backend)
 
+#### 🚀 Service Management (New!)
+
 ```bash
-# Development
-make run              # Run in production mode (port 8001)
-make dev              # Run in development mode with hot reload
+# Start all services automatically
+make run              # Checks Ollama → Starts Qdrant → Starts Backend
+
+# Check service status
+make status           # Shows status of Backend, Ollama, Qdrant
+
+# Stop services
+make stop             # Stop backend only
+make stop-all         # Stop backend + Qdrant (recommended)
+```
+
+**Example: `make status` output:**
+```
+📊 Amenly Services Status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Backend Server (Port 8001)
+   ✓ Running
+   ✓ Healthy
+
+2. Ollama (Port 11434)
+   ✓ Running
+   ✓ Models: 2
+
+3. Qdrant (Port 6333)
+   ✓ Running
+   ✓ Accessible
+   ✓ Collections: 1
+```
+
+#### 💻 Development
+
+```bash
+# Development mode
+make dev              # Run with hot reload
 make install          # Install production dependencies
 make install-dev      # Install all dependencies including dev tools
-make stop             # Stop the running server
+```
 
-# Code Quality
+#### 🧪 Code Quality
+
+```bash
+# Formatting & Linting
 make format           # Format code with black and isort
 make lint             # Run linting checks (ruff, flake8, mypy)
 make type-check       # Run type checking with mypy
 make check            # Run all checks (format, lint, test)
+```
 
-# Testing
+#### 🧪 Testing
+
+```bash
+# Run tests
 make test             # Run tests with coverage
 make test-unit        # Run unit tests only
 make test-integration # Run integration tests only
+```
 
-# Database
+#### 🗄️ Database
+
+```bash
+# Migrations
 make migrate          # Apply database migrations
 make makemigrations   # Create new migration
 make downgrade        # Rollback last migration
 make seed             # Seed database with initial data
+```
 
-# Utilities
+#### 🧹 Utilities
+
+```bash
+# Maintenance
 make clean            # Clean cache and temporary files
 make shell            # Open Python shell with app context
 make health           # Check backend health
@@ -1611,6 +1841,7 @@ Error: model 'qwen2.5:1.5b' not found
 ```bash
 # 1. Pull the model
 ollama pull qwen2.5:1.5b
+ollama pull nomic-embed-text
 
 # 2. List available models
 ollama list
@@ -1621,6 +1852,89 @@ curl http://localhost:11434/api/tags
 # 4. Check model in .env
 grep OLLAMA_MODEL backend/.env
 ```
+
+#### Issue 3.1: Ollama Not Running ⭐ NEW
+
+**Symptoms**:
+```
+✗ Ollama is not running!
+  Please start Ollama first: ollama serve
+```
+
+**Solutions**:
+```bash
+# 1. Start Ollama in a separate terminal
+ollama serve
+
+# 2. Or run as background service
+nohup ollama serve > /dev/null 2>&1 &
+
+# 3. Verify it's running
+curl http://localhost:11434/api/tags
+
+# 4. Check with make status
+cd backend
+make status
+```
+
+#### Issue 3.2: Qdrant Not Accessible ⭐ NEW
+
+**Symptoms**:
+```
+✗ Qdrant is not accessible
+RAG query failed: [Errno 101] Network is unreachable
+```
+
+**Solutions**:
+```bash
+# 1. Check Qdrant status
+docker ps -a | grep qdrant
+
+# 2. Start Qdrant if stopped
+docker start qdrant-container
+
+# 3. Or use make run (auto-starts Qdrant)
+cd backend
+make run
+
+# 4. Verify Qdrant is accessible
+curl http://localhost:6333/collections
+
+# 5. Check with make status
+make status
+```
+
+#### Issue 3.3: All Services Status Check ⭐ NEW
+
+**Quick diagnostic command:**
+```bash
+cd backend
+make status
+```
+
+**Expected output:**
+```
+📊 Amenly Services Status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Backend Server (Port 8001)
+   ✓ Running
+   ✓ Healthy
+
+2. Ollama (Port 11434)
+   ✓ Running
+   ✓ Models: 2
+
+3. Qdrant (Port 6333)
+   ✓ Running
+   ✓ Accessible
+   ✓ Collections: 1
+```
+
+**If any service shows ✗:**
+- Backend: `make run`
+- Ollama: `ollama serve` (in separate terminal)
+- Qdrant: `docker start qdrant-container` or `make run`
 
 #### Issue 4: Slow RAG Queries (>120s timeout)
 
@@ -2568,7 +2882,36 @@ async def set_cached_data(key: str, value: dict, ttl: int = 300):
 
 ## 🔄 Version History
 
-### Version 1.0.1 (Current) - May 9, 2026
+### Version 1.0.2 (Current) - May 9, 2026 ⭐ NEW
+
+#### Features
+- ✅ **Automatic Service Management** - `make run` now auto-starts all services
+- ✅ **Service Status Monitoring** - New `make status` command
+- ✅ **Smart Service Control** - New `make stop-all` command
+- ✅ **Qdrant Auto-Start** - Automatically starts/creates Qdrant container
+- ✅ **Ollama Health Check** - Verifies Ollama before starting
+- ✅ **Service Verification** - Ensures all services are accessible
+- ✅ **Enhanced Error Messages** - Clear, actionable error messages
+- ✅ **Professional Output** - Colored, formatted status messages
+
+#### Developer Experience Improvements
+- 🚀 **One-Command Start** - `make run` handles everything
+- 🚀 **Zero Configuration** - No manual service management needed
+- 🚀 **Quick Diagnostics** - `make status` shows all service health
+- 🚀 **Clean Shutdown** - `make stop-all` stops all services cleanly
+
+#### Bug Fixes
+- 🐛 Fixed "Network is unreachable" error (Qdrant auto-start)
+- 🐛 Fixed service startup order issues
+- 🐛 Fixed port conflict detection
+
+#### Documentation
+- 📚 Updated README with new service management commands
+- 📚 Added Service Architecture Overview section
+- 📚 Added comprehensive troubleshooting for services
+- 📚 Added MAKEFILE_ENHANCEMENT.md documentation
+
+### Version 1.0.1 - May 9, 2026
 
 #### Features
 - ✅ Complete authentication system (JWT + refresh tokens)
@@ -3950,6 +4293,63 @@ Special thanks to the open-source community and these amazing projects:
 
 ---
 
+## 📝 Recent Updates
+
+### Latest Changes (v1.0.2 - May 9, 2026) ⭐
+
+#### 🚀 Automatic Service Management
+- **One-Command Start**: `make run` now automatically starts all required services
+- **Smart Checks**: Verifies Ollama is running before starting
+- **Auto-Start Qdrant**: Automatically starts or creates Qdrant Docker container
+- **Service Verification**: Ensures all services are accessible before proceeding
+
+#### 📊 Service Monitoring
+- **Status Command**: New `make status` shows health of all services
+- **Real-time Monitoring**: Check Backend, Ollama, and Qdrant status instantly
+- **Detailed Info**: Shows models count, collections, and accessibility
+
+#### 🛑 Clean Shutdown
+- **Stop All**: New `make stop-all` stops Backend + Qdrant cleanly
+- **Selective Stop**: `make stop` for backend only
+- **No Orphan Processes**: Proper cleanup of all services
+
+#### 🐛 Bug Fixes
+- Fixed "Network is unreachable" error in RAG queries
+- Fixed service startup order issues
+- Fixed port conflict detection
+- Improved error messages with actionable solutions
+
+#### 📚 Documentation
+- Updated Quick Start with new commands
+- Added Service Architecture Overview
+- Enhanced Troubleshooting section
+- Added comprehensive service management guide
+
+### What's New
+
+```bash
+# Before (v1.0.1)
+docker start qdrant    # Manual
+cd backend
+make run              # Only starts backend
+
+# After (v1.0.2)
+cd backend
+make run              # Starts everything automatically! 🎉
+```
+
+### Quick Commands Reference
+
+| Command | Description | New in v1.0.2 |
+|---------|-------------|---------------|
+| `make run` | Start all services | ✅ Enhanced |
+| `make status` | Check service health | ⭐ NEW |
+| `make stop-all` | Stop all services | ⭐ NEW |
+| `make dev` | Development mode | - |
+| `make test` | Run tests | - |
+
+---
+
 <div align="center">
 
 **Built with ❤️ by the Amenly Team**
@@ -3957,5 +4357,9 @@ Special thanks to the open-source community and these amazing projects:
 ⭐ Star us on GitHub if you find this project useful!
 
 [Report Bug](https://github.com/Kiramido1/Amenly-Product/issues) · [Request Feature](https://github.com/Kiramido1/Amenly-Product/issues) · [Documentation](backend/README.md)
+
+---
+
+**Last Updated**: May 9, 2026 | **Version**: 1.0.2 | **Status**: ✅ Production Ready
 
 </div>
