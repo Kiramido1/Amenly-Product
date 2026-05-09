@@ -23,18 +23,30 @@ app = FastAPI(
 # Centralized Error Handling
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Convert errors to JSON-serializable format (fix for Python 3.13)
+    errors = []
+    for error in exc.errors():
+        error_dict = {}
+        for key, value in error.items():
+            # Convert bytes to string if needed
+            if isinstance(value, bytes):
+                error_dict[key] = value.decode('utf-8')
+            else:
+                error_dict[key] = value
+        errors.append(error_dict)
+    
     logger.warning(
         "validation_error",
         path=request.url.path,
         method=request.method,
-        errors=exc.errors(),
+        errors=errors,
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "success": False,
             "message": "Validation Error",
-            "errors": exc.errors(),
+            "errors": errors,
         },
     )
 

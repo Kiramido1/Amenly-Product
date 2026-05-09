@@ -41,7 +41,7 @@ class RAGService:
     def __init__(self):
         self.ollama = get_ollama_service()
         self.retrieval = get_retrieval_service()
-        self.context_builder = ContextBuilder(max_tokens=4000)
+        self.context_builder = ContextBuilder(max_tokens=800)  # Reduced for CPU
         
         logger.info("rag_service_initialized")
     
@@ -135,7 +135,7 @@ class RAGService:
                 prompt=user_prompt,
                 system=SYSTEM_PROMPT,
                 temperature=0.3,  # Lower for factual answers
-                max_tokens=1000
+                max_tokens=256  # Reduced for faster CPU generation
             )
             
             answer_text = response.response

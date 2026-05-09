@@ -20,7 +20,7 @@ from app.models.identity import User
 
 logger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/rag", tags=["RAG System"])
+router = APIRouter(tags=["RAG System"])
 
 
 @router.post("/query", response_model=RAGQueryResponse)

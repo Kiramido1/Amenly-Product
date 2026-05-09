@@ -56,7 +56,7 @@ class OllamaService:
         base_url: Optional[str] = None,
         llm_model: Optional[str] = None,
         embedding_model: Optional[str] = None,
-        timeout: float = 120.0,
+        timeout: float = 600.0,  # Increased to 10 minutes for CPU processing
         max_retries: int = 3
     ):
         self.base_url = base_url or settings.OLLAMA_URL
@@ -262,6 +262,10 @@ class OllamaService:
                 "temperature": temperature,
                 "top_p": top_p,
                 "top_k": top_k,
+                "num_ctx": 1024,  # Further reduced context window for CPU
+                "num_gpu": 0,  # Use CPU only
+                "num_thread": 8,  # CPU threads
+                "num_predict": 256,  # Limit response length for faster generation
             }
         }
         

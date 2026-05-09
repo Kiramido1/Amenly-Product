@@ -28,3 +28,25 @@ class ControlStatus(str, Enum):
     PARTIALLY_IMPLEMENTED = "partially_implemented"
     FULLY_IMPLEMENTED = "fully_implemented"
     NOT_APPLICABLE = "not_applicable"
+
+
+class FrameworkType(str, Enum):
+    """Type of compliance framework"""
+    STANDARD = "standard"  # ISO 27001, NIST CSF, SOC 2, PCI DSS, COBIT, TISAX
+    REGULATION = "regulation"  # GDPR, HIPAA, CCPA, SOX, etc.
+    GUIDELINE = "guideline"  # Best practices, recommendations
+
+
+class FrameworkCategory(str, Enum):
+    """Category of compliance framework"""
+    INFORMATION_SECURITY = "information_security"
+    CYBERSECURITY = "cybersecurity"
+    DATA_PROTECTION = "data_protection"
+    PRIVACY = "privacy"
+    FINANCIAL = "financial"
+    HEALTHCARE = "healthcare"
+    PAYMENT_SECURITY = "payment_security"
+    IT_GOVERNANCE = "it_governance"
+    CLOUD_SECURITY = "cloud_security"
+    AUTOMOTIVE = "automotive"
+    GENERAL = "general"

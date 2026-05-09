@@ -145,15 +145,15 @@ class RetrievalService:
             # Build filter
             query_filter = self._build_filter(framework)
             
-            # Search Qdrant
-            search_results = self.client.search(
+            # Search Qdrant using query() method (new API)
+            search_results = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=top_k * 2 if deduplicate else top_k,  # Get more for deduplication
                 score_threshold=score_threshold,
                 query_filter=query_filter,
                 with_payload=True
-            )
+            ).points
             
             logger.info(
                 "qdrant_search_complete",

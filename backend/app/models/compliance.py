@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from app.database.session import Base
-from app.models.enums import AssessmentStatus, ControlStatus
+from app.models.enums import AssessmentStatus, ControlStatus, FrameworkType, FrameworkCategory
 from app.models.identity import TimestampMixin
 
 class Framework(Base, TimestampMixin):
@@ -16,7 +16,15 @@ class Framework(Base, TimestampMixin):
     name = Column(String(255), nullable=False) # e.g., ISO 27001, NIST CSF
     version = Column(String(50))
     description = Column(Text)
-
+    
+    # New professional columns
+    framework_type = Column(SQLEnum(FrameworkType), nullable=False, default=FrameworkType.STANDARD, index=True)
+    category = Column(SQLEnum(FrameworkCategory), nullable=False, default=FrameworkCategory.GENERAL, index=True)
+    region = Column(String(100), nullable=True)  # e.g., "United States", "European Union", "Global"
+    industry = Column(String(100), nullable=True)  # e.g., "Healthcare", "Financial", "General"
+    is_mandatory = Column(Boolean, default=False)  # Is it legally required?
+    official_url = Column(String(512), nullable=True)  # Official documentation URL
+    
     # Relationships
     organization = relationship("Organization", back_populates="frameworks")
     controls = relationship("FrameworkControl", back_populates="framework", cascade="all, delete-orphan")

@@ -3,7 +3,7 @@ RAG System Schemas
 Request/Response models for RAG operations
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -32,7 +32,7 @@ class RetrievedChunk(BaseModel):
     source_file: Optional[str] = None
     section: Optional[str] = None
     control_id: Optional[str] = None
-    page_number: Optional[int] = None
+    page_number: Optional[Union[int, str]] = None  # Can be int or string like "Front Sheet"
     
     class Config:
         json_schema_extra = {
@@ -56,7 +56,7 @@ class SourceReference(BaseModel):
     section: Optional[str] = None
     control_id: Optional[str] = None
     source_file: str
-    page_number: Optional[int] = None
+    page_number: Optional[Union[int, str]] = None  # Can be int or string
     relevance_score: float
     
     class Config:

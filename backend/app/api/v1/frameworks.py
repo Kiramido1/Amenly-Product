@@ -1,0 +1,551 @@
+"""
+Professional Frameworks API Router
+Provides comprehensive endpoints for managing compliance frameworks
+"""
+from typing import Any, List, Optional
+from uuid import UUID
+import re
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, and_, or_
+
+from app.database.session import get_db
+from app.auth.dependencies import get_current_active_user, require_org_admin
+from app.models.compliance import Framework
+from app.models.enums import FrameworkType, FrameworkCategory
+from app.schemas.compliance import (
+    FrameworkCreate,
+    FrameworkUpdate,
+    FrameworkResponse,
+    FrameworkListResponse,
+    FrameworkStatsResponse
+)
+from app.auth.schemas import GenericResponse
+
+router = APIRouter()
+
+
+def sanitize_input(text: str) -> str:
+    """Sanitize input to prevent XSS attacks"""
+    if not text:
+        return text
+    
+    # Remove HTML tags
+    text = re.sub(r'<[^>]*>', '', text)
+    
+    # Remove script tags and content
+    text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Remove dangerous characters
+    dangerous_chars = ['<', '>', '"', "'", '&', ';']
+    for char in dangerous_chars:
+        if char in text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid character '{char}' in input. HTML/Script tags are not allowed."
+            )
+    
+    return text.strip()
+
+
+@router.get(
+    "/",
+    response_model=GenericResponse,
+    summary="List all frameworks",
+    description="Get a paginated list of all compliance frameworks with optional filtering by type, category, region, and mandatory status"
+)
+async def list_frameworks(
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_active_user),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of records to return"),
+    framework_type: Optional[FrameworkType] = Query(None, description="Filter by framework type (STANDARD, REGULATION, GUIDELINE)"),
+    category: Optional[FrameworkCategory] = Query(None, description="Filter by category"),
+    region: Optional[str] = Query(None, description="Filter by region (e.g., 'United States', 'European Union')"),
+    is_mandatory: Optional[bool] = Query(None, description="Filter by mandatory status"),
+    search: Optional[str] = Query(None, description="Search in framework name or description")
+) -> Any:
+    """
+    Get list of frameworks with advanced filtering options.
+    
+    **Filters:**
+    - `framework_type`: Filter by STANDARD, REGULATION, or GUIDELINE
+    - `category`: Filter by category (e.g., DATA_PROTECTION, HEALTHCARE)
+    - `region`: Filter by geographic region
+    - `is_mandatory`: Filter by mandatory/optional status
+    - `search`: Search in name or description
+    
+    **Returns:**
+    - List of frameworks with metadata
+    - Total count
+    - Pagination info
+    """
+    # Build query
+    query = select(Framework).where(Framework.organization_id == current_user.organization_id)
+    
+    # Apply filters
+    if framework_type:
+        query = query.where(Framework.framework_type == framework_type)
+    
+    if category:
+        query = query.where(Framework.category == category)
+    
+    if region:
+        query = query.where(Framework.region == region)
+    
+    if is_mandatory is not None:
+        query = query.where(Framework.is_mandatory == is_mandatory)
+    
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            or_(
+                Framework.name.ilike(search_pattern),
+                Framework.description.ilike(search_pattern)
+            )
+        )
+    
+    # Get total count
+    count_query = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+    
+    # Apply pagination and ordering
+    query = query.order_by(Framework.framework_type, Framework.name).offset(skip).limit(limit)
+    
+    # Execute query
+    result = await db.execute(query)
+    frameworks = result.scalars().all()
+    
+    return {
+        "success": True,
+        "message": f"Retrieved {len(frameworks)} frameworks",
+        "data": {
+            "frameworks": [FrameworkListResponse.model_validate(f) for f in frameworks],
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "filters": {
+                "framework_type": framework_type.value if framework_type else None,
+                "category": category.value if category else None,
+                "region": region,
+                "is_mandatory": is_mandatory,
+                "search": search
+            }
+        }
+    }
+
+
+@router.get(
+    "/stats",
+    response_model=GenericResponse,
+    summary="Get framework statistics",
+    description="Get comprehensive statistics about frameworks including counts by type, category, region, and mandatory status"
+)
+async def get_framework_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get comprehensive statistics about frameworks.
+    
+    **Returns:**
+    - Total count
+    - Count by type (STANDARD, REGULATION, GUIDELINE)
+    - Count by category
+    - Count by region
+    - Mandatory vs optional count
+    """
+    org_id = current_user.organization_id
+    
+    # Total count
+    total_result = await db.execute(
+        select(func.count(Framework.id)).where(Framework.organization_id == org_id)
+    )
+    total = total_result.scalar()
+    
+    # Count by type
+    type_result = await db.execute(
+        select(Framework.framework_type, func.count(Framework.id))
+        .where(Framework.organization_id == org_id)
+        .group_by(Framework.framework_type)
+    )
+    by_type = {row[0].value: row[1] for row in type_result.all()}
+    
+    # Count by category
+    category_result = await db.execute(
+        select(Framework.category, func.count(Framework.id))
+        .where(Framework.organization_id == org_id)
+        .group_by(Framework.category)
+    )
+    by_category = {row[0].value: row[1] for row in category_result.all()}
+    
+    # Count by region
+    region_result = await db.execute(
+        select(Framework.region, func.count(Framework.id))
+        .where(Framework.organization_id == org_id, Framework.region.isnot(None))
+        .group_by(Framework.region)
+    )
+    by_region = {row[0]: row[1] for row in region_result.all()}
+    
+    # Mandatory vs optional
+    mandatory_result = await db.execute(
+        select(func.count(Framework.id))
+        .where(Framework.organization_id == org_id, Framework.is_mandatory == True)
+    )
+    mandatory_count = mandatory_result.scalar()
+    
+    optional_count = total - mandatory_count
+    
+    return {
+        "success": True,
+        "message": "Framework statistics retrieved successfully",
+        "data": {
+            "total": total,
+            "by_type": by_type,
+            "by_category": by_category,
+            "by_region": by_region,
+            "mandatory_count": mandatory_count,
+            "optional_count": optional_count
+        }
+    }
+
+
+@router.get(
+    "/types",
+    response_model=GenericResponse,
+    summary="Get available framework types",
+    description="Get list of all available framework types (STANDARD, REGULATION, GUIDELINE)"
+)
+async def get_framework_types(
+    current_user: Any = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get all available framework types.
+    
+    **Returns:**
+    - List of framework types with descriptions
+    """
+    types = [
+        {
+            "value": FrameworkType.STANDARD.value,
+            "label": "Standard",
+            "description": "Industry standards and best practices (e.g., ISO 27001, NIST CSF, SOC 2)"
+        },
+        {
+            "value": FrameworkType.REGULATION.value,
+            "label": "Regulation",
+            "description": "Legal regulations and compliance requirements (e.g., GDPR, HIPAA, CCPA)"
+        },
+        {
+            "value": FrameworkType.GUIDELINE.value,
+            "label": "Guideline",
+            "description": "Recommended guidelines and frameworks"
+        }
+    ]
+    
+    return {
+        "success": True,
+        "message": "Framework types retrieved successfully",
+        "data": {"types": types}
+    }
+
+
+@router.get(
+    "/categories",
+    response_model=GenericResponse,
+    summary="Get available framework categories",
+    description="Get list of all available framework categories"
+)
+async def get_framework_categories(
+    current_user: Any = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get all available framework categories.
+    
+    **Returns:**
+    - List of categories with descriptions
+    """
+    categories = [
+        {"value": cat.value, "label": cat.value.replace("_", " ").title()}
+        for cat in FrameworkCategory
+    ]
+    
+    return {
+        "success": True,
+        "message": "Framework categories retrieved successfully",
+        "data": {"categories": categories}
+    }
+
+
+@router.get(
+    "/regions",
+    response_model=GenericResponse,
+    summary="Get available regions",
+    description="Get list of all regions that have frameworks"
+)
+async def get_framework_regions(
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get all unique regions from existing frameworks.
+    
+    **Returns:**
+    - List of regions with framework counts
+    """
+    result = await db.execute(
+        select(Framework.region, func.count(Framework.id))
+        .where(
+            Framework.organization_id == current_user.organization_id,
+            Framework.region.isnot(None)
+        )
+        .group_by(Framework.region)
+        .order_by(func.count(Framework.id).desc())
+    )
+    
+    regions = [{"region": row[0], "count": row[1]} for row in result.all()]
+    
+    return {
+        "success": True,
+        "message": "Framework regions retrieved successfully",
+        "data": {"regions": regions}
+    }
+
+
+@router.get(
+    "/{framework_id}",
+    response_model=GenericResponse,
+    summary="Get framework details",
+    description="Get detailed information about a specific framework"
+)
+async def get_framework(
+    framework_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_active_user)
+) -> Any:
+    """
+    Get detailed information about a specific framework.
+    
+    **Parameters:**
+    - `framework_id`: UUID of the framework
+    
+    **Returns:**
+    - Complete framework details including all metadata
+    """
+    result = await db.execute(
+        select(Framework).where(
+            Framework.id == framework_id,
+            Framework.organization_id == current_user.organization_id
+        )
+    )
+    framework = result.scalar_one_or_none()
+    
+    if not framework:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Framework not found"
+        )
+    
+    return {
+        "success": True,
+        "message": "Framework retrieved successfully",
+        "data": {"framework": FrameworkResponse.model_validate(framework)}
+    }
+
+
+@router.post(
+    "/",
+    response_model=GenericResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create new framework",
+    description="Create a new compliance framework (Admin only)"
+)
+async def create_framework(
+    framework_in: FrameworkCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(require_org_admin)
+) -> Any:
+    """
+    Create a new compliance framework.
+    
+    **Required fields:**
+    - `name`: Framework name
+    - `framework_type`: STANDARD, REGULATION, or GUIDELINE
+    - `category`: Framework category
+    
+    **Optional fields:**
+    - `version`: Framework version
+    - `description`: Detailed description
+    - `region`: Geographic region
+    - `industry`: Target industry
+    - `is_mandatory`: Whether legally required
+    - `official_url`: Official documentation URL
+    
+    **Permissions:** Organization Admin only
+    """
+    # Verify organization_id matches current user
+    if framework_in.organization_id != current_user.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create framework for another organization"
+        )
+    
+    # Sanitize inputs to prevent XSS
+    framework_in.name = sanitize_input(framework_in.name)
+    if framework_in.description:
+        framework_in.description = sanitize_input(framework_in.description)
+    if framework_in.region:
+        framework_in.region = sanitize_input(framework_in.region)
+    if framework_in.industry:
+        framework_in.industry = sanitize_input(framework_in.industry)
+    
+    # Check for duplicate name
+    existing = await db.execute(
+        select(Framework).where(
+            Framework.organization_id == current_user.organization_id,
+            Framework.name == framework_in.name
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Framework with name '{framework_in.name}' already exists"
+        )
+    
+    # Create framework
+    framework = Framework(**framework_in.model_dump())
+    db.add(framework)
+    await db.commit()
+    await db.refresh(framework)
+    
+    return {
+        "success": True,
+        "message": "Framework created successfully",
+        "data": {"framework": FrameworkResponse.model_validate(framework)}
+    }
+
+
+@router.patch(
+    "/{framework_id}",
+    response_model=GenericResponse,
+    summary="Update framework",
+    description="Update an existing framework (Admin only)"
+)
+async def update_framework(
+    framework_id: UUID,
+    framework_in: FrameworkUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(require_org_admin)
+) -> Any:
+    """
+    Update an existing framework.
+    
+    **Parameters:**
+    - `framework_id`: UUID of the framework to update
+    
+    **Updatable fields:**
+    - All framework fields can be updated
+    
+    **Permissions:** Organization Admin only
+    """
+    # Get framework
+    result = await db.execute(
+        select(Framework).where(
+            Framework.id == framework_id,
+            Framework.organization_id == current_user.organization_id
+        )
+    )
+    framework = result.scalar_one_or_none()
+    
+    if not framework:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Framework not found"
+        )
+    
+    # Sanitize inputs
+    if framework_in.name:
+        framework_in.name = sanitize_input(framework_in.name)
+    if framework_in.description:
+        framework_in.description = sanitize_input(framework_in.description)
+    if framework_in.region:
+        framework_in.region = sanitize_input(framework_in.region)
+    if framework_in.industry:
+        framework_in.industry = sanitize_input(framework_in.industry)
+    
+    # Check for duplicate name if name is being updated
+    if framework_in.name and framework_in.name != framework.name:
+        existing = await db.execute(
+            select(Framework).where(
+                Framework.organization_id == current_user.organization_id,
+                Framework.name == framework_in.name,
+                Framework.id != framework_id
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Framework with name '{framework_in.name}' already exists"
+            )
+    
+    # Update framework
+    update_data = framework_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(framework, field, value)
+    
+    db.add(framework)
+    await db.commit()
+    await db.refresh(framework)
+    
+    return {
+        "success": True,
+        "message": "Framework updated successfully",
+        "data": {"framework": FrameworkResponse.model_validate(framework)}
+    }
+
+
+@router.delete(
+    "/{framework_id}",
+    response_model=GenericResponse,
+    summary="Delete framework",
+    description="Delete a framework (Admin only)"
+)
+async def delete_framework(
+    framework_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(require_org_admin)
+) -> Any:
+    """
+    Delete a framework.
+    
+    **Parameters:**
+    - `framework_id`: UUID of the framework to delete
+    
+    **Warning:** This will also delete all associated controls and assessments.
+    
+    **Permissions:** Organization Admin only
+    """
+    # Get framework
+    result = await db.execute(
+        select(Framework).where(
+            Framework.id == framework_id,
+            Framework.organization_id == current_user.organization_id
+        )
+    )
+    framework = result.scalar_one_or_none()
+    
+    if not framework:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Framework not found"
+        )
+    
+    # Delete framework (cascade will handle related records)
+    await db.delete(framework)
+    await db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Framework '{framework.name}' deleted successfully"
+    }
