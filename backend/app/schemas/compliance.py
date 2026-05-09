@@ -11,7 +11,6 @@ class FrameworkBase(BaseModel):
     description: Optional[str] = Field(None, description="Detailed description of the framework")
 
 class FrameworkCreate(FrameworkBase):
-    organization_id: UUID = Field(..., description="Organization ID")
     framework_type: FrameworkType = Field(..., description="Type: STANDARD, REGULATION, or GUIDELINE")
     category: FrameworkCategory = Field(..., description="Primary category of the framework")
     region: Optional[str] = Field(None, max_length=100, description="Geographic region (e.g., 'Global', 'United States', 'European Union')")
@@ -32,7 +31,6 @@ class FrameworkUpdate(BaseModel):
 
 class FrameworkResponse(FrameworkBase):
     id: UUID
-    organization_id: UUID
     framework_type: FrameworkType = Field(..., description="Type: STANDARD, REGULATION, or GUIDELINE")
     category: FrameworkCategory = Field(..., description="Primary category")
     region: Optional[str] = Field(None, description="Geographic region")

@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy import select
 
 from app.database.session import AsyncSessionLocal
-from app.models.compliance import Framework
+from app.models.compliance import Framework, organization_frameworks
 from app.models.identity import Organization
 from app.models.enums import FrameworkType, FrameworkCategory
 from app.models.assets_risks import Asset, Risk, Document, DocumentChunk  # Import all models
@@ -264,10 +264,12 @@ async def seed_all_frameworks():
         print()
         
         for fw_data in FRAMEWORKS_DATA:
-            # Check if framework already exists
+            # Check if framework already exists for this organization
             result = await session.execute(
-                select(Framework).where(
-                    Framework.organization_id == org.id,
+                select(Framework)
+                .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+                .where(
+                    organization_frameworks.c.organization_id == org.id,
                     Framework.name == fw_data["name"]
                 )
             )
@@ -278,9 +280,8 @@ async def seed_all_frameworks():
                 skipped_count += 1
                 continue
             
-            # Create framework with all metadata
+            # Create framework with all metadata (without organization_id)
             framework = Framework(
-                organization_id=org.id,
                 name=fw_data["name"],
                 version=fw_data["version"],
                 description=fw_data["description"],
@@ -292,6 +293,15 @@ async def seed_all_frameworks():
                 official_url=fw_data.get("official_url")
             )
             session.add(framework)
+            await session.flush()  # Flush to get the framework ID
+            
+            # Create the organization-framework association
+            await session.execute(
+                organization_frameworks.insert().values(
+                    organization_id=org.id,
+                    framework_id=framework.id
+                )
+            )
             
             type_badge = "📜" if fw_data["framework_type"] == FrameworkType.REGULATION else "📋"
             mandatory_badge = "⚠️" if fw_data.get("is_mandatory") else "✓"

@@ -11,7 +11,8 @@ from sqlalchemy import select, func, and_, or_
 
 from app.database.session import get_db
 from app.auth.dependencies import get_current_active_user, require_org_admin
-from app.models.compliance import Framework
+from app.models.compliance import Framework, organization_frameworks
+from app.models.identity import Organization
 from app.models.enums import FrameworkType, FrameworkCategory
 from app.schemas.compliance import (
     FrameworkCreate,
@@ -80,8 +81,12 @@ async def list_frameworks(
     - Total count
     - Pagination info
     """
-    # Build query
-    query = select(Framework).where(Framework.organization_id == current_user.organization_id)
+    # Build query - join with organization_frameworks to filter by organization
+    query = (
+        select(Framework)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == current_user.organization_id)
+    )
     
     # Apply filters
     if framework_type:
@@ -158,16 +163,19 @@ async def get_framework_stats(
     """
     org_id = current_user.organization_id
     
-    # Total count
+    # Total count - frameworks associated with this organization
     total_result = await db.execute(
-        select(func.count(Framework.id)).where(Framework.organization_id == org_id)
+        select(func.count(Framework.id))
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id)
     )
     total = total_result.scalar()
     
     # Count by type
     type_result = await db.execute(
         select(Framework.framework_type, func.count(Framework.id))
-        .where(Framework.organization_id == org_id)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id)
         .group_by(Framework.framework_type)
     )
     by_type = {row[0].value: row[1] for row in type_result.all()}
@@ -175,7 +183,8 @@ async def get_framework_stats(
     # Count by category
     category_result = await db.execute(
         select(Framework.category, func.count(Framework.id))
-        .where(Framework.organization_id == org_id)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id)
         .group_by(Framework.category)
     )
     by_category = {row[0].value: row[1] for row in category_result.all()}
@@ -183,7 +192,8 @@ async def get_framework_stats(
     # Count by region
     region_result = await db.execute(
         select(Framework.region, func.count(Framework.id))
-        .where(Framework.organization_id == org_id, Framework.region.isnot(None))
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id, Framework.region.isnot(None))
         .group_by(Framework.region)
     )
     by_region = {row[0]: row[1] for row in region_result.all()}
@@ -191,7 +201,8 @@ async def get_framework_stats(
     # Mandatory vs optional
     mandatory_result = await db.execute(
         select(func.count(Framework.id))
-        .where(Framework.organization_id == org_id, Framework.is_mandatory == True)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id, Framework.is_mandatory == True)
     )
     mandatory_count = mandatory_result.scalar()
     
@@ -296,8 +307,9 @@ async def get_framework_regions(
     """
     result = await db.execute(
         select(Framework.region, func.count(Framework.id))
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
         .where(
-            Framework.organization_id == current_user.organization_id,
+            organization_frameworks.c.organization_id == current_user.organization_id,
             Framework.region.isnot(None)
         )
         .group_by(Framework.region)
@@ -334,9 +346,11 @@ async def get_framework(
     - Complete framework details including all metadata
     """
     result = await db.execute(
-        select(Framework).where(
+        select(Framework)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(
             Framework.id == framework_id,
-            Framework.organization_id == current_user.organization_id
+            organization_frameworks.c.organization_id == current_user.organization_id
         )
     )
     framework = result.scalar_one_or_none()
@@ -384,13 +398,6 @@ async def create_framework(
     
     **Permissions:** Organization Admin only
     """
-    # Verify organization_id matches current user
-    if framework_in.organization_id != current_user.organization_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot create framework for another organization"
-        )
-    
     # Sanitize inputs to prevent XSS
     framework_in.name = sanitize_input(framework_in.name)
     if framework_in.description:
@@ -400,10 +407,12 @@ async def create_framework(
     if framework_in.industry:
         framework_in.industry = sanitize_input(framework_in.industry)
     
-    # Check for duplicate name
+    # Check for duplicate name in this organization
     existing = await db.execute(
-        select(Framework).where(
-            Framework.organization_id == current_user.organization_id,
+        select(Framework)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(
+            organization_frameworks.c.organization_id == current_user.organization_id,
             Framework.name == framework_in.name
         )
     )
@@ -413,9 +422,20 @@ async def create_framework(
             detail=f"Framework with name '{framework_in.name}' already exists"
         )
     
-    # Create framework
-    framework = Framework(**framework_in.model_dump())
+    # Create framework (without organization_id)
+    framework_data = framework_in.model_dump(exclude={'organization_id'})
+    framework = Framework(**framework_data)
     db.add(framework)
+    await db.flush()  # Flush to get the framework ID
+    
+    # Create the organization-framework association
+    await db.execute(
+        organization_frameworks.insert().values(
+            organization_id=current_user.organization_id,
+            framework_id=framework.id
+        )
+    )
+    
     await db.commit()
     await db.refresh(framework)
     
@@ -451,9 +471,11 @@ async def update_framework(
     """
     # Get framework
     result = await db.execute(
-        select(Framework).where(
+        select(Framework)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(
             Framework.id == framework_id,
-            Framework.organization_id == current_user.organization_id
+            organization_frameworks.c.organization_id == current_user.organization_id
         )
     )
     framework = result.scalar_one_or_none()
@@ -477,8 +499,10 @@ async def update_framework(
     # Check for duplicate name if name is being updated
     if framework_in.name and framework_in.name != framework.name:
         existing = await db.execute(
-            select(Framework).where(
-                Framework.organization_id == current_user.organization_id,
+            select(Framework)
+            .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+            .where(
+                organization_frameworks.c.organization_id == current_user.organization_id,
                 Framework.name == framework_in.name,
                 Framework.id != framework_id
             )
@@ -528,9 +552,11 @@ async def delete_framework(
     """
     # Get framework
     result = await db.execute(
-        select(Framework).where(
+        select(Framework)
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(
             Framework.id == framework_id,
-            Framework.organization_id == current_user.organization_id
+            organization_frameworks.c.organization_id == current_user.organization_id
         )
     )
     framework = result.scalar_one_or_none()
@@ -541,7 +567,7 @@ async def delete_framework(
             detail="Framework not found"
         )
     
-    # Delete framework (cascade will handle related records)
+    # Delete framework (cascade will handle related records including junction table)
     await db.delete(framework)
     await db.commit()
     
