@@ -82,7 +82,7 @@ async def list_frameworks(
     - Pagination info
     """
     # Build query - join with organization_frameworks to filter by organization
-    query = (
+    base_query = (
         select(Framework)
         .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
         .where(organization_frameworks.c.organization_id == current_user.organization_id)
@@ -90,33 +90,60 @@ async def list_frameworks(
     
     # Apply filters
     if framework_type:
-        query = query.where(Framework.framework_type == framework_type)
+        base_query = base_query.where(Framework.framework_type == framework_type)
     
     if category:
-        query = query.where(Framework.category == category)
+        base_query = base_query.where(Framework.category == category)
     
     if region:
-        query = query.where(Framework.region == region)
+        base_query = base_query.where(Framework.region == region)
     
     if is_mandatory is not None:
-        query = query.where(Framework.is_mandatory == is_mandatory)
+        base_query = base_query.where(Framework.is_mandatory == is_mandatory)
     
     if search:
         search_pattern = f"%{search}%"
-        query = query.where(
+        base_query = base_query.where(
             or_(
                 Framework.name.ilike(search_pattern),
                 Framework.description.ilike(search_pattern)
             )
         )
     
-    # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
+    # Get total count - use count on Framework.id directly
+    count_query = (
+        select(func.count(Framework.id))
+        .join(organization_frameworks, Framework.id == organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == current_user.organization_id)
+    )
+    
+    # Apply same filters to count query
+    if framework_type:
+        count_query = count_query.where(Framework.framework_type == framework_type)
+    
+    if category:
+        count_query = count_query.where(Framework.category == category)
+    
+    if region:
+        count_query = count_query.where(Framework.region == region)
+    
+    if is_mandatory is not None:
+        count_query = count_query.where(Framework.is_mandatory == is_mandatory)
+    
+    if search:
+        search_pattern = f"%{search}%"
+        count_query = count_query.where(
+            or_(
+                Framework.name.ilike(search_pattern),
+                Framework.description.ilike(search_pattern)
+            )
+        )
+    
     total_result = await db.execute(count_query)
     total = total_result.scalar()
     
-    # Apply pagination and ordering
-    query = query.order_by(Framework.framework_type, Framework.name).offset(skip).limit(limit)
+    # Apply pagination and ordering to main query
+    query = base_query.order_by(Framework.framework_type, Framework.name).offset(skip).limit(limit)
     
     # Execute query
     result = await db.execute(query)
