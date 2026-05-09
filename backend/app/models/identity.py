@@ -41,7 +41,12 @@ class Organization(Base, TimestampMixin):
     domain = Column(String(255), unique=True, index=True)
     is_active = Column(Boolean, default=True)
 
-    # Relationships
+    # Relationships - Many-to-Many with Frameworks
+    frameworks = relationship(
+        "Framework",
+        secondary="organization_frameworks",
+        back_populates="organizations"
+    )
     departments = relationship(
         "Department", back_populates="organization", cascade="all, delete-orphan"
     )
@@ -50,9 +55,6 @@ class Organization(Base, TimestampMixin):
     )
     assets = relationship(
         "Asset", back_populates="organization", cascade="all, delete-orphan"
-    )
-    frameworks = relationship(
-        "Framework", back_populates="organization", cascade="all, delete-orphan"
     )
 
 

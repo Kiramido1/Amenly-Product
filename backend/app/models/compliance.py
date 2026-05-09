@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, Text, Enum as SQLEnum, Integer, Float
+from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, Text, Enum as SQLEnum, Integer, Float, Table
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -8,16 +8,26 @@ from app.database.session import Base
 from app.models.enums import AssessmentStatus, ControlStatus, FrameworkType, FrameworkCategory
 from app.models.identity import TimestampMixin
 
+# Junction table for Many-to-Many relationship between Organizations and Frameworks
+organization_frameworks = Table(
+    'organization_frameworks',
+    Base.metadata,
+    Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column('organization_id', UUID(as_uuid=True), ForeignKey('organizations.id', ondelete='CASCADE'), nullable=False, index=True),
+    Column('framework_id', UUID(as_uuid=True), ForeignKey('frameworks.id', ondelete='CASCADE'), nullable=False, index=True),
+    Column('created_at', DateTime, default=datetime.utcnow, nullable=False),
+    Column('updated_at', DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False),
+)
+
 class Framework(Base, TimestampMixin):
     __tablename__ = "frameworks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False) # e.g., ISO 27001, NIST CSF
     version = Column(String(50))
     description = Column(Text)
     
-    # New professional columns
+    # Professional columns
     framework_type = Column(SQLEnum(FrameworkType), nullable=False, default=FrameworkType.STANDARD, index=True)
     category = Column(SQLEnum(FrameworkCategory), nullable=False, default=FrameworkCategory.GENERAL, index=True)
     region = Column(String(100), nullable=True)  # e.g., "United States", "European Union", "Global"
@@ -25,8 +35,12 @@ class Framework(Base, TimestampMixin):
     is_mandatory = Column(Boolean, default=False)  # Is it legally required?
     official_url = Column(String(512), nullable=True)  # Official documentation URL
     
-    # Relationships
-    organization = relationship("Organization", back_populates="frameworks")
+    # Relationships - Many-to-Many with Organizations
+    organizations = relationship(
+        "Organization",
+        secondary=organization_frameworks,
+        back_populates="frameworks"
+    )
     controls = relationship("FrameworkControl", back_populates="framework", cascade="all, delete-orphan")
     assessments = relationship("Assessment", back_populates="framework")
 
