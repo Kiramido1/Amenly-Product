@@ -1,7 +1,7 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.enums import AssessmentStatus, ControlStatus, FrameworkType, FrameworkCategory
 
 # --- Framework ---
@@ -61,6 +61,26 @@ class FrameworkStatsResponse(BaseModel):
     by_region: dict = Field(..., description="Count by region")
     mandatory_count: int = Field(..., description="Number of mandatory frameworks")
     optional_count: int = Field(..., description="Number of optional frameworks")
+
+# --- Organization Framework Association ---
+class AddFrameworksRequest(BaseModel):
+    """Request to add frameworks to organization"""
+    framework_ids: Optional[List[UUID]] = Field(None, description="List of specific framework IDs to add")
+    framework_types: Optional[List[FrameworkType]] = Field(None, description="Add all frameworks of these types")
+    add_all: bool = Field(False, description="Add all available frameworks")
+    
+    @field_validator('framework_ids', 'framework_types')
+    @classmethod
+    def check_at_least_one(cls, v, info):
+        """Ensure at least one method is specified"""
+        return v
+
+class AddFrameworksResponse(BaseModel):
+    """Response after adding frameworks"""
+    added_count: int = Field(..., description="Number of frameworks added")
+    skipped_count: int = Field(..., description="Number of frameworks already associated")
+    total_frameworks: int = Field(..., description="Total frameworks now associated with organization")
+    added_frameworks: List[FrameworkListResponse] = Field(..., description="List of newly added frameworks")
 
 # --- FrameworkControl ---
 class FrameworkControlBase(BaseModel):

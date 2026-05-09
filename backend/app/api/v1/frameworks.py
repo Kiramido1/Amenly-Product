@@ -19,7 +19,9 @@ from app.schemas.compliance import (
     FrameworkUpdate,
     FrameworkResponse,
     FrameworkListResponse,
-    FrameworkStatsResponse
+    FrameworkStatsResponse,
+    AddFrameworksRequest,
+    AddFrameworksResponse
 )
 from app.auth.schemas import GenericResponse
 
@@ -601,4 +603,289 @@ async def delete_framework(
     return {
         "success": True,
         "message": f"Framework '{framework.name}' deleted successfully"
+    }
+
+
+@router.post(
+    "/associate",
+    response_model=GenericResponse,
+    summary="Associate frameworks with organization",
+    description="Add frameworks to organization by IDs, types, or all frameworks (Admin only)"
+)
+async def associate_frameworks(
+    request: AddFrameworksRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(require_org_admin)
+) -> Any:
+    """
+    Associate frameworks with the current organization.
+    
+    **Three ways to add frameworks:**
+    
+    1. **By specific IDs**: Provide `framework_ids` list
+    2. **By types**: Provide `framework_types` list (e.g., ["standard", "regulation"])
+    3. **All frameworks**: Set `add_all` to true
+    
+    **Examples:**
+    
+    ```json
+    // Add specific frameworks
+    {
+      "framework_ids": ["uuid1", "uuid2", "uuid3"]
+    }
+    
+    // Add all standards and regulations
+    {
+      "framework_types": ["standard", "regulation"]
+    }
+    
+    // Add all available frameworks
+    {
+      "add_all": true
+    }
+    ```
+    
+    **Returns:**
+    - Number of frameworks added
+    - Number of frameworks skipped (already associated)
+    - Total frameworks now associated
+    - List of newly added frameworks
+    
+    **Permissions:** Organization Admin only
+    """
+    org_id = current_user.organization_id
+    
+    # Validate request - at least one method must be specified
+    if not request.framework_ids and not request.framework_types and not request.add_all:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must specify at least one of: framework_ids, framework_types, or add_all"
+        )
+    
+    # Build query to get frameworks to add
+    query = select(Framework)
+    
+    if request.add_all:
+        # Add all frameworks
+        pass  # No filter needed
+    elif request.framework_ids:
+        # Add specific frameworks by ID
+        query = query.where(Framework.id.in_(request.framework_ids))
+    elif request.framework_types:
+        # Add frameworks by type
+        query = query.where(Framework.framework_type.in_(request.framework_types))
+    
+    # Get frameworks
+    result = await db.execute(query)
+    frameworks_to_add = result.scalars().all()
+    
+    if not frameworks_to_add:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No frameworks found matching the criteria"
+        )
+    
+    # Get already associated framework IDs
+    existing_result = await db.execute(
+        select(organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id)
+    )
+    existing_framework_ids = {row[0] for row in existing_result.all()}
+    
+    # Filter out already associated frameworks
+    added_frameworks = []
+    skipped_count = 0
+    
+    for framework in frameworks_to_add:
+        if framework.id in existing_framework_ids:
+            skipped_count += 1
+            continue
+        
+        # Add association
+        await db.execute(
+            organization_frameworks.insert().values(
+                organization_id=org_id,
+                framework_id=framework.id
+            )
+        )
+        added_frameworks.append(framework)
+    
+    await db.commit()
+    
+    # Get total count after addition
+    total_result = await db.execute(
+        select(func.count(organization_frameworks.c.framework_id))
+        .where(organization_frameworks.c.organization_id == org_id)
+    )
+    total_frameworks = total_result.scalar()
+    
+    return {
+        "success": True,
+        "message": f"Added {len(added_frameworks)} frameworks, skipped {skipped_count} already associated",
+        "data": {
+            "added_count": len(added_frameworks),
+            "skipped_count": skipped_count,
+            "total_frameworks": total_frameworks,
+            "added_frameworks": [FrameworkListResponse.model_validate(f) for f in added_frameworks]
+        }
+    }
+
+
+@router.get(
+    "/available/all",
+    response_model=GenericResponse,
+    summary="Get all available frameworks",
+    description="Get all frameworks in the system (not just organization's frameworks)"
+)
+async def get_all_available_frameworks(
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_active_user),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=200, description="Maximum number of records to return"),
+    framework_type: Optional[FrameworkType] = Query(None, description="Filter by framework type"),
+    category: Optional[FrameworkCategory] = Query(None, description="Filter by category"),
+    search: Optional[str] = Query(None, description="Search in framework name or description")
+) -> Any:
+    """
+    Get all available frameworks in the system (not filtered by organization).
+    
+    This endpoint shows ALL frameworks that exist, useful for:
+    - Discovering new frameworks to add
+    - Browsing the framework library
+    - Seeing what's available before associating
+    
+    **Returns:**
+    - List of all frameworks with metadata
+    - Indicates which ones are already associated with your organization
+    """
+    org_id = current_user.organization_id
+    
+    # Get organization's framework IDs
+    org_frameworks_result = await db.execute(
+        select(organization_frameworks.c.framework_id)
+        .where(organization_frameworks.c.organization_id == org_id)
+    )
+    org_framework_ids = {row[0] for row in org_frameworks_result.all()}
+    
+    # Build query for all frameworks
+    query = select(Framework)
+    
+    if framework_type:
+        query = query.where(Framework.framework_type == framework_type)
+    
+    if category:
+        query = query.where(Framework.category == category)
+    
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            or_(
+                Framework.name.ilike(search_pattern),
+                Framework.description.ilike(search_pattern)
+            )
+        )
+    
+    # Get total count
+    count_query = select(func.count(Framework.id))
+    if framework_type:
+        count_query = count_query.where(Framework.framework_type == framework_type)
+    if category:
+        count_query = count_query.where(Framework.category == category)
+    if search:
+        search_pattern = f"%{search}%"
+        count_query = count_query.where(
+            or_(
+                Framework.name.ilike(search_pattern),
+                Framework.description.ilike(search_pattern)
+            )
+        )
+    
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+    
+    # Apply pagination
+    query = query.order_by(Framework.framework_type, Framework.name).offset(skip).limit(limit)
+    
+    # Execute query
+    result = await db.execute(query)
+    frameworks = result.scalars().all()
+    
+    # Add "is_associated" flag to each framework
+    frameworks_data = []
+    for fw in frameworks:
+        fw_dict = FrameworkListResponse.model_validate(fw).model_dump()
+        fw_dict["is_associated"] = fw.id in org_framework_ids
+        frameworks_data.append(fw_dict)
+    
+    return {
+        "success": True,
+        "message": f"Retrieved {len(frameworks)} available frameworks",
+        "data": {
+            "frameworks": frameworks_data,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "organization_associated_count": len(org_framework_ids)
+        }
+    }
+
+
+@router.delete(
+    "/dissociate/{framework_id}",
+    response_model=GenericResponse,
+    summary="Remove framework from organization",
+    description="Dissociate a framework from the organization (Admin only)"
+)
+async def dissociate_framework(
+    framework_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(require_org_admin)
+) -> Any:
+    """
+    Remove a framework association from the organization.
+    
+    **Note:** This only removes the association, it does NOT delete the framework itself.
+    The framework will still exist in the system and can be re-associated later.
+    
+    **Parameters:**
+    - `framework_id`: UUID of the framework to dissociate
+    
+    **Permissions:** Organization Admin only
+    """
+    org_id = current_user.organization_id
+    
+    # Check if association exists
+    check_result = await db.execute(
+        select(organization_frameworks)
+        .where(
+            organization_frameworks.c.organization_id == org_id,
+            organization_frameworks.c.framework_id == framework_id
+        )
+    )
+    association = check_result.first()
+    
+    if not association:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Framework is not associated with your organization"
+        )
+    
+    # Get framework name for response
+    fw_result = await db.execute(
+        select(Framework).where(Framework.id == framework_id)
+    )
+    framework = fw_result.scalar_one_or_none()
+    
+    # Delete association
+    await db.execute(
+        organization_frameworks.delete().where(
+            organization_frameworks.c.organization_id == org_id,
+            organization_frameworks.c.framework_id == framework_id
+        )
+    )
+    await db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Framework '{framework.name if framework else 'Unknown'}' removed from organization"
     }
