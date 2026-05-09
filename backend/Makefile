@@ -36,20 +36,66 @@ update: ## Update dependencies
 	@echo "$(GREEN)✓ Dependencies updated$(NC)"
 
 run: install ## Run the backend server (production mode)
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(BLUE)🚀 Starting Amenly Backend Services...$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1/4 Checking Ollama...$(NC)"
+	@if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then \
+		echo "$(RED)✗ Ollama is not running!$(NC)"; \
+		echo "$(YELLOW)  Please start Ollama first: ollama serve$(NC)"; \
+		exit 1; \
+	else \
+		echo "$(GREEN)✓ Ollama is running$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)2/4 Starting Qdrant...$(NC)"
+	@if docker ps | grep -q qdrant; then \
+		echo "$(GREEN)✓ Qdrant is already running$(NC)"; \
+	elif docker ps -a | grep -q qdrant; then \
+		echo "$(BLUE)  Starting existing Qdrant container...$(NC)"; \
+		docker start $$(docker ps -a | grep qdrant | awk '{print $$1}') > /dev/null 2>&1; \
+		sleep 3; \
+		echo "$(GREEN)✓ Qdrant started$(NC)"; \
+	else \
+		echo "$(BLUE)  Creating new Qdrant container...$(NC)"; \
+		docker run -d --name qdrant -p 6333:6333 -p 6334:6334 \
+			-v $$(pwd)/qdrant_storage:/qdrant/storage:z \
+			qdrant/qdrant:latest > /dev/null 2>&1; \
+		sleep 5; \
+		echo "$(GREEN)✓ Qdrant created and started$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)3/4 Verifying services...$(NC)"
+	@if curl -s http://localhost:6333/collections > /dev/null 2>&1; then \
+		echo "$(GREEN)✓ Qdrant is accessible$(NC)"; \
+	else \
+		echo "$(RED)✗ Qdrant is not accessible$(NC)"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)4/4 Starting Backend Server...$(NC)"
+	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+	@echo ""
 	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
-	@echo "$(GREEN)✓ Amenly Backend Server Started Successfully!$(NC)"
+	@echo "$(GREEN)✓ All Services Started Successfully!$(NC)"
 	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 	@echo ""
 	@echo "$(BLUE)🌐 API Server:$(NC)      http://localhost:8001"
 	@echo "$(BLUE)📚 API Docs:$(NC)        http://localhost:8001/docs"
 	@echo "$(BLUE)📖 ReDoc:$(NC)           http://localhost:8001/redoc"
 	@echo "$(BLUE)❤️  Health Check:$(NC)   http://localhost:8001/health"
+	@echo "$(BLUE)🤖 RAG Health:$(NC)      http://localhost:8001/api/v1/rag/health"
+	@echo ""
+	@echo "$(BLUE)🔧 Services:$(NC)"
+	@echo "   • Ollama:  http://localhost:11434"
+	@echo "   • Qdrant:  http://localhost:6333"
 	@echo ""
 	@echo "$(YELLOW)💡 Press Ctrl+C to stop the server$(NC)"
+	@echo "$(YELLOW)💡 To stop all services: make stop-all$(NC)"
 	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 	@echo ""
-	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
-	@sleep 1
 	@poetry run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --log-level error 2>&1 | grep -E "ERROR|CRITICAL" || true
 
 dev: install-dev ## Run the backend in development mode with hot reload
@@ -71,6 +117,65 @@ dev: install-dev ## Run the backend in development mode with hot reload
 stop: ## Stop the running backend server
 	@echo "$(BLUE)Stopping backend server on port 8001...$(NC)"
 	@-lsof -ti:8001 | xargs kill -9 2>/dev/null && echo "$(GREEN)✓ Server stopped$(NC)" || echo "$(YELLOW)No server running on port 8001$(NC)"
+
+stop-all: ## Stop all services (Backend + Qdrant)
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(BLUE)🛑 Stopping All Amenly Services...$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1/2 Stopping Backend Server...$(NC)"
+	@-lsof -ti:8001 | xargs kill -9 2>/dev/null && echo "$(GREEN)✓ Backend stopped$(NC)" || echo "$(YELLOW)  No backend running$(NC)"
+	@echo ""
+	@echo "$(YELLOW)2/2 Stopping Qdrant...$(NC)"
+	@if docker ps | grep -q qdrant; then \
+		docker stop $$(docker ps | grep qdrant | awk '{print $$1}') > /dev/null 2>&1; \
+		echo "$(GREEN)✓ Qdrant stopped$(NC)"; \
+	else \
+		echo "$(YELLOW)  Qdrant is not running$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)✓ All Services Stopped$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)💡 Note: Ollama is still running (managed separately)$(NC)"
+	@echo "$(YELLOW)   To stop Ollama: pkill ollama$(NC)"
+
+status: ## Check status of all services
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(BLUE)📊 Amenly Services Status$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Backend Server (Port 8001)$(NC)"
+	@if lsof -ti:8001 > /dev/null 2>&1; then \
+		echo "   $(GREEN)✓ Running$(NC)"; \
+		curl -s http://localhost:8001/health > /dev/null 2>&1 && echo "   $(GREEN)✓ Healthy$(NC)" || echo "   $(RED)✗ Not responding$(NC)"; \
+	else \
+		echo "   $(RED)✗ Not running$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)2. Ollama (Port 11434)$(NC)"
+	@if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then \
+		echo "   $(GREEN)✓ Running$(NC)"; \
+		echo "   $(GREEN)✓ Models: $$(curl -s http://localhost:11434/api/tags | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | wc -l)$(NC)"; \
+	else \
+		echo "   $(RED)✗ Not running$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)3. Qdrant (Port 6333)$(NC)"
+	@if docker ps | grep -q qdrant; then \
+		echo "   $(GREEN)✓ Running$(NC)"; \
+		if curl -s http://localhost:6333/collections > /dev/null 2>&1; then \
+			echo "   $(GREEN)✓ Accessible$(NC)"; \
+			echo "   $(GREEN)✓ Collections: $$(curl -s http://localhost:6333/collections | grep -o '"name":"[^"]*"' | wc -l)$(NC)"; \
+		else \
+			echo "   $(RED)✗ Not accessible$(NC)"; \
+		fi \
+	else \
+		echo "   $(RED)✗ Not running$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 
 test: install-dev ## Run tests with coverage
 	@echo "$(BLUE)Running tests...$(NC)"
