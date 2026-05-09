@@ -114,3 +114,4 @@ class User(Base, TimestampMixin):
     organization = relationship("Organization", back_populates="users")
     position = relationship("Position", back_populates="users")
     assessment_sessions = relationship("AssessmentSession", back_populates="user")
+    custom_permissions = relationship("UserRolePermission", foreign_keys="[UserRolePermission.user_id]", back_populates="user", cascade="all, delete-orphan")

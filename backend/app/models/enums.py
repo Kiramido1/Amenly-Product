@@ -50,3 +50,29 @@ class FrameworkCategory(str, Enum):
     CLOUD_SECURITY = "cloud_security"
     AUTOMOTIVE = "automotive"
     GENERAL = "general"
+
+
+class Permission(str, Enum):
+    """User permissions for fine-grained access control"""
+    # Assessment Permissions
+    START_ASSESSMENT = "start_assessment"
+    VIEW_OWN_SESSIONS = "view_own_sessions"
+    VIEW_ALL_SESSIONS = "view_all_sessions"
+    VIEW_OWN_SCORE = "view_own_score"
+    VIEW_ALL_SCORES = "view_all_scores"
+    VIEW_ORG_TOTAL_SCORE = "view_org_total_score"
+    
+    # Framework Permissions
+    SELECT_FRAMEWORK = "select_framework"
+    MANAGE_FRAMEWORKS = "manage_frameworks"
+    
+    # Dashboard Permissions
+    VIEW_DASHBOARD = "view_dashboard"
+    VIEW_ASSETS = "view_assets"
+    VIEW_VULNERABILITIES = "view_vulnerabilities"
+    MANAGE_DASHBOARD_ACCESS = "manage_dashboard_access"
+    
+    # Member Management
+    VIEW_MEMBERS = "view_members"
+    MANAGE_MEMBERS = "manage_members"
+    GRANT_PERMISSIONS = "grant_permissions"
