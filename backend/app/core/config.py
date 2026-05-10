@@ -68,6 +68,7 @@ class Settings(BaseSettings):
 
     # AI Models
     AI_MODEL: str = "llama3"
+    OLLAMA_MODEL: str = "llama3"  # LLM model for Ollama generation
     EMBEDDING_MODEL: str = "nomic-embed-text"
 
     model_config = SettingsConfigDict(

@@ -79,7 +79,7 @@ class RAGQueryRequest(BaseModel):
         FrameworkType.ALL,
         description="Filter by specific framework"
     )
-    top_k: int = Field(5, ge=1, le=20, description="Number of chunks to retrieve")
+    top_k: int = Field(10, ge=1, le=20, description="Number of chunks to retrieve")
     score_threshold: float = Field(0.5, ge=0.0, le=1.0, description="Minimum similarity score")
     include_metadata: bool = Field(True, description="Include chunk metadata in response")
     
@@ -88,9 +88,79 @@ class RAGQueryRequest(BaseModel):
             "example": {
                 "question": "What does ISO 27001 require for MFA?",
                 "framework": "ISO27001",
-                "top_k": 5,
+                "top_k": 10,
                 "score_threshold": 0.5,
                 "include_metadata": True
+            }
+        }
+
+
+class AnswerSection(BaseModel):
+    """A single structured section of the answer"""
+    title: str = Field(..., description="Section title (e.g., Overview, Detailed Requirements)")
+    content: str = Field(..., description="Section body text")
+    order: int = Field(..., description="Section display order")
+
+
+class AnswerMetadata(BaseModel):
+    """Answer metadata and statistics"""
+    word_count: int = Field(..., description="Total word count in the answer")
+    char_count: int = Field(..., description="Total character count")
+    estimated_reading_time_seconds: int = Field(..., description="Estimated reading time in seconds (~200 wpm)")
+    sections_count: int = Field(..., description="Number of structured sections")
+    sources_count: int = Field(..., description="Number of cited sources")
+
+
+class RAGAnswer(BaseModel):
+    """Structured RAG answer with rich formatting"""
+    summary: str = Field(..., description="Concise 2-3 sentence summary of the answer")
+    sections: List[AnswerSection] = Field(default_factory=list, description="Structured answer sections")
+    full_text: str = Field(..., description="Complete raw answer text")
+    sources: List[SourceReference] = Field(default_factory=list, description="Source references")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Answer confidence")
+    retrieved_chunks: int = Field(..., description="Number of chunks retrieved")
+    processing_time_ms: int = Field(..., description="Total processing time")
+    framework_filter: Optional[str] = Field(None, description="Framework filter applied")
+    metadata: AnswerMetadata = Field(..., description="Answer metadata and statistics")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "summary": "ISO 27001 requires MFA for all critical systems to enhance authentication security and reduce unauthorized access risks.",
+                "sections": [
+                    {
+                        "title": "Overview",
+                        "content": "ISO 27001 is an international standard...",
+                        "order": 1
+                    },
+                    {
+                        "title": "Detailed Requirements",
+                        "content": "Control Objective 12.2.11 mandates MFA...",
+                        "order": 2
+                    }
+                ],
+                "full_text": "### Overview\n\nISO 27001 is...",
+                "sources": [
+                    {
+                        "framework": "ISO27001",
+                        "section": "A.9.4.2",
+                        "control_id": "A.9.4.2",
+                        "source_file": "iso27001_2022.pdf",
+                        "page_number": 45,
+                        "relevance_score": 0.92
+                    }
+                ],
+                "confidence_score": 0.89,
+                "retrieved_chunks": 5,
+                "processing_time_ms": 1250,
+                "framework_filter": "ISO27001",
+                "metadata": {
+                    "word_count": 850,
+                    "char_count": 5200,
+                    "estimated_reading_time_seconds": 255,
+                    "sections_count": 5,
+                    "sources_count": 1
+                }
             }
         }
 
@@ -99,15 +169,19 @@ class RAGQueryResponse(BaseModel):
     """Response for RAG query"""
     success: bool = Field(..., description="Query success status")
     message: str = Field(..., description="Status message")
-    data: Optional[Dict[str, Any]] = Field(None, description="Response data")
-    
+    data: Optional[RAGAnswer] = Field(None, description="Structured answer with sections, summary, and metadata")
+
     class Config:
         json_schema_extra = {
             "example": {
                 "success": True,
                 "message": "Query processed successfully",
                 "data": {
-                    "answer": "ISO 27001 requires multi-factor authentication...",
+                    "summary": "ISO 27001 requires multi-factor authentication...",
+                    "sections": [
+                        {"title": "Overview", "content": "...", "order": 1}
+                    ],
+                    "full_text": "### Overview\n\nISO 27001 is...",
                     "sources": [
                         {
                             "framework": "ISO27001",
@@ -120,7 +194,15 @@ class RAGQueryResponse(BaseModel):
                     ],
                     "confidence_score": 0.89,
                     "retrieved_chunks": 5,
-                    "processing_time_ms": 1250
+                    "processing_time_ms": 1250,
+                    "framework_filter": "ISO27001",
+                    "metadata": {
+                        "word_count": 850,
+                        "char_count": 5200,
+                        "estimated_reading_time_seconds": 255,
+                        "sections_count": 5,
+                        "sources_count": 1
+                    }
                 }
             }
         }
@@ -172,36 +254,5 @@ class RAGSearchResponse(BaseModel):
                     "total_results": 10,
                     "query_time_ms": 45
                 }
-            }
-        }
-
-
-class RAGAnswer(BaseModel):
-    """Structured RAG answer"""
-    answer: str = Field(..., description="Generated answer")
-    sources: List[SourceReference] = Field(default_factory=list, description="Source references")
-    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Answer confidence")
-    retrieved_chunks: int = Field(..., description="Number of chunks retrieved")
-    processing_time_ms: int = Field(..., description="Total processing time")
-    framework_filter: Optional[str] = Field(None, description="Framework filter applied")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "answer": "ISO 27001 requires multi-factor authentication for remote access...",
-                "sources": [
-                    {
-                        "framework": "ISO27001",
-                        "section": "A.9.4.2",
-                        "control_id": "A.9.4.2",
-                        "source_file": "iso27001_2022.pdf",
-                        "page_number": 45,
-                        "relevance_score": 0.92
-                    }
-                ],
-                "confidence_score": 0.89,
-                "retrieved_chunks": 5,
-                "processing_time_ms": 1250,
-                "framework_filter": "ISO27001"
             }
         }

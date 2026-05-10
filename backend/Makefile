@@ -40,16 +40,45 @@ run: install ## Run the backend server (production mode)
 	@echo "$(BLUE)🚀 Starting Amenly Backend Services...$(NC)"
 	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 	@echo ""
-	@echo "$(YELLOW)1/4 Checking Ollama...$(NC)"
+	@echo "$(YELLOW)1/5 Checking GPU Availability...$(NC)"
+	@if command -v nvidia-smi > /dev/null 2>&1; then \
+		GPU_INFO=$$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null | head -1); \
+		if [ -n "$$GPU_INFO" ]; then \
+			echo "$(GREEN)✓ GPU Detected: $$GPU_INFO$(NC)"; \
+			echo "$(GREEN)✓ Ollama will use GPU acceleration$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠ nvidia-smi found but no GPU detected$(NC)"; \
+			echo "$(YELLOW)  Ollama will use CPU$(NC)"; \
+		fi \
+	else \
+		echo "$(YELLOW)⚠ No NVIDIA GPU detected$(NC)"; \
+		echo "$(YELLOW)  Ollama will use CPU$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)2/5 Checking Ollama & Model...$(NC)"
 	@if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then \
 		echo "$(RED)✗ Ollama is not running!$(NC)"; \
 		echo "$(YELLOW)  Please start Ollama first: ollama serve$(NC)"; \
 		exit 1; \
 	else \
 		echo "$(GREEN)✓ Ollama is running$(NC)"; \
+		MODEL_NAME="qwen2.5:3b"; \
+		if ollama list | grep -q "$$MODEL_NAME"; then \
+			echo "$(GREEN)✓ Model $$MODEL_NAME is available$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠ Model $$MODEL_NAME not found$(NC)"; \
+			echo "$(BLUE)  Downloading $$MODEL_NAME (this may take a few minutes)...$(NC)"; \
+			ollama pull $$MODEL_NAME; \
+			if [ $$? -eq 0 ]; then \
+				echo "$(GREEN)✓ Model $$MODEL_NAME downloaded successfully$(NC)"; \
+			else \
+				echo "$(RED)✗ Failed to download model $$MODEL_NAME$(NC)"; \
+				exit 1; \
+			fi \
+		fi \
 	fi
 	@echo ""
-	@echo "$(YELLOW)2/4 Starting Qdrant...$(NC)"
+	@echo "$(YELLOW)3/5 Starting Qdrant...$(NC)"
 	@if docker ps | grep -q qdrant; then \
 		echo "$(GREEN)✓ Qdrant is already running$(NC)"; \
 	elif docker ps -a | grep -q qdrant; then \
@@ -66,7 +95,7 @@ run: install ## Run the backend server (production mode)
 		echo "$(GREEN)✓ Qdrant created and started$(NC)"; \
 	fi
 	@echo ""
-	@echo "$(YELLOW)3/4 Verifying services...$(NC)"
+	@echo "$(YELLOW)4/5 Verifying services...$(NC)"
 	@if curl -s http://localhost:6333/collections > /dev/null 2>&1; then \
 		echo "$(GREEN)✓ Qdrant is accessible$(NC)"; \
 	else \
@@ -74,7 +103,7 @@ run: install ## Run the backend server (production mode)
 		exit 1; \
 	fi
 	@echo ""
-	@echo "$(YELLOW)4/4 Starting Backend Server...$(NC)"
+	@echo "$(YELLOW)5/5 Starting Backend Server...$(NC)"
 	@-lsof -ti:8001 | xargs kill -9 2>/dev/null || true
 	@sleep 1
 	@echo ""
@@ -92,6 +121,18 @@ run: install ## Run the backend server (production mode)
 	@echo "   • Ollama:  http://localhost:11434"
 	@echo "   • Qdrant:  http://localhost:6333"
 	@echo ""
+	@if command -v nvidia-smi > /dev/null 2>&1; then \
+		GPU_USAGE=$$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | head -1); \
+		if [ -n "$$GPU_USAGE" ]; then \
+			GPU_UTIL=$$(echo $$GPU_USAGE | cut -d',' -f1); \
+			MEM_USED=$$(echo $$GPU_USAGE | cut -d',' -f2); \
+			MEM_TOTAL=$$(echo $$GPU_USAGE | cut -d',' -f3); \
+			echo "$(BLUE)🎮 GPU Status:$(NC)"; \
+			echo "   • Utilization: $$GPU_UTIL%"; \
+			echo "   • Memory: $${MEM_USED}MB / $${MEM_TOTAL}MB"; \
+			echo ""; \
+		fi \
+	fi
 	@echo "$(YELLOW)💡 Press Ctrl+C to stop the server$(NC)"
 	@echo "$(YELLOW)💡 To stop all services: make stop-all$(NC)"
 	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"

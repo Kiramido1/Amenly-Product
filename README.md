@@ -224,9 +224,9 @@ Before running, ensure you have:
   # Install Ollama
   curl -fsSL https://ollama.ai/install.sh | sh
   
-  # Pull required models
-  ollama pull qwen2.5:1.5b
-  ollama pull nomic-embed-text
+  # Pull required models (3B recommended for quality, 1.5B for speed)
+  ollama pull qwen2.5:3b      # Recommended: detailed, comprehensive answers
+  ollama pull nomic-embed-text  # Embeddings model
   ```
 
 #### Optional
@@ -339,12 +339,12 @@ Amenly consists of **3 main services** that work together:
 - **Framework CRUD** - Complete management with admin protection
 
 ### 🤖 AI & RAG System
-- **Local LLM Integration** - Ollama-powered AI (qwen2.5:1.5b model)
-- **RAG (Retrieval-Augmented Generation)** - Intelligent document search and Q&A
+- **Local LLM Integration** - Ollama-powered AI (qwen2.5:3b model) with GPU acceleration
+- **RAG (Retrieval-Augmented Generation)** - Intelligent document search and Q&A with structured, sectioned responses
 - **Vector Database** - Qdrant for semantic search
-- **Embeddings** - OpenAI-compatible embeddings for document indexing
+- **Embeddings** - nomic-embed-text for document indexing
 - **Smart Search** - Semantic search with confidence scoring
-- **AI Query** - Natural language questions with context-aware answers
+- **AI Query** - Natural language questions with context-aware, detailed answers (5-8 sections)
 
 ### 📈 Analytics & Reporting
 - **Real-time Dashboards** - Compliance status, risk scores, framework coverage
@@ -404,8 +404,8 @@ Amenly consists of **3 main services** that work together:
 ┌───────▼────────┐  ┌────▼──────┐  ┌──────▼────────┐  ┌──────▼──────┐
 │    Ollama      │  │  Qdrant   │  │   WebSocket   │  │  Frameworks │
 │  (AI/LLM)      │  │ (Vector   │  │    Server     │  │     API     │
-│ qwen2.5:1.5b   │  │  Store)   │  │  (Planned)    │  │  (9 Endpoints)│
-│ Port: 11434    │  │Port: 6333 │  │               │  │             │
+│ qwen2.5:3b     │  │  Store)   │  │  (Planned)    │  │     API     │
+│ Port: 11434    │  │Port: 6333 │  │               │  │  (9 Endpoints)│
 └────────────────┘  └───────────┘  └───────────────┘  └─────────────┘
 ```
 
@@ -710,6 +710,32 @@ make migrate
 make dev
 ```
 
+### ☁️ Supabase Integration
+
+Amenly uses **Supabase** as the managed PostgreSQL database with **pgbouncer** for connection pooling:
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| Host | `*.pooler.supabase.com` | Supabase connection pooler |
+| Port | `6543` | Transaction pooler (pgbouncer) |
+| Driver | `postgresql+psycopg` | Sync psycopg driver for pgbouncer compatibility |
+
+**Why Supabase?**
+- Managed PostgreSQL with automatic backups
+- Built-in connection pooling via pgbouncer
+- Row-Level Security (RLS) support
+- Generous free tier for development
+
+**Environment Variables:**
+```env
+POSTGRES_SERVER=your-project.pooler.supabase.com
+POSTGRES_USER=postgres.xxxxx
+POSTGRES_PASSWORD=your-password
+POSTGRES_DB=postgres
+POSTGRES_PORT=6543
+DATABASE_URL=postgresql+psycopg://user:pass@host:6543/postgres
+```
+
 ### 🔧 Configuration
 
 Create `backend/.env` from the template:
@@ -732,9 +758,13 @@ DATABASE_URL=postgresql+psycopg://user:pass@host:6543/postgres
 # Redis (Token Management & Caching)
 REDIS_URL=redis://redis:6379/0
 
-# AI Services
-OLLAMA_URL=http://ollama:11434
-QDRANT_URL=http://qdrant:6333
+# AI / LLM
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:3b
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+
+# Vector Store
+QDRANT_URL=http://localhost:6333
 
 # Security
 ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -743,6 +773,58 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 # CORS
 BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:8001"]
 ```
+
+### 🤖 RAG Response Format
+
+The RAG query endpoint (`POST /api/v1/rag/query`) returns a **richly structured response** with the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `summary` | string | 2-3 sentence concise summary of the answer |
+| `sections` | `AnswerSection[]` | Structured answer broken into titled sections |
+| `full_text` | string | Complete raw Markdown answer |
+| `sources` | `SourceReference[]` | Cited document sources with page numbers |
+| `confidence_score` | float | Answer quality score (0.0 - 1.0) |
+| `metadata` | `AnswerMetadata` | Word count, char count, estimated reading time |
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "message": "Query processed successfully",
+  "data": {
+    "summary": "ISO 27001 requires MFA for all critical systems...",
+    "sections": [
+      {"title": "Overview", "content": "...", "order": 1},
+      {"title": "Detailed Requirements", "content": "...", "order": 2},
+      {"title": "Implementation Guidance", "content": "...", "order": 3},
+      {"title": "Practical Examples", "content": "...", "order": 4},
+      {"title": "Key Takeaways & References", "content": "...", "order": 5}
+    ],
+    "full_text": "### Overview\n\nISO 27001 is...",
+    "sources": [
+      {
+        "framework": "ISO27001",
+        "section": "A.9.4.2",
+        "control_id": "A.9.4.2",
+        "source_file": "iso27001_2022.pdf",
+        "page_number": 45,
+        "relevance_score": 0.92
+      }
+    ],
+    "confidence_score": 0.91,
+    "metadata": {
+      "word_count": 722,
+      "char_count": 4927,
+      "estimated_reading_time_seconds": 216,
+      "sections_count": 5,
+      "sources_count": 5
+    }
+  }
+}
+```
+
+---
 
 ## 🛠️ Development
 

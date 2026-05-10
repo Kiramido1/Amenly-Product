@@ -262,10 +262,9 @@ class OllamaService:
                 "temperature": temperature,
                 "top_p": top_p,
                 "top_k": top_k,
-                "num_ctx": 1024,  # Further reduced context window for CPU
-                "num_gpu": 0,  # Use CPU only
-                "num_thread": 8,  # CPU threads
-                "num_predict": 256,  # Limit response length for faster generation
+                "num_ctx": 8192,  # Expanded context window for large context + long output
+                "num_predict": 2048,  # Maximum for longest possible answers
+                "repeat_penalty": 1.0,  # No repeat penalty to encourage longer output
             }
         }
         
