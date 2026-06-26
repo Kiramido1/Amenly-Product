@@ -1,7 +1,6 @@
-import os
 from urllib.parse import quote_plus
-from typing import List, Optional, Union
-from pydantic import AnyHttpUrl, field_validator
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,27 +14,46 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: list[str] | str = []
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug_flag(cls, value) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug", "development", "dev"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "release", "production", "prod"}:
+                return False
+        return bool(value)
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            if not v:
+                return []
+            # Handle comma-separated string
+            if "," in v:
+                return [i.strip() for i in v.split(",")]
+            # Handle single URL
+            return [v.strip()]
+        elif isinstance(v, list):
             return v
-        raise ValueError(v)
+        return []
 
     # Postgres
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "amenly"
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Optional[str], info) -> str:
+    def assemble_db_connection(cls, v: str | None, info) -> str:
         if isinstance(v, str) and v.strip():
             if "pgbouncer=true" in v:
                 return v.replace("?pgbouncer=true", "")
@@ -67,8 +85,9 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = "http://localhost:11434"
 
     # AI Models
-    AI_MODEL: str = "llama3"
-    OLLAMA_MODEL: str = "llama3"  # LLM model for Ollama generation
+    AI_MODEL: str = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL: str = "gpt-oss:120b-cloud"  # LLM model for Ollama generation (compliance RAG)
+    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
     EMBEDDING_MODEL: str = "nomic-embed-text"
 
     model_config = SettingsConfigDict(
