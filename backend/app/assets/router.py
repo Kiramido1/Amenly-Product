@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.assets.service import AssetExtractionService
+from app.assets.vulnerability_service import VulnerabilityService
 from app.auth.dependencies import get_current_active_user
 from app.auth.permissions import require_permission
 from app.auth.schemas import GenericResponse
@@ -183,4 +184,74 @@ async def get_asset_statistics(
         "success": True,
         "message": "Asset statistics retrieved",
         "data": stats,
+    }
+
+
+# --- Vulnerability scanning + infrastructure map ---
+
+
+def _require_org(current_user: User) -> UUID:
+    if current_user.organization_id is None:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    return current_user.organization_id
+
+
+@router.post(
+    "/scan-vulnerabilities",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.VIEW_VULNERABILITIES))],
+)
+async def scan_vulnerabilities(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Scan all infrastructure assets against NVD and refresh risk/status (Admin)."""
+    org_id = _require_org(current_user)
+    service = VulnerabilityService(db)
+    summary = await service.scan_organization(org_id)
+    return {
+        "success": True,
+        "message": f"Scanned {summary['assets_scanned']} assets, found {summary['new_vulnerabilities']} new CVEs",
+        "data": summary,
+    }
+
+
+@router.get(
+    "/vulnerabilities",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.VIEW_VULNERABILITIES))],
+)
+async def list_vulnerabilities(
+    only_open: bool = False,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """List detected vulnerabilities for the organization."""
+    org_id = _require_org(current_user)
+    service = VulnerabilityService(db)
+    vulns = await service.list_vulnerabilities(org_id, only_open=only_open)
+    return {
+        "success": True,
+        "message": "Vulnerabilities retrieved",
+        "data": {"vulnerabilities": vulns, "count": len(vulns)},
+    }
+
+
+@router.get(
+    "/map",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.VIEW_INFRASTRUCTURE_MAP))],
+)
+async def infrastructure_map(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Infrastructure topology map (nodes + edges) for the dashboard (Admin)."""
+    org_id = _require_org(current_user)
+    service = VulnerabilityService(db)
+    graph = await service.get_infrastructure_map(org_id)
+    return {
+        "success": True,
+        "message": "Infrastructure map retrieved",
+        "data": graph,
     }
