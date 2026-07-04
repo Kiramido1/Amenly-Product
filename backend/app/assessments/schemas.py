@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import AssessmentStatus, ControlStatus
+from app.models.enums import AssessmentPhase, AssessmentStatus, ControlStatus
 
 
 # Base Schemas
@@ -31,6 +31,12 @@ class AssessmentResponse(BaseModel):
     name: str
     status: AssessmentStatus
     overall_score: float | None
+    current_phase: AssessmentPhase | None = None
+    baseline_score: float | None = None
+    remediation_score: float | None = None
+    regulation_score: float | None = None
+    launched_at: datetime | None = None
+    closed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -101,6 +107,7 @@ class AssessmentAnswerResponse(BaseModel):
     ai_feedback: str | None
     remediation: str | None = None
     regulation_note: str | None = None
+    phase: AssessmentPhase | None = None
     status: ControlStatus
     created_at: datetime
     updated_at: datetime
