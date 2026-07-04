@@ -26,7 +26,7 @@ async def test_full_admin_onboarding_flow(client: AsyncClient):
         "name": "Security",
         "organization_id": reg_resp.json()["data"]["user"]["organization_id"]
     }
-    dept_resp = await admin_client.post("/api/v1/organizations/departments", json=dept_payload)
+    dept_resp = await admin_client.post("/api/v1/orgs/departments", json=dept_payload)
     assert dept_resp.status_code == 201
     dept_id = dept_resp.json()["data"]["department"]["id"]
     
@@ -35,11 +35,11 @@ async def test_full_admin_onboarding_flow(client: AsyncClient):
         "name": "CISO",
         "department_id": dept_id
     }
-    pos_resp = await admin_client.post("/api/v1/organizations/positions", json=pos_payload)
+    pos_resp = await admin_client.post("/api/v1/orgs/positions", json=pos_payload)
     assert pos_resp.status_code == 201
     
     # 4. Verify Org Structure
-    me_resp = await admin_client.get("/api/v1/organizations/me")
+    me_resp = await admin_client.get("/api/v1/orgs/me")
     assert me_resp.status_code == 200
     org_details = me_resp.json()["data"]["organization"]
     assert len(org_details["departments"]) >= 1

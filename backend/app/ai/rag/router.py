@@ -3,18 +3,19 @@ RAG API Endpoints
 Professional REST APIs for RAG system
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Any
-import structlog
 
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.ai.llm import get_ollama_service
+from app.ai.rag.rag_service import get_rag_service
 from app.ai.rag.schemas import (
     RAGQueryRequest,
     RAGQueryResponse,
     RAGSearchRequest,
     RAGSearchResponse,
 )
-from app.ai.rag.rag_service import get_rag_service
-from app.ai.llm import get_ollama_service
 from app.auth.dependencies import get_current_active_user
 from app.models.identity import User
 
@@ -62,9 +63,11 @@ async def query_rag(
         )
 
     except Exception as e:
+        # Log full detail server-side; never leak internal infra errors to clients.
         logger.error("rag_query_error", error=str(e), user_id=str(current_user.id))
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"RAG query failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to process the query at this time. Please try again later.",
         )
 
 
@@ -82,8 +85,9 @@ async def search_documents(
     - Debugging retrieval quality
     """
     try:
-        from app.ai.rag.retrieval_service import get_retrieval_service
         from datetime import datetime
+
+        from app.ai.rag.retrieval_service import get_retrieval_service
 
         start_time = datetime.now()
 
@@ -113,7 +117,8 @@ async def search_documents(
     except Exception as e:
         logger.error("search_error", error=str(e))
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Search failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to complete the search at this time. Please try again later.",
         )
 
 
@@ -144,24 +149,16 @@ async def health_check() -> Any:
             qdrant_status = f"error: {str(e)}"
             qdrant_collections = []
 
+        # SECURITY: this endpoint is unauthenticated. Return only coarse status —
+        # never leak model names, infrastructure URLs, or collection names, which
+        # are valuable reconnaissance for an attacker.
+        healthy = health.ollama_available and qdrant_status == "connected"
         return {
-            "status": (
-                "healthy"
-                if health.ollama_available and qdrant_status == "connected"
-                else "degraded"
-            ),
-            "ollama": {
-                "available": health.ollama_available,
-                "llm_model": health.llm_model,
-                "embedding_model": health.embedding_model,
-                "models": health.models_available,
-            },
-            "qdrant": {
-                "url": retrieval.qdrant_url,
-                "status": qdrant_status,
-                "collections": qdrant_collections,
-            },
+            "status": "healthy" if healthy else "degraded",
+            "ollama": health.ollama_available,
+            "qdrant": qdrant_status == "connected",
         }
 
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}
+    except Exception:
+        logger.exception("rag_health_check_failed")
+        return {"status": "unhealthy"}

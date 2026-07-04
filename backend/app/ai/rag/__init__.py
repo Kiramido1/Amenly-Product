@@ -3,20 +3,20 @@ RAG (Retrieval-Augmented Generation) Module
 Enterprise-grade RAG system for compliance frameworks
 """
 
+from app.ai.rag.context_builder import ContextBuilder
+from app.ai.rag.rag_service import RAGService, get_rag_service
+from app.ai.rag.retrieval_service import RetrievalService, get_retrieval_service
+from app.ai.rag.router import router
 from app.ai.rag.schemas import (
+    FrameworkType,
+    RAGAnswer,
     RAGQueryRequest,
     RAGQueryResponse,
     RAGSearchRequest,
     RAGSearchResponse,
-    RAGAnswer,
-    SourceReference,
     RetrievedChunk,
-    FrameworkType
+    SourceReference,
 )
-from app.ai.rag.rag_service import RAGService, get_rag_service
-from app.ai.rag.retrieval_service import RetrievalService, get_retrieval_service
-from app.ai.rag.context_builder import ContextBuilder
-from app.ai.rag.router import router
 
 __all__ = [
     # Schemas

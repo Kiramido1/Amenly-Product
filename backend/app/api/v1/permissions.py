@@ -2,32 +2,25 @@
 Permissions API Router
 Manage user permissions and role-based access control
 """
-from typing import Any, List
+from typing import Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
-from app.database.session import get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.auth.dependencies import get_current_active_user
-from app.auth.permissions import (
-    get_user_permissions,
-    require_permission,
-    check_user_permission
-)
-from app.models.permissions import UserRolePermission, get_role_permissions, ROLE_PERMISSIONS
-from app.models.identity import User
+from app.auth.permissions import check_user_permission, get_user_permissions, require_permission
+from app.auth.schemas import GenericResponse
+from app.database.session import get_db
 from app.models.enums import Permission
+from app.models.identity import User
+from app.models.permissions import ROLE_PERMISSIONS, UserRolePermission, get_role_permissions
 from app.schemas.permissions import (
-    UserPermissionsResponse,
     GrantPermissionRequest,
     RevokePermissionRequest,
-    UserRolePermissionResponse,
-    PermissionInfo,
     get_permission_info,
-    PERMISSION_CATALOG
 )
-from app.auth.schemas import GenericResponse
 
 router = APIRouter()
 
@@ -53,20 +46,10 @@ async def get_my_permissions(
     # Get role permissions
     role_perms = get_role_permissions(current_user.role)
     role_perm_values = [perm.value for perm in role_perms]
-    
+
     # Get custom permissions
-    result = await db.execute(
-        select(UserRolePermission).where(
-            UserRolePermission.user_id == current_user.id,
-            UserRolePermission.is_active == True
-        )
-    )
-    custom_perm = result.scalar_one_or_none()
-    custom_perm_values = custom_perm.permissions if custom_perm else []
-    
-    # Combine all permissions
-    all_perms = list(set(role_perm_values + custom_perm_values))
-    
+    all_perms_list = await get_user_permissions(current_user, db)
+
     return {
         "success": True,
         "message": "Permissions retrieved successfully",
@@ -74,8 +57,8 @@ async def get_my_permissions(
             "user_id": current_user.id,
             "role": current_user.role,
             "role_permissions": role_perm_values,
-            "custom_permissions": custom_perm_values,
-            "all_permissions": all_perms
+            "custom_permissions": [p for p in all_perms_list if p not in role_perm_values],
+            "all_permissions": all_perms_list
         }
     }
 
@@ -98,7 +81,7 @@ async def get_permissions_catalog(
     permissions = []
     for perm in Permission:
         permissions.append(get_permission_info(perm))
-    
+
     # Group by category
     by_category = {}
     for perm_info in permissions:
@@ -106,7 +89,7 @@ async def get_permissions_catalog(
         if category not in by_category:
             by_category[category] = []
         by_category[category].append(perm_info.model_dump())
-    
+
     return {
         "success": True,
         "message": "Permissions catalog retrieved successfully",
@@ -141,7 +124,7 @@ async def get_role_permissions_list(
             "permissions": [perm.value for perm in perms],
             "count": len(perms)
         }
-    
+
     return {
         "success": True,
         "message": "Role permissions retrieved successfully",
@@ -182,30 +165,20 @@ async def get_user_permissions_by_id(
         )
     )
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found in your organization"
         )
-    
+
     # Get role permissions
     role_perms = get_role_permissions(user.role)
     role_perm_values = [perm.value for perm in role_perms]
-    
+
     # Get custom permissions
-    result = await db.execute(
-        select(UserRolePermission).where(
-            UserRolePermission.user_id == user_id,
-            UserRolePermission.is_active == True
-        )
-    )
-    custom_perm = result.scalar_one_or_none()
-    custom_perm_values = custom_perm.permissions if custom_perm else []
-    
-    # Combine all permissions
-    all_perms = list(set(role_perm_values + custom_perm_values))
-    
+    all_perms_list = await get_user_permissions(user, db)
+
     return {
         "success": True,
         "message": "User permissions retrieved successfully",
@@ -215,8 +188,8 @@ async def get_user_permissions_by_id(
             "user_name": user.full_name,
             "role": user.role,
             "role_permissions": role_perm_values,
-            "custom_permissions": custom_perm_values,
-            "all_permissions": all_perms
+            "custom_permissions": [p for p in all_perms_list if p not in role_perm_values],
+            "all_permissions": all_perms_list
         }
     }
 
@@ -261,13 +234,13 @@ async def grant_permissions(
         )
     )
     target_user = result.scalar_one_or_none()
-    
+
     if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found in your organization"
         )
-    
+
     # Get or create user permissions record
     result = await db.execute(
         select(UserRolePermission).where(
@@ -275,13 +248,13 @@ async def grant_permissions(
         )
     )
     user_perm = result.scalar_one_or_none()
-    
+
     if user_perm:
         # Update existing permissions
         existing_perms = set(user_perm.permissions or [])
         new_perms = set(perm.value for perm in request.permissions)
         combined_perms = list(existing_perms | new_perms)
-        
+
         user_perm.permissions = combined_perms
         user_perm.granted_by_id = current_user.id
         user_perm.is_active = True
@@ -300,10 +273,10 @@ async def grant_permissions(
             is_active=True
         )
         db.add(user_perm)
-    
+
     await db.commit()
     await db.refresh(user_perm)
-    
+
     return {
         "success": True,
         "message": f"Granted {len(request.permissions)} permissions to user",
@@ -350,13 +323,13 @@ async def revoke_permissions(
         )
     )
     target_user = result.scalar_one_or_none()
-    
+
     if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found in your organization"
         )
-    
+
     # Get user permissions record
     result = await db.execute(
         select(UserRolePermission).where(
@@ -364,27 +337,27 @@ async def revoke_permissions(
         )
     )
     user_perm = result.scalar_one_or_none()
-    
+
     if not user_perm or not user_perm.permissions:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User has no custom permissions to revoke"
         )
-    
+
     # Remove specified permissions
     existing_perms = set(user_perm.permissions)
     perms_to_revoke = set(perm.value for perm in request.permissions)
     remaining_perms = list(existing_perms - perms_to_revoke)
-    
+
     if not remaining_perms:
         # No permissions left, delete the record
         await db.delete(user_perm)
     else:
         # Update with remaining permissions
         user_perm.permissions = remaining_perms
-    
+
     await db.commit()
-    
+
     return {
         "success": True,
         "message": f"Revoked {len(request.permissions)} permissions from user",
@@ -425,13 +398,13 @@ async def revoke_all_permissions(
         )
     )
     target_user = result.scalar_one_or_none()
-    
+
     if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found in your organization"
         )
-    
+
     # Delete all custom permissions
     await db.execute(
         delete(UserRolePermission).where(
@@ -439,7 +412,7 @@ async def revoke_all_permissions(
         )
     )
     await db.commit()
-    
+
     return {
         "success": True,
         "message": "All custom permissions revoked from user",
@@ -478,14 +451,14 @@ async def check_my_permission(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid permission: {permission}"
         )
-    
+
     # Check permission
     has_perm = await check_user_permission(current_user, perm_enum, db)
-    
+
     # Determine source
     role_perms = get_role_permissions(current_user.role)
     source = "role" if perm_enum in role_perms else "custom"
-    
+
     return {
         "success": True,
         "message": "Permission check completed",

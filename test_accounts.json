@@ -1,0 +1,157 @@
+{
+  "note": "Seed/test accounts for the amenly-grc database. For local testing only.",
+  "default_password": "Test@1234",
+  "organizations": [
+    {
+      "name": "Acme Corp",
+      "invite_code": "MRRACGR9",
+      "accounts": [
+        {
+          "email": "admin@acme.com",
+          "password": "Test@1234",
+          "full_name": "Alice Admin",
+          "role": "org_admin"
+        },
+        {
+          "email": "dev@acme.com",
+          "password": "Test@1234",
+          "full_name": "Bob Developer",
+          "role": "org_member",
+          "department": "Engineering",
+          "position": "Backend Developer"
+        },
+        {
+          "email": "ops@acme.com",
+          "password": "Test@1234",
+          "full_name": "Cara Ops",
+          "role": "org_member",
+          "department": "Engineering",
+          "position": "DevOps Engineer"
+        },
+        {
+          "email": "sec@acme.com",
+          "password": "Test@1234",
+          "full_name": "Dan Security",
+          "role": "org_member",
+          "department": "Security",
+          "position": "Security Analyst"
+        }
+      ],
+      "pending_join_requests": [
+        {
+          "email": "candidate1@acme.com",
+          "password": "Test@1234",
+          "full_name": "Frank Candidate",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "name": "Globex Inc",
+      "invite_code": "U5AK3K3G",
+      "accounts": [
+        {
+          "email": "admin@globex.com",
+          "password": "Test@1234",
+          "full_name": "Grace Admin",
+          "role": "org_admin"
+        },
+        {
+          "email": "comp@globex.com",
+          "password": "Test@1234",
+          "full_name": "Helen Compliance",
+          "role": "org_member",
+          "department": "Compliance",
+          "position": "Compliance Officer"
+        },
+        {
+          "email": "it@globex.com",
+          "password": "Test@1234",
+          "full_name": "Ian IT",
+          "role": "org_member",
+          "department": "IT",
+          "position": "System Admin"
+        }
+      ],
+      "pending_join_requests": [
+        {
+          "email": "candidate1@globex.com",
+          "password": "Test@1234",
+          "full_name": "Jack Candidate",
+          "status": "pending"
+        },
+        {
+          "email": "candidate2@globex.com",
+          "password": "Test@1234",
+          "full_name": "Kira Candidate",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "name": "Initech",
+      "invite_code": "QLYS3K2L",
+      "accounts": [
+        {
+          "email": "admin@initech.com",
+          "password": "Test@1234",
+          "full_name": "Karen Admin",
+          "role": "org_admin"
+        },
+        {
+          "email": "opsmgr@initech.com",
+          "password": "Test@1234",
+          "full_name": "Leo Operations",
+          "role": "org_member",
+          "department": "Operations",
+          "position": "Operations Manager"
+        },
+        {
+          "email": "risk@initech.com",
+          "password": "Test@1234",
+          "full_name": "Mona Risk",
+          "role": "org_member",
+          "department": "Risk",
+          "position": "Risk Analyst"
+        }
+      ],
+      "pending_join_requests": []
+    },
+    {
+      "name": "Umbrella Health",
+      "invite_code": "56EARD32",
+      "accounts": [
+        {
+          "email": "admin@umbrella.com",
+          "password": "Test@1234",
+          "full_name": "Liam Admin",
+          "role": "org_admin"
+        },
+        {
+          "email": "privacy@umbrella.com",
+          "password": "Test@1234",
+          "full_name": "Nora Privacy",
+          "role": "org_member",
+          "department": "Privacy",
+          "position": "Privacy Officer"
+        },
+        {
+          "email": "soc@umbrella.com",
+          "password": "Test@1234",
+          "full_name": "Omar SOC",
+          "role": "org_member",
+          "department": "Security",
+          "position": "SOC Analyst"
+        }
+      ],
+      "pending_join_requests": [
+        {
+          "email": "candidate1@umbrella.com",
+          "password": "Test@1234",
+          "full_name": "Pia Candidate",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
@@ -11,6 +12,10 @@ engine = create_async_engine(
     poolclass=NullPool,  # Disable connection pooling for pgbouncer
     future=True,
     echo=False,
+    # Supabase's transaction pooler (port 6543) does not support server-side
+    # prepared statements; psycopg auto-prepares repeated queries, which fails with
+    # "prepared statement already exists". Disabling prepares keeps the pooler happy.
+    connect_args={"prepare_threshold": None},
 )
 
 AsyncSessionLocal = async_sessionmaker(

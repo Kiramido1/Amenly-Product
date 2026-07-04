@@ -1,13 +1,14 @@
 import time
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
 
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.api.v1.router import api_router
-from app.database import base  # Ensure all models are loaded
+from app.websocket.router import router as websocket_router
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -16,25 +17,33 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Amenly AI GRC Platform - Production API",
     version="1.0.1",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    # Expose the OpenAPI schema / interactive docs only when DEBUG or ENABLE_DOCS is on.
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if (settings.DEBUG or settings.ENABLE_DOCS) else None,
+    docs_url="/docs" if (settings.DEBUG or settings.ENABLE_DOCS) else None,
+    redoc_url="/redoc" if (settings.DEBUG or settings.ENABLE_DOCS) else None,
 )
 
 
 # Centralized Error Handling
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    # Convert errors to JSON-serializable format (fix for Python 3.13)
+    # Build a SANITIZED error list. We deliberately drop Pydantic's `input` key,
+    # which echoes the raw submitted value (e.g. a plaintext password) — it must
+    # never be logged or returned to the client.
     errors = []
     for error in exc.errors():
-        error_dict = {}
-        for key, value in error.items():
-            # Convert bytes to string if needed
-            if isinstance(value, bytes):
-                error_dict[key] = value.decode('utf-8')
-            else:
-                error_dict[key] = value
-        errors.append(error_dict)
-    
+        loc = [
+            part.decode("utf-8") if isinstance(part, bytes) else part
+            for part in error.get("loc", [])
+        ]
+        errors.append(
+            {
+                "loc": loc,
+                "type": error.get("type"),
+                "msg": error.get("msg"),
+            }
+        )
+
     logger.warning(
         "validation_error",
         path=request.url.path,
@@ -82,11 +91,32 @@ if settings.BACKEND_CORS_ORIGINS:
 
 
 @app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
+async def add_security_and_timing_headers(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
+
+    # Security headers (clickjacking, MIME sniffing, referrer leakage).
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    # Swagger UI / ReDoc load assets from a CDN, so they need a relaxed CSP; every
+    # other route keeps the strict default-deny policy.
+    if request.url.path in ("/docs", "/redoc"):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "worker-src 'self' blob:"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    if not settings.DEBUG:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    # Processing-time header is a minor timing oracle; expose it only in debug.
+    if settings.DEBUG:
+        response.headers["X-Process-Time"] = str(time.time() - start_time)
     return response
 
 
@@ -120,6 +150,7 @@ async def health_check():
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(websocket_router, prefix="/ws")
 
 if __name__ == "__main__":
     import uvicorn

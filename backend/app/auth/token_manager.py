@@ -3,26 +3,27 @@ Token Management with Revocation Support
 Tracks active tokens and revokes old ones when new tokens are issued
 """
 
-from typing import Optional
-from datetime import datetime, timedelta, timezone
-from uuid import UUID
 import hashlib
+from datetime import UTC, datetime
+from uuid import UUID
+
 import redis.asyncio as redis
-from jose import jwt, JWTError
+from jose import JWTError, jwt
+
 from app.core.config import settings
 
 
 class TokenManager:
     """Manages JWT tokens with revocation support using Redis"""
-    
+
     def __init__(self):
-        self.redis_client: Optional[redis.Redis] = None
-    
+        self.redis_client: redis.Redis | None = None
+
     def _token_hash(self, token: str) -> str:
         """Create a hash of the token for use as Redis key"""
         return hashlib.sha256(token.encode()).hexdigest()[:32]
-    
-    async def _get_redis(self) -> Optional[redis.Redis]:
+
+    async def _get_redis(self) -> redis.Redis | None:
         """Get or create Redis connection"""
         if self.redis_client is None:
             try:
@@ -37,11 +38,11 @@ class TokenManager:
                 print(f"⚠️  Redis connection error: {e}")
                 self.redis_client = None
         return self.redis_client
-    
+
     async def store_active_token(
-        self, 
-        user_id: UUID, 
-        access_token: str, 
+        self,
+        user_id: UUID,
+        access_token: str,
         token_type: str = "access"
     ) -> None:
         """
@@ -55,7 +56,7 @@ class TokenManager:
         redis_client = await self._get_redis()
         if not redis_client:
             return
-        
+
         try:
             # Decode token to get expiration
             payload = jwt.decode(
@@ -64,12 +65,12 @@ class TokenManager:
                 algorithms=[settings.ALGORITHM]
             )
             exp = payload.get("exp")
-            
+
             if exp:
                 # Calculate TTL (time to live)
-                exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
-                ttl = int((exp_datetime - datetime.now(timezone.utc)).total_seconds())
-                
+                exp_datetime = datetime.fromtimestamp(exp, tz=UTC)
+                ttl = int((exp_datetime - datetime.now(UTC)).total_seconds())
+
                 if ttl > 0:
                     # Store token with user_id as key
                     key = f"active_token:{token_type}:{user_id}"
@@ -80,7 +81,7 @@ class TokenManager:
                     )
         except Exception as e:
             print(f"⚠️  Error storing token: {e}")
-    
+
     async def revoke_user_tokens(self, user_id: UUID) -> None:
         """
         Revoke all active tokens for a user
@@ -91,15 +92,15 @@ class TokenManager:
         redis_client = await self._get_redis()
         if not redis_client:
             return
-        
+
         try:
             # Get current tokens before deleting
             access_key = f"active_token:access:{user_id}"
             refresh_key = f"active_token:refresh:{user_id}"
-            
+
             access_token = await redis_client.get(access_key)
             refresh_token = await redis_client.get(refresh_key)
-            
+
             # Add tokens to blacklist using hash
             if access_token:
                 blacklist_key = f"blacklist:{self._token_hash(access_token)}"
@@ -108,7 +109,7 @@ class TokenManager:
                     settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                     "revoked"
                 )
-            
+
             if refresh_token:
                 blacklist_key = f"blacklist:{self._token_hash(refresh_token)}"
                 await redis_client.setex(
@@ -116,13 +117,13 @@ class TokenManager:
                     settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
                     "revoked"
                 )
-            
+
             # Delete active tokens
             await redis_client.delete(access_key, refresh_key)
-            
+
         except Exception as e:
             print(f"⚠️  Error revoking tokens: {e}")
-    
+
     async def is_token_revoked(self, token: str, user_id: UUID) -> bool:
         """
         Check if a token has been revoked
@@ -138,16 +139,16 @@ class TokenManager:
         if not redis_client:
             # If Redis is not available, assume token is valid (no revocation)
             return False
-        
+
         try:
             # Check blacklist using hash - THIS IS THE PRIMARY CHECK
             token_hash = self._token_hash(token)
             blacklist_key = f"blacklist:{token_hash}"
             is_blacklisted = await redis_client.get(blacklist_key)
-            
+
             # Return True if token is in blacklist
             return bool(is_blacklisted)
-            
+
         except JWTError:
             # Invalid token
             return True
@@ -155,7 +156,7 @@ class TokenManager:
             # On error, assume token is valid to avoid blocking users
             print(f"⚠️  Error checking token revocation: {e}")
             return False
-    
+
     async def revoke_old_access_token(self, user_id: UUID, new_access_token: str = "") -> None:
         """
         Revoke old access token when issuing a new one
@@ -167,12 +168,12 @@ class TokenManager:
         redis_client = await self._get_redis()
         if not redis_client:
             return
-        
+
         try:
             # Get old token
             key = f"active_token:access:{user_id}"
             old_token = await redis_client.get(key)
-            
+
             if old_token:
                 # Add old token to blacklist using hash
                 token_hash = self._token_hash(old_token)
@@ -182,17 +183,41 @@ class TokenManager:
                     settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # TTL in seconds
                     "revoked"
                 )
-            
+
             # Store new token if provided
             if new_access_token:
                 await self.store_active_token(user_id, new_access_token, "access")
             else:
                 # Just delete the active token key
                 await redis_client.delete(key)
-            
+
         except Exception as e:
             print(f"⚠️  Error revoking old token: {e}")
-    
+
+    async def get_active_token(self, user_id: UUID, token_type: str = "refresh") -> str | None:
+        """Return the currently-stored active token of the given type for a user, if any."""
+        redis_client = await self._get_redis()
+        if not redis_client:
+            return None
+        try:
+            return await redis_client.get(f"active_token:{token_type}:{user_id}")
+        except Exception as e:
+            print(f"⚠️  Error reading active token: {e}")
+            return None
+
+    async def blacklist_token(self, token: str, ttl_seconds: int) -> None:
+        """Explicitly blacklist a specific token for `ttl_seconds` (used for refresh rotation)."""
+        redis_client = await self._get_redis()
+        if not redis_client:
+            return
+        try:
+            if ttl_seconds > 0:
+                await redis_client.setex(
+                    f"blacklist:{self._token_hash(token)}", ttl_seconds, "revoked"
+                )
+        except Exception as e:
+            print(f"⚠️  Error blacklisting token: {e}")
+
     async def is_token_explicitly_revoked(self, token: str) -> bool:
         """
         Check if token is in the explicit blacklist
@@ -206,7 +231,7 @@ class TokenManager:
         redis_client = await self._get_redis()
         if not redis_client:
             return False
-        
+
         try:
             blacklist_key = f"blacklist:{self._token_hash(token)}"
             result = await redis_client.get(blacklist_key)
@@ -214,7 +239,7 @@ class TokenManager:
         except Exception as e:
             print(f"Error checking explicit revocation: {e}")
             return False
-    
+
     async def close(self):
         """Close Redis connection"""
         if self.redis_client:

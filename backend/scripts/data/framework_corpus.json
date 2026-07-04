@@ -1,0 +1,92 @@
+[
+  {
+    "framework": "NIST",
+    "source_file": "NIST Cybersecurity Framework (CSF) 2.0",
+    "source_url": "https://www.nist.gov/cyberframework",
+    "sections": [
+      {"control_id": "GV", "section": "CSF Govern Function", "text": "The Govern function establishes and monitors the organization's cybersecurity risk management strategy, expectations, and policy. Categories: Organizational Context; Risk Management Strategy; Roles, Responsibilities, and Authorities; Policy; Oversight; and Cybersecurity Supply Chain Risk Management."},
+      {"control_id": "ID", "section": "CSF Identify Function", "text": "The Identify function develops organizational understanding to manage cybersecurity risk to systems, assets, data, and capabilities. Categories: Asset Management; Business Environment; Governance; Risk Assessment; Risk Management Strategy; and Supply Chain Risk Management."},
+      {"control_id": "PR", "section": "CSF Protect Function", "text": "The Protect function implements safeguards to ensure delivery of critical services. Categories: Identity Management and Access Control; Awareness and Training; Data Security; Information Protection Processes and Procedures; Maintenance; and Protective Technology."},
+      {"control_id": "DE", "section": "CSF Detect Function", "text": "The Detect function identifies the occurrence of a cybersecurity event in a timely manner. Categories: Anomalies and Events; Security Continuous Monitoring; and Detection Processes."},
+      {"control_id": "RS", "section": "CSF Respond Function", "text": "The Respond function takes action regarding a detected cybersecurity incident. Categories: Response Planning; Communications; Analysis; Mitigation; and Improvements."},
+      {"control_id": "RC", "section": "CSF Recover Function", "text": "The Recover function maintains resilience and restores capabilities or services impaired by an incident. Categories: Recovery Planning; Improvements; and Communications."}
+    ]
+  },
+  {
+    "framework": "ISO27001",
+    "source_file": "ISO/IEC 27001:2022 - Information Security Management",
+    "source_url": "https://en.wikipedia.org/wiki/ISO/IEC_27001",
+    "sections": [
+      {"control_id": "ISMS", "section": "ISMS Core Requirements (Clauses 4-10)", "text": "ISO/IEC 27001 requires an Information Security Management System (ISMS). Organizations must define context and scope (clause 4), demonstrate leadership and an information security policy (5), plan risk assessment and risk treatment and set objectives (6), provide resources, competence and awareness (7), operate the ISMS and perform risk assessments/treatment (8), evaluate performance via monitoring, internal audit and management review (9), and continually improve including corrective action for nonconformities (10). Key documents: Information Security Policy, Statement of Applicability (SoA), and Risk Treatment Plan (RTP)."},
+      {"control_id": "A.5", "section": "Annex A.5 Organizational Controls (37 controls)", "text": "Organizational controls (A.5.1-A.5.37): policies for information security; information security roles and responsibilities; segregation of duties; management responsibilities; contact with authorities; contact with special interest groups; threat intelligence; information security in project management; inventory of information and other associated assets; acceptable use of information and assets; return of assets; classification of information; labelling of information; information transfer; access control; identity management; authentication information; access rights; information security in supplier relationships; addressing information security within supplier agreements; managing information security in the ICT supply chain; monitoring, review and change management of supplier services; information security for use of cloud services; information security incident management planning and preparation; assessment and decision on information security events; response to information security incidents; learning from incidents; collection of evidence; information security during disruption; ICT readiness for business continuity; legal, statutory, regulatory and contractual requirements; intellectual property rights; protection of records; privacy and protection of PII; independent review of information security; compliance with policies, rules and standards; documented operating procedures."},
+      {"control_id": "A.6", "section": "Annex A.6 People Controls (8 controls)", "text": "People controls (A.6.1-A.6.8): screening; terms and conditions of employment; information security awareness, education and training; disciplinary process; responsibilities after termination or change of employment; confidentiality or non-disclosure agreements; remote working; information security event reporting."},
+      {"control_id": "A.7", "section": "Annex A.7 Physical Controls (14 controls)", "text": "Physical controls (A.7.1-A.7.14): physical security perimeters; physical entry controls; securing offices, rooms and facilities; physical security monitoring; protecting against physical and environmental threats; working in secure areas; clear desk and clear screen; equipment siting and protection; security of assets off-premises; storage media; supporting utilities; cabling security; equipment maintenance; secure disposal or re-use of equipment."},
+      {"control_id": "A.8", "section": "Annex A.8 Technological Controls (34 controls)", "text": "Technological controls (A.8.1-A.8.34): user endpoint devices; privileged access rights; information access restriction; access to source code; secure authentication; capacity management; protection against malware; management of technical vulnerabilities; configuration management; information deletion; data masking; data leakage prevention; information backup; redundancy of information processing facilities; logging; monitoring activities; clock synchronization; use of privileged utility programs; installation of software on operational systems; networks security; security of network services; segregation of networks; web filtering; use of cryptography; secure development life cycle; application security requirements; secure system architecture and engineering principles; secure coding; security testing in development and acceptance; outsourced development; separation of development, test and production environments; change management; test information; protection of information systems during audit testing."}
+    ]
+  },
+  {
+    "framework": "SOC2",
+    "source_file": "AICPA SOC 2 - Trust Services Criteria",
+    "source_url": "https://en.wikipedia.org/wiki/System_and_Organization_Controls",
+    "sections": [
+      {"control_id": "CC-Security", "section": "Security (Common Criteria)", "text": "Security (the Common Criteria, required in every SOC 2) protects information and systems against unauthorized access, unauthorized disclosure, and damage. The common criteria series covers control environment (CC1), communication and information (CC2), risk assessment (CC3), monitoring activities (CC4), control activities (CC5), logical and physical access controls (CC6), system operations (CC7), change management (CC8), and risk mitigation (CC9). Typical controls: firewalls, intrusion detection, and multi-factor authentication."},
+      {"control_id": "A-Availability", "section": "Availability", "text": "Availability requires that information and systems are available for operation and use as committed or agreed. Implementation involves capacity and performance monitoring, environmental protections, backups, and disaster recovery and incident handling to maintain service continuity."},
+      {"control_id": "PI-ProcessingIntegrity", "section": "Processing Integrity", "text": "Processing Integrity requires that system processing is complete, valid, accurate, timely, and authorized. Organizations use input/processing/output controls, quality assurance, and process monitoring to maintain data integrity."},
+      {"control_id": "C-Confidentiality", "section": "Confidentiality", "text": "Confidentiality requires that information designated as confidential is protected per commitments and agreements, on a need-to-know basis, using encryption, access controls, and secure disposal."},
+      {"control_id": "P-Privacy", "section": "Privacy", "text": "Privacy requires that personal information is collected, used, retained, disclosed, and disposed of in conformity with the entity's privacy notice and criteria covering notice, choice and consent, collection, use/retention/disposal, access, disclosure, quality, and monitoring and enforcement."}
+    ]
+  },
+  {
+    "framework": "HIPAA",
+    "source_file": "HIPAA (45 CFR Part 164)",
+    "source_url": "https://www.hhs.gov/hipaa/for-professionals/index.html",
+    "sections": [
+      {"control_id": "164.308", "section": "Security Rule - Administrative Safeguards", "text": "Administrative safeguards (45 CFR 164.308): security management process including risk analysis, risk management, sanction policy, and information system activity review; assigned security responsibility; workforce security (authorization, clearance, termination procedures); information access management; security awareness and training; security incident procedures; contingency plan (data backup, disaster recovery, emergency mode operation, testing); evaluation; and business associate contracts."},
+      {"control_id": "164.310", "section": "Security Rule - Physical Safeguards", "text": "Physical safeguards (45 CFR 164.310): facility access controls (contingency operations, facility security plan, access control and validation, maintenance records); workstation use; workstation security; and device and media controls (disposal, media re-use, accountability, data backup and storage)."},
+      {"control_id": "164.312", "section": "Security Rule - Technical Safeguards", "text": "Technical safeguards (45 CFR 164.312): access control (unique user identification, emergency access procedure, automatic logoff, encryption and decryption); audit controls; integrity (mechanism to authenticate EPHI); person or entity authentication; and transmission security (integrity controls and encryption)."},
+      {"control_id": "164.502", "section": "Privacy Rule - Uses and Disclosures of PHI", "text": "The HIPAA Privacy Rule governs uses and disclosures of Protected Health Information (PHI). It applies the minimum necessary standard, requires permitted/required disclosures (to the individual, for treatment, payment and operations, and as required by law), and grants individuals rights to access, amend, and obtain an accounting of disclosures of their PHI, and to request restrictions."},
+      {"control_id": "164.400", "section": "Breach Notification Rule", "text": "The Breach Notification Rule requires covered entities to notify affected individuals, the Secretary of HHS, and in some cases the media, following a breach of unsecured PHI, generally without unreasonable delay and no later than 60 days. Business associates must notify the covered entity of breaches."}
+    ]
+  },
+  {
+    "framework": "PCI_DSS",
+    "source_file": "PCI DSS v4.0 - 12 Requirements (public summary; standard is copyrighted by PCI SSC)",
+    "source_url": "https://www.pcisecuritystandards.org/",
+    "sections": [
+      {"control_id": "Req 1", "section": "Install and Maintain Network Security Controls", "text": "Requirement 1: Install and maintain network security controls (e.g., firewalls and routers) to protect the cardholder data environment (CDE). Restrict inbound and outbound traffic to that which is necessary, and segment the CDE from untrusted networks."},
+      {"control_id": "Req 2", "section": "Apply Secure Configurations", "text": "Requirement 2: Apply secure configurations to all system components. Change vendor-supplied defaults (passwords, settings), remove unnecessary services, and maintain configuration standards."},
+      {"control_id": "Req 3", "section": "Protect Stored Account Data", "text": "Requirement 3: Protect stored account data. Minimize storage of cardholder data, render the Primary Account Number (PAN) unreadable (strong cryptography, truncation, tokenization, hashing), and never store sensitive authentication data after authorization."},
+      {"control_id": "Req 4", "section": "Protect Cardholder Data in Transit", "text": "Requirement 4: Protect cardholder data with strong cryptography during transmission over open, public networks."},
+      {"control_id": "Req 5", "section": "Protect Against Malicious Software", "text": "Requirement 5: Protect all systems and networks from malicious software using anti-malware solutions that are kept current and actively running."},
+      {"control_id": "Req 6", "section": "Develop and Maintain Secure Systems and Software", "text": "Requirement 6: Develop and maintain secure systems and software. Patch vulnerabilities promptly, follow secure software development practices, and protect public-facing web applications."},
+      {"control_id": "Req 7", "section": "Restrict Access by Business Need to Know", "text": "Requirement 7: Restrict access to system components and cardholder data by business need to know, enforcing least privilege and role-based access control."},
+      {"control_id": "Req 8", "section": "Identify Users and Authenticate Access", "text": "Requirement 8: Identify users and authenticate access to system components with unique IDs and strong authentication, including multi-factor authentication (MFA) for access into the CDE."},
+      {"control_id": "Req 9", "section": "Restrict Physical Access", "text": "Requirement 9: Restrict physical access to cardholder data and to systems in the CDE, including media handling, device protection, and visitor controls."},
+      {"control_id": "Req 10", "section": "Log and Monitor All Access", "text": "Requirement 10: Log and monitor all access to system components and cardholder data; retain audit trails, synchronize time, and review logs to detect anomalies."},
+      {"control_id": "Req 11", "section": "Test Security of Systems and Networks", "text": "Requirement 11: Regularly test security of systems and networks, including vulnerability scans, penetration testing, wireless detection, and change/tamper detection."},
+      {"control_id": "Req 12", "section": "Support Information Security with Policies", "text": "Requirement 12: Support information security with organizational policies and programs, including risk assessment, security awareness, incident response, and management of third-party service providers."}
+    ]
+  },
+  {
+    "framework": "COBIT",
+    "source_file": "COBIT 2019 - Governance and Management Objectives (public summary; framework is copyrighted by ISACA)",
+    "source_url": "https://www.isaca.org/resources/cobit",
+    "sections": [
+      {"control_id": "EDM", "section": "Evaluate, Direct and Monitor (Governance)", "text": "The EDM domain covers governance objectives: EDM01 Ensured Governance Framework Setting and Maintenance; EDM02 Ensured Benefits Delivery; EDM03 Ensured Risk Optimization; EDM04 Ensured Resource Optimization; EDM05 Ensured Stakeholder Engagement. Governance ensures stakeholder needs are evaluated, direction is set, and performance and compliance are monitored."},
+      {"control_id": "APO", "section": "Align, Plan and Organize (Management)", "text": "The APO domain addresses strategy and supporting activities: managed I&T management framework, strategy, enterprise architecture, innovation, portfolio, budget and costs, human resources, relationships, service agreements, vendors, quality, risk (APO12), and security (APO13)."},
+      {"control_id": "BAI", "section": "Build, Acquire and Implement", "text": "The BAI domain covers solution delivery: managed programs, requirements definition, solutions identification and build, availability and capacity, organizational change, IT changes, change acceptance and transitioning, knowledge, assets, configuration, and projects."},
+      {"control_id": "DSS", "section": "Deliver, Service and Support", "text": "The DSS domain covers operations and support: managed operations, service requests and incidents, problems, continuity, security services (DSS05), and business process controls."},
+      {"control_id": "MEA", "section": "Monitor, Evaluate and Assess", "text": "The MEA domain covers monitoring: managed performance and conformance monitoring, system of internal control, and compliance with external requirements and assurance."}
+    ]
+  },
+  {
+    "framework": "TISAX",
+    "source_file": "TISAX / VDA ISA (public summary; catalog is copyrighted by ENX/VDA)",
+    "source_url": "https://enx.com/en-us/tisax/",
+    "sections": [
+      {"control_id": "TISAX-IS", "section": "Information Security Assessment Objectives", "text": "TISAX (Trusted Information Security Assessment Exchange), based on the VDA ISA catalog and aligned with ISO/IEC 27001, assesses information security for the automotive supply chain. The information security module covers IS policies and organization, human resources, asset management, access control, cryptography, physical security, operations security, communications, supplier relationships, and incident management, with maturity-level scoring."},
+      {"control_id": "TISAX-Prototype", "section": "Prototype Protection", "text": "The prototype protection module sets requirements for handling prototypes, test vehicles, and components: physical and organizational protection, secure areas, access management, handling of mobile devices and photography, and protection during events and test drives."},
+      {"control_id": "TISAX-Data", "section": "Data Protection", "text": "The data protection module addresses requirements derived from GDPR (Article 28 processing on behalf of a controller), covering the handling of personal data by service providers in the automotive supply chain."}
+    ]
+  }
+]

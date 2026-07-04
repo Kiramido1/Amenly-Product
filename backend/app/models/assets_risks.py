@@ -1,21 +1,22 @@
 import uuid
-from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    DateTime,
-    String,
     Boolean,
-    ForeignKey,
-    Text,
-    Enum as SQLEnum,
-    Integer,
+    Column,
     Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from app.database.session import Base
-from app.models.enums import RiskSeverity, AssetType
+from app.models.enums import AssetType, RiskSeverity
 from app.models.identity import TimestampMixin
 
 
@@ -24,12 +25,12 @@ class Asset(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
-        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name = Column(String(255), nullable=False)
     type = Column(SQLEnum(AssetType), nullable=False)
     criticality = Column(SQLEnum(RiskSeverity), default=RiskSeverity.MEDIUM)
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     properties = Column(JSONB)  # Additional metadata
 
     # Relationships
@@ -42,7 +43,7 @@ class Risk(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     asset_id = Column(
-        UUID(as_uuid=True), ForeignKey("assets.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title = Column(String(255), nullable=False)
     description = Column(Text)
@@ -60,7 +61,7 @@ class Document(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
-        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
     )
     filename = Column(String(255), nullable=False)
     file_type = Column(String(50))
@@ -78,7 +79,7 @@ class DocumentChunk(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(
-        UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
     )
     content = Column(Text, nullable=False)
     # Note: Vector embedding will be stored in Qdrant,

@@ -1,0 +1,176 @@
+{
+  "timestamp": "20260510_205007",
+  "total_tests": 21,
+  "passed": 21,
+  "failed": 0,
+  "results": [
+    {
+      "endpoint": "/rag/health",
+      "test_case": "Health check without auth",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 82
+    },
+    {
+      "endpoint": "/rag/health",
+      "test_case": "Health check with auth",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 96
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search without authentication",
+      "passed": true,
+      "status_code": 403,
+      "error": null,
+      "duration_ms": 23
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with valid query - All frameworks",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1315
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with ISO27001 filter",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1403
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with NIST filter",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1532
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with SOC2 filter",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1314
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with high top_k",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1602
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with high score threshold",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1391
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with empty query",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 974
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with very short query",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 906
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with invalid top_k (0)",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 941
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with invalid top_k (>50)",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 882
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with invalid score_threshold (<0)",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 889
+    },
+    {
+      "endpoint": "/rag/search",
+      "test_case": "Search with invalid score_threshold (>1)",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 865
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query without authentication",
+      "passed": true,
+      "status_code": 403,
+      "error": null,
+      "duration_ms": 37
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query with valid question - All frameworks",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 272960
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query with ISO27001 filter",
+      "passed": true,
+      "status_code": 200,
+      "error": null,
+      "duration_ms": 1783966
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query with empty question",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 848
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query with very short question",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 860
+    },
+    {
+      "endpoint": "/rag/query",
+      "test_case": "Query with invalid top_k (0)",
+      "passed": true,
+      "status_code": 422,
+      "error": null,
+      "duration_ms": 862
+    }
+  ]
+}

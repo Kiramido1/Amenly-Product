@@ -1,8 +1,15 @@
 from enum import Enum
 
+
 class UserRole(str, Enum):
     ORG_ADMIN = "org_admin"
     ORG_MEMBER = "org_member"
+
+class JoinRequestStatus(str, Enum):
+    """Status of a request to join an existing organization."""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 class AssessmentStatus(str, Enum):
     PENDING = "pending"
@@ -54,6 +61,15 @@ class FrameworkCategory(str, Enum):
 
 class Permission(str, Enum):
     """User permissions for fine-grained access control"""
+    # Production permission set
+    PARTICIPATE_IN_ASSESSMENT = "participate_in_assessment"
+    VIEW_ORG_DASHBOARD = "view_org_dashboard"
+    VIEW_ALL_ASSETS = "view_all_assets"
+    VIEW_ASSIGNED_ASSETS_ONLY = "view_assigned_assets_only"
+    VIEW_FINAL_COMPLIANCE_SCORE = "view_final_compliance_score"
+    MANAGE_PERMISSIONS = "manage_permissions"
+    MANAGE_USERS = "manage_users"
+
     # Assessment Permissions
     START_ASSESSMENT = "start_assessment"
     VIEW_OWN_SESSIONS = "view_own_sessions"
@@ -61,17 +77,17 @@ class Permission(str, Enum):
     VIEW_OWN_SCORE = "view_own_score"
     VIEW_ALL_SCORES = "view_all_scores"
     VIEW_ORG_TOTAL_SCORE = "view_org_total_score"
-    
+
     # Framework Permissions
     SELECT_FRAMEWORK = "select_framework"
     MANAGE_FRAMEWORKS = "manage_frameworks"
-    
+
     # Dashboard Permissions
     VIEW_DASHBOARD = "view_dashboard"
     VIEW_ASSETS = "view_assets"
     VIEW_VULNERABILITIES = "view_vulnerabilities"
     MANAGE_DASHBOARD_ACCESS = "manage_dashboard_access"
-    
+
     # Member Management
     VIEW_MEMBERS = "view_members"
     MANAGE_MEMBERS = "manage_members"

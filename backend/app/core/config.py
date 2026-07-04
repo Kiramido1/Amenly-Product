@@ -1,17 +1,33 @@
 from urllib.parse import quote_plus
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Placeholder/example secrets that must never be used to sign tokens in production.
+_WEAK_SECRET_KEYS = {
+    "",
+    "your-secret-key-here",
+    "yoursecretkeyhere",
+    "changeme",
+    "change-me",
+    "secret",
+}
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Amenly"
     API_V1_STR: str = "/api/v1"
     DEBUG: bool = False
+    # Expose Swagger /docs, /redoc and the OpenAPI schema without enabling full DEBUG.
+    # Keep this False in real production; enable for local/demo environments.
+    ENABLE_DOCS: bool = False
     SECRET_KEY: str = "your-secret-key-here"  # Change in production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 100  # 100 minutes
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days
+
+    # Rate limiting (brute-force protection on auth endpoints). Disabled in tests.
+    RATE_LIMIT_ENABLED: bool = True
 
     # CORS
     BACKEND_CORS_ORIGINS: list[str] | str = []
@@ -89,6 +105,21 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "gpt-oss:120b-cloud"  # LLM model for Ollama generation (compliance RAG)
     OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
     EMBEDDING_MODEL: str = "nomic-embed-text"
+
+    @model_validator(mode="after")
+    def _enforce_strong_secret_key(self) -> "Settings":
+        # In production (DEBUG disabled) the JWT signing key must be a strong,
+        # non-default value. A known placeholder lets anyone forge valid tokens.
+        if not self.DEBUG:
+            if (
+                self.SECRET_KEY.strip().lower() in _WEAK_SECRET_KEYS
+                or len(self.SECRET_KEY) < 32
+            ):
+                raise ValueError(
+                    "SECRET_KEY must be set to a strong, non-default value "
+                    "(at least 32 characters) when DEBUG is disabled."
+                )
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=True, extra="ignore"

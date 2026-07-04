@@ -1,9 +1,9 @@
 """
 Permission Schemas
 """
-from typing import Optional, List
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import Permission
@@ -21,35 +21,35 @@ class UserPermissionsResponse(BaseModel):
     """User's complete permissions"""
     user_id: UUID
     role: str
-    role_permissions: List[str] = Field(..., description="Permissions from role")
-    custom_permissions: List[str] = Field(..., description="Additional granted permissions")
-    all_permissions: List[str] = Field(..., description="Combined permissions")
+    role_permissions: list[str] = Field(..., description="Permissions from role")
+    custom_permissions: list[str] = Field(..., description="Additional granted permissions")
+    all_permissions: list[str] = Field(..., description="Combined permissions")
 
 
 class GrantPermissionRequest(BaseModel):
     """Request to grant permissions to a user"""
     user_id: UUID = Field(..., description="User to grant permissions to")
-    permissions: List[Permission] = Field(..., description="Permissions to grant")
-    notes: Optional[str] = Field(None, max_length=500, description="Notes about why permissions were granted")
-    expires_at: Optional[datetime] = Field(None, description="Optional expiry date for permissions")
+    permissions: list[Permission] = Field(..., description="Permissions to grant")
+    notes: str | None = Field(None, max_length=500, description="Notes about why permissions were granted")
+    expires_at: datetime | None = Field(None, description="Optional expiry date for permissions")
 
 
 class RevokePermissionRequest(BaseModel):
     """Request to revoke permissions from a user"""
     user_id: UUID = Field(..., description="User to revoke permissions from")
-    permissions: List[Permission] = Field(..., description="Permissions to revoke")
+    permissions: list[Permission] = Field(..., description="Permissions to revoke")
 
 
 class UserRolePermissionResponse(BaseModel):
     """Response for user role permission"""
     id: UUID
     user_id: UUID
-    permissions: List[str]
-    granted_by_id: Optional[UUID]
+    permissions: list[str]
+    granted_by_id: UUID | None
     granted_at: datetime
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
     is_active: bool
-    notes: Optional[str]
+    notes: str | None
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
@@ -88,7 +88,7 @@ PERMISSION_CATALOG = {
         "description": "Can view organization's total compliance score",
         "category": "Assessment"
     },
-    
+
     # Framework Permissions
     Permission.SELECT_FRAMEWORK: {
         "label": "Select Framework",
@@ -100,7 +100,7 @@ PERMISSION_CATALOG = {
         "description": "Can add, update, and remove frameworks",
         "category": "Framework"
     },
-    
+
     # Dashboard Permissions
     Permission.VIEW_DASHBOARD: {
         "label": "View Dashboard",
@@ -122,7 +122,7 @@ PERMISSION_CATALOG = {
         "description": "Can grant dashboard access to members",
         "category": "Dashboard"
     },
-    
+
     # Member Management
     Permission.VIEW_MEMBERS: {
         "label": "View Members",
@@ -149,7 +149,7 @@ def get_permission_info(permission: Permission) -> PermissionInfo:
         "description": f"Permission: {permission.value}",
         "category": "Other"
     })
-    
+
     return PermissionInfo(
         value=permission.value,
         label=info["label"],

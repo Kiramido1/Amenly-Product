@@ -3,13 +3,15 @@ RAG System Schemas
 Request/Response models for RAG operations
 """
 
-from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class FrameworkType(str, Enum):
-    """Supported compliance frameworks"""
+    """Supported compliance frameworks and national data-protection regulations"""
+    # Global standards / frameworks
     ISO27001 = "ISO27001"
     NIST = "NIST"
     SOC2 = "SOC2"
@@ -18,6 +20,20 @@ class FrameworkType(str, Enum):
     PCI_DSS = "PCI_DSS"
     COBIT = "COBIT"
     TISAX = "TISAX"
+    # National / regional data-protection regulations
+    CCPA = "CCPA"            # USA - California (CCPA/CPRA)
+    LGPD = "LGPD"            # Brazil
+    PIPEDA = "PIPEDA"        # Canada
+    UK_GDPR = "UK_GDPR"      # United Kingdom (DPA 2018)
+    PIPL = "PIPL"            # China
+    DPDP = "DPDP"            # India (DPDP Act 2023)
+    POPIA = "POPIA"          # South Africa
+    PDPA_SG = "PDPA_SG"      # Singapore
+    APPI = "APPI"            # Japan
+    AU_PRIVACY = "AU_PRIVACY"  # Australia (Privacy Act / APPs)
+    EGYPT_PDPL = "EGYPT_PDPL"  # Egypt (Law 151/2020)
+    KSA_PDPL = "KSA_PDPL"      # Saudi Arabia
+    UAE_PDPL = "UAE_PDPL"      # UAE (Federal Decree-Law 45/2021)
     ALL = "ALL"
 
 
@@ -25,15 +41,15 @@ class RetrievedChunk(BaseModel):
     """Retrieved document chunk with metadata"""
     text: str = Field(..., description="Chunk text content")
     score: float = Field(..., description="Similarity score")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
-    
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
+
     # Common metadata fields
-    framework: Optional[str] = None
-    source_file: Optional[str] = None
-    section: Optional[str] = None
-    control_id: Optional[str] = None
-    page_number: Optional[Union[int, str]] = None  # Can be int or string like "Front Sheet"
-    
+    framework: str | None = None
+    source_file: str | None = None
+    section: str | None = None
+    control_id: str | None = None
+    page_number: int | str | None = None  # Can be int or string like "Front Sheet"
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -53,12 +69,12 @@ class RetrievedChunk(BaseModel):
 class SourceReference(BaseModel):
     """Source document reference"""
     framework: str
-    section: Optional[str] = None
-    control_id: Optional[str] = None
+    section: str | None = None
+    control_id: str | None = None
     source_file: str
-    page_number: Optional[Union[int, str]] = None  # Can be int or string
+    page_number: int | str | None = None  # Can be int or string
     relevance_score: float
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -75,14 +91,14 @@ class SourceReference(BaseModel):
 class RAGQueryRequest(BaseModel):
     """Request for RAG query"""
     question: str = Field(..., min_length=3, max_length=1000, description="User question")
-    framework: Optional[FrameworkType] = Field(
+    framework: FrameworkType | None = Field(
         FrameworkType.ALL,
         description="Filter by specific framework"
     )
     top_k: int = Field(10, ge=1, le=20, description="Number of chunks to retrieve")
     score_threshold: float = Field(0.5, ge=0.0, le=1.0, description="Minimum similarity score")
     include_metadata: bool = Field(True, description="Include chunk metadata in response")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -114,13 +130,13 @@ class AnswerMetadata(BaseModel):
 class RAGAnswer(BaseModel):
     """Structured RAG answer with rich formatting"""
     summary: str = Field(..., description="Concise 2-3 sentence summary of the answer")
-    sections: List[AnswerSection] = Field(default_factory=list, description="Structured answer sections")
+    sections: list[AnswerSection] = Field(default_factory=list, description="Structured answer sections")
     full_text: str = Field(..., description="Complete raw answer text")
-    sources: List[SourceReference] = Field(default_factory=list, description="Source references")
+    sources: list[SourceReference] = Field(default_factory=list, description="Source references")
     confidence_score: float = Field(..., ge=0.0, le=1.0, description="Answer confidence")
     retrieved_chunks: int = Field(..., description="Number of chunks retrieved")
     processing_time_ms: int = Field(..., description="Total processing time")
-    framework_filter: Optional[str] = Field(None, description="Framework filter applied")
+    framework_filter: str | None = Field(None, description="Framework filter applied")
     metadata: AnswerMetadata = Field(..., description="Answer metadata and statistics")
 
     class Config:
@@ -169,7 +185,7 @@ class RAGQueryResponse(BaseModel):
     """Response for RAG query"""
     success: bool = Field(..., description="Query success status")
     message: str = Field(..., description="Status message")
-    data: Optional[RAGAnswer] = Field(None, description="Structured answer with sections, summary, and metadata")
+    data: RAGAnswer | None = Field(None, description="Structured answer with sections, summary, and metadata")
 
     class Config:
         json_schema_extra = {
@@ -211,13 +227,13 @@ class RAGQueryResponse(BaseModel):
 class RAGSearchRequest(BaseModel):
     """Request for semantic search only (no LLM generation)"""
     query: str = Field(..., min_length=3, max_length=500, description="Search query")
-    framework: Optional[FrameworkType] = Field(
+    framework: FrameworkType | None = Field(
         FrameworkType.ALL,
         description="Filter by framework"
     )
     top_k: int = Field(10, ge=1, le=50, description="Number of results")
     score_threshold: float = Field(0.3, ge=0.0, le=1.0, description="Minimum score")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -233,8 +249,8 @@ class RAGSearchResponse(BaseModel):
     """Response for semantic search"""
     success: bool
     message: str
-    data: Optional[Dict[str, Any]] = None
-    
+    data: dict[str, Any] | None = None
+
     class Config:
         json_schema_extra = {
             "example": {

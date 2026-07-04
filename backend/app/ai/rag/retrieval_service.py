@@ -3,14 +3,13 @@ Enterprise RAG Retrieval Service
 Professional document retrieval for compliance frameworks
 """
 
-from typing import List, Optional, Dict, Any
-from qdrant_client import QdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchValue, SearchParams
 import structlog
+from qdrant_client import QdrantClient
+from qdrant_client.models import FieldCondition, Filter, MatchValue
 
-from app.core.config import settings
 from app.ai.embeddings import get_embedding_service
-from app.ai.rag.schemas import RetrievedChunk, FrameworkType
+from app.ai.rag.schemas import FrameworkType, RetrievedChunk
+from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -27,51 +26,78 @@ class RetrievalService:
     - Metadata preservation
     - Ranking and reranking
     """
-    
+
     def __init__(
         self,
         collection_name: str = "compliance_frameworks",
-        qdrant_url: Optional[str] = None
+        qdrant_url: str | None = None
     ):
         self.collection_name = collection_name
         self.qdrant_url = qdrant_url or getattr(settings, "QDRANT_URL", "http://localhost:6333")
         self.client = QdrantClient(url=self.qdrant_url)
         self.embedding_service = get_embedding_service()
-        
+
         logger.info(
             "retrieval_service_initialized",
             collection=collection_name,
             qdrant_url=self.qdrant_url
         )
-    
-    def _build_filter(self, framework: Optional[FrameworkType] = None) -> Optional[Filter]:
+
+    def _build_filter(
+        self,
+        framework: FrameworkType | None = None,
+        org_id: str | None = None
+    ) -> Filter | None:
         """
-        Build Qdrant filter for framework-specific search
+        Build Qdrant filter for specific search
         
         Args:
             framework: Framework to filter by
+            org_id: Organization ID to filter by (for private documents)
             
         Returns:
             Qdrant Filter object or None
         """
-        if not framework or framework == FrameworkType.ALL:
-            return None
-        
-        # Build filter for framework
-        return Filter(
-            must=[
+        must_conditions = []
+
+        # 1. Framework Filter
+        if framework and framework != FrameworkType.ALL:
+            must_conditions.append(
                 FieldCondition(
                     key="framework",
                     match=MatchValue(value=framework.value.lower())
                 )
-            ]
-        )
-    
+            )
+
+        # 2. Organization Isolation (Security Filter)
+        # We always filter by organization_id to ensure data isolation.
+        # If org_id is provided, we search for:
+        # (org_id == current_org OR org_id == "PUBLIC")
+        if org_id:
+            must_conditions.append(
+                Filter(
+                    should=[
+                        FieldCondition(key="organization_id", match=MatchValue(value=str(org_id))),
+                        FieldCondition(key="organization_id", match=MatchValue(value="PUBLIC"))
+                    ]
+                )
+            )
+        else:
+            # Fallback to only public documents if no org_id provided
+            must_conditions.append(
+                FieldCondition(key="organization_id", match=MatchValue(value="PUBLIC"))
+            )
+
+        if not must_conditions:
+            return None
+
+        return Filter(must=must_conditions)
+
     def _deduplicate_chunks(
         self,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         similarity_threshold: float = 0.95
-    ) -> List[RetrievedChunk]:
+    ) -> list[RetrievedChunk]:
         """
         Remove duplicate or highly similar chunks
         
@@ -84,39 +110,40 @@ class RetrievalService:
         """
         if not chunks:
             return []
-        
+
         unique_chunks = []
         seen_texts = set()
-        
+
         for chunk in chunks:
             # Simple deduplication based on text
             text_lower = chunk.text.lower().strip()
-            
+
             # Check if we've seen this exact text
             if text_lower in seen_texts:
                 logger.debug("duplicate_chunk_removed", chunk_id=chunk.metadata.get("chunk_id"))
                 continue
-            
+
             seen_texts.add(text_lower)
             unique_chunks.append(chunk)
-        
+
         logger.info(
             "deduplication_complete",
             original_count=len(chunks),
             unique_count=len(unique_chunks),
             removed=len(chunks) - len(unique_chunks)
         )
-        
+
         return unique_chunks
-    
+
     async def retrieve(
         self,
         query: str,
         top_k: int = 5,
         score_threshold: float = 0.5,
-        framework: Optional[FrameworkType] = None,
+        framework: FrameworkType | None = None,
+        org_id: str | None = None,
         deduplicate: bool = True
-    ) -> List[RetrievedChunk]:
+    ) -> list[RetrievedChunk]:
         """
         Retrieve relevant chunks for a query
         
@@ -125,6 +152,7 @@ class RetrievalService:
             top_k: Number of chunks to retrieve
             score_threshold: Minimum similarity score
             framework: Filter by framework
+            org_id: Organization ID for security filtering
             deduplicate: Remove duplicate chunks
             
         Returns:
@@ -135,16 +163,17 @@ class RetrievalService:
             query_length=len(query),
             top_k=top_k,
             score_threshold=score_threshold,
-            framework=framework.value if framework else "ALL"
+            framework=framework.value if framework else "ALL",
+            org_id=org_id
         )
-        
+
         try:
             # Generate query embedding
             query_embedding = await self.embedding_service.embed_query(query)
-            
+
             # Build filter
-            query_filter = self._build_filter(framework)
-            
+            query_filter = self._build_filter(framework, org_id)
+
             # Search Qdrant using query() method (new API)
             search_results = self.client.query_points(
                 collection_name=self.collection_name,
@@ -154,18 +183,18 @@ class RetrievalService:
                 query_filter=query_filter,
                 with_payload=True
             ).points
-            
+
             logger.info(
                 "qdrant_search_complete",
                 results_count=len(search_results),
                 top_score=search_results[0].score if search_results else 0.0
             )
-            
+
             # Convert to RetrievedChunk objects
             chunks = []
             for result in search_results:
                 payload = result.payload or {}
-                
+
                 chunk = RetrievedChunk(
                     text=payload.get("text", ""),
                     score=result.score,
@@ -177,33 +206,33 @@ class RetrievalService:
                     page_number=payload.get("unit_number") or payload.get("page_number")
                 )
                 chunks.append(chunk)
-            
+
             # Deduplicate if requested
             if deduplicate:
                 chunks = self._deduplicate_chunks(chunks)
-            
+
             # Limit to top_k after deduplication
             chunks = chunks[:top_k]
-            
+
             logger.info(
                 "retrieval_complete",
                 final_count=len(chunks),
                 avg_score=sum(c.score for c in chunks) / len(chunks) if chunks else 0.0
             )
-            
+
             return chunks
-            
+
         except Exception as e:
             logger.error("retrieval_failed", error=str(e))
             raise
-    
+
     async def search_by_metadata(
         self,
-        framework: Optional[str] = None,
-        section: Optional[str] = None,
-        control_id: Optional[str] = None,
+        framework: str | None = None,
+        section: str | None = None,
+        control_id: str | None = None,
         limit: int = 10
-    ) -> List[RetrievedChunk]:
+    ) -> list[RetrievedChunk]:
         """
         Search chunks by metadata only (no semantic search)
         
@@ -222,32 +251,32 @@ class RetrievalService:
             section=section,
             control_id=control_id
         )
-        
+
         # Build filter conditions
         conditions = []
-        
+
         if framework:
             conditions.append(
                 FieldCondition(key="framework", match=MatchValue(value=framework.lower()))
             )
-        
+
         if section:
             conditions.append(
                 FieldCondition(key="section", match=MatchValue(value=section))
             )
-        
+
         if control_id:
             conditions.append(
                 FieldCondition(key="control_id", match=MatchValue(value=control_id))
             )
-        
+
         if not conditions:
             logger.warning("metadata_search_no_conditions")
             return []
-        
+
         # Search with filter only
         search_filter = Filter(must=conditions)
-        
+
         # Use scroll for metadata-only search
         results, _ = self.client.scroll(
             collection_name=self.collection_name,
@@ -255,12 +284,12 @@ class RetrievalService:
             limit=limit,
             with_payload=True
         )
-        
+
         # Convert to chunks
         chunks = []
         for result in results:
             payload = result.payload or {}
-            
+
             chunk = RetrievedChunk(
                 text=payload.get("text", ""),
                 score=1.0,  # No similarity score for metadata search
@@ -272,14 +301,14 @@ class RetrievalService:
                 page_number=payload.get("unit_number")
             )
             chunks.append(chunk)
-        
+
         logger.info("metadata_search_complete", results_count=len(chunks))
-        
+
         return chunks
 
 
 # Global instance
-_retrieval_service: Optional[RetrievalService] = None
+_retrieval_service: RetrievalService | None = None
 
 
 def get_retrieval_service() -> RetrievalService:

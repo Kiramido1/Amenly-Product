@@ -1,57 +1,68 @@
-import asyncio
-import pytest
-from typing import AsyncGenerator, Generator
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
+# Test configuration.
+#
+# IMPORTANT: the committed .env points DATABASE_URL at a live (Supabase) database
+# with no test isolation. We override the environment BEFORE importing the app so
+# the whole suite runs against a disposable local Postgres, and we bootstrap the
+# schema directly from the SQLAlchemy models (the Alembic chain is not reproducible
+# from an empty database — an early migration drops a table that does not exist yet).
+import os
 
-from app.main import app
-from app.database.session import Base, get_db
-from app.core.config import settings
-
-# Use a separate schema or database for testing if possible.
-# For this setup, we'll use the existing DB but ensure we clean up.
-# IMPORTANT: In a real production CI, you'd use a dedicated Test DB.
-
-TEST_DATABASE_URL = settings.DATABASE_URL
-if "pooler.supabase.com" in TEST_DATABASE_URL:
-    # Switch to direct connection (Session mode) for testing to avoid PgBouncer issues
-    TEST_DATABASE_URL = TEST_DATABASE_URL.replace(":6543", ":5432")
-
-engine = create_async_engine(
-    TEST_DATABASE_URL, poolclass=NullPool, connect_args={"statement_cache_size": 0}
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql+psycopg://test:test@localhost:5544/amenly_test",
 )
-TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# A real SECRET_KEY is required now that startup rejects the placeholder default.
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789abcdef")
+os.environ.setdefault("DEBUG", "False")
+# Keep docs disabled in tests regardless of .env (the hardening regression test asserts this).
+os.environ.setdefault("ENABLE_DOCS", "False")
+# Disable brute-force rate limiting in tests (avoids cross-test 429s).
+os.environ.setdefault("RATE_LIMIT_ENABLED", "False")
+
+import asyncio
+from collections.abc import AsyncGenerator
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+# Importing the app registers every ORM model on Base.metadata.
+import app.database.base  # noqa: F401
+from app.database.session import AsyncSessionLocal, Base, engine
+from app.main import app
+
+
+def _bootstrap_schema() -> None:
+    async def _create() -> None:
+        async with engine.begin() as conn:
+            # Drop first so the disposable test schema always matches the current
+            # models — create_all alone cannot add new columns to pre-existing tables.
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+
+    asyncio.run(_create())
+
+
+# Create the schema once, at collection time, before any test runs.
+_bootstrap_schema()
 
 
 @pytest.fixture(scope="session")
-async def db_engine():
-    async with engine.begin() as conn:
-        # For safety, we could create/drop tables,
-        # but since we are using Alembic, we assume tables exist.
-        pass
-    yield engine
-    await engine.dispose()
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture
-async def db(db_engine) -> AsyncGenerator[AsyncSession, None]:
-    async with TestingSessionLocal() as session:
-        yield session
-        # No rollback here if it causes loop issues,
-        # but for safety we'll try to just close it.
-        await session.close()
-
-
-@pytest.fixture
-async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    def override_get_db():
-        yield db
-
-    app.dependency_overrides[get_db] = override_get_db
+async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://testserver"
-    ) as ac:
-        yield ac
-    app.dependency_overrides.clear()
+        transport=ASGITransport(app=app),
+        base_url="http://testserver",
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+async def db() -> AsyncGenerator:
+    async with AsyncSessionLocal() as session:
+        yield session

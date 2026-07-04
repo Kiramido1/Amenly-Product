@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260510_203120",
+  "total_tests": 12,
+  "passed": 11,
+  "failed": 1,
+  "results": {
+    "health": true,
+    "search": [
+      6,
+      0
+    ],
+    "validation": [
+      4,
+      0
+    ],
+    "llm_query": false
+  }
+}

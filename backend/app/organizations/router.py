@@ -1,22 +1,25 @@
-from typing import Any, List
+from typing import Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_db
-from app.organizations.service import OrganizationService
 from app.auth.dependencies import get_current_active_user, require_org_admin
+from app.auth.schemas import GenericResponse, JoinRequestResponse
+from app.auth.service import AuthService
+from app.database.session import get_db
+from app.models.identity import User
+from app.organizations.service import OrganizationService
 from app.schemas.identity import (
+    DepartmentCreate,
+    DepartmentResponse,
+    OrganizationDetailResponse,
+    OrganizationProfileUpdate,
     OrganizationResponse,
     OrganizationUpdate,
-    OrganizationDetailResponse,
-    DepartmentResponse,
-    DepartmentCreate,
-    PositionResponse,
     PositionCreate,
+    PositionResponse,
 )
-from app.auth.schemas import GenericResponse
-from app.models.identity import User
 
 router = APIRouter()
 
@@ -54,6 +57,114 @@ async def update_my_organization(
         "message": "Organization updated successfully",
         "data": {"organization": OrganizationResponse.model_validate(org)},
     }
+
+
+# --- Company Profile Endpoint (Admin) ---
+
+
+@router.put("/profile", response_model=GenericResponse)
+async def update_company_profile(
+    profile_in: OrganizationProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_org_admin),
+) -> Any:
+    """
+    Save the organization's company profile and mark onboarding complete (Admin only).
+
+    This is the first step of the assessment: members cannot start an assessment
+    until the admin completes this profile.
+    """
+    org_service = OrganizationService(db)
+    org = await org_service.update_company_profile(current_user.organization_id, profile_in)
+    return {
+        "success": True,
+        "message": "Company profile saved",
+        "data": {"organization": OrganizationResponse.model_validate(org)},
+    }
+
+
+# --- Invite Code Endpoint (Admin) ---
+
+
+@router.post("/invite-code/regenerate", response_model=GenericResponse)
+async def regenerate_invite_code(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_org_admin),
+) -> Any:
+    """
+    Generate a fresh single-use invite code for the organization (Admin only).
+
+    The previous code is replaced. Each code can be used by exactly one person to
+    request to join; once used it is consumed and a new one must be generated.
+    """
+    org_service = OrganizationService(db)
+    code = await org_service.regenerate_invite_code(current_user.organization_id)
+    return {
+        "success": True,
+        "message": "New invite code generated",
+        "data": {"invite_code": code},
+    }
+
+
+# --- Join Request Endpoints (Admin) ---
+
+
+@router.get("/join-requests", response_model=GenericResponse)
+async def list_join_requests(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_org_admin),
+) -> Any:
+    """
+    List pending requests from people who want to join the admin's organization.
+    """
+    auth_service = AuthService(db)
+    requests = await auth_service.list_join_requests(current_user.organization_id)
+    return {
+        "success": True,
+        "message": "Join requests retrieved",
+        "data": {
+            "join_requests": [
+                JoinRequestResponse.model_validate(r).model_dump(mode="json")
+                for r in requests
+            ]
+        },
+    }
+
+
+@router.post("/join-requests/{request_id}/approve", response_model=GenericResponse)
+async def approve_join_request(
+    request_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_org_admin),
+) -> Any:
+    """
+    Approve a pending join request — creates the member account (Admin only).
+    """
+    auth_service = AuthService(db)
+    user = await auth_service.approve_join_request(
+        request_id, current_user.organization_id, current_user
+    )
+    return {
+        "success": True,
+        "message": "Join request approved. The user can now log in.",
+        "data": {"user_id": str(user.id), "email": user.email},
+    }
+
+
+@router.post("/join-requests/{request_id}/reject", response_model=GenericResponse)
+async def reject_join_request(
+    request_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_org_admin),
+) -> Any:
+    """
+    Reject a pending join request (Admin only).
+    """
+    auth_service = AuthService(db)
+    await auth_service.reject_join_request(
+        request_id, current_user.organization_id, current_user
+    )
+    return {"success": True, "message": "Join request rejected", "data": None}
 
 
 # --- Department Endpoints ---

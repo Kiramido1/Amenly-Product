@@ -1,29 +1,37 @@
+import secrets
+import string
 import uuid
 from datetime import datetime
-from typing import List, Optional
+
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
-    String,
-    Boolean,
     ForeignKey,
-    Table,
+    String,
     Text,
-    Enum as SQLEnum,
-    Integer,
-    Float,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.database.session import Base
 from app.models.enums import (
+    JoinRequestStatus,
     UserRole,
-    AssessmentStatus,
-    RiskSeverity,
-    AssetType,
-    ControlStatus,
 )
+
+# Unambiguous alphabet for invite codes (no easily-confused O/0/I/1).
+_INVITE_ALPHABET = "".join(
+    c for c in (string.ascii_uppercase + string.digits) if c not in "O0I1"
+)
+
+
+def generate_invite_code(length: int = 8) -> str:
+    """Generate a short, human-shareable organization invite code."""
+    return "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(length))
 
 
 class TimestampMixin:
@@ -39,6 +47,22 @@ class Organization(Base, TimestampMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False, index=True)
     domain = Column(String(255), unique=True, index=True)
+    # Single-use code an admin gives out so a new user can request to join this org.
+    # It is consumed (set to NULL) once someone submits a join request with it; the
+    # admin generates a fresh code to invite the next person.
+    invite_code = Column(
+        String(12), unique=True, index=True, nullable=True, default=generate_invite_code
+    )
+
+    # Company profile — filled in by the org admin during onboarding (the first step
+    # of the assessment). Members cannot start an assessment until this is completed.
+    industry = Column(String(100), nullable=True)
+    company_size = Column(String(50), nullable=True)
+    region = Column(String(100), nullable=True)
+    website = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
+    profile_completed = Column(Boolean, default=False, nullable=False)
+
     is_active = Column(Boolean, default=True)
 
     # Relationships - Many-to-Many with Frameworks
@@ -63,7 +87,7 @@ class Department(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
-        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -80,7 +104,7 @@ class Position(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     department_id = Column(
-        UUID(as_uuid=True), ForeignKey("departments.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("departments.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name = Column(String(255), nullable=False)
     level = Column(String(50), nullable=True)  # e.g., Junior, Senior, Head
@@ -97,10 +121,10 @@ class User(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
-        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
     )
     position_id = Column(
-        UUID(as_uuid=True), ForeignKey("positions.id"), nullable=True, index=True
+        UUID(as_uuid=True), ForeignKey("positions.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     email = Column(String(255), unique=True, index=True, nullable=False)
@@ -115,3 +139,39 @@ class User(Base, TimestampMixin):
     position = relationship("Position", back_populates="users")
     assessment_sessions = relationship("AssessmentSession", back_populates="user")
     custom_permissions = relationship("UserRolePermission", foreign_keys="[UserRolePermission.user_id]", back_populates="user", cascade="all, delete-orphan")
+
+
+class OrganizationJoinRequest(Base, TimestampMixin):
+    """A pending request from a new person to join an existing organization.
+
+    The actual ``User`` row is NOT created until an admin approves the request, so
+    the applicant cannot log in while pending. The credentials they chose at signup
+    are stored here (password already hashed) and used to create the user on approval.
+    """
+
+    __tablename__ = "organization_join_requests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    email = Column(String(255), nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(255))
+    status = Column(
+        SQLEnum(JoinRequestStatus),
+        default=JoinRequestStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    reviewed_by_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    organization = relationship("Organization")
+    reviewed_by = relationship("User", foreign_keys=[reviewed_by_id])

@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, DateTime, String, Boolean, ForeignKey, Text, Enum as SQLEnum, Integer, Float, Table
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, String, Table, Text
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.database.session import Base
-from app.models.enums import AssessmentStatus, ControlStatus, FrameworkType, FrameworkCategory
+from app.models.enums import FrameworkCategory, FrameworkType
 from app.models.identity import TimestampMixin
 
 # Junction table for Many-to-Many relationship between Organizations and Frameworks
@@ -26,7 +28,7 @@ class Framework(Base, TimestampMixin):
     name = Column(String(255), nullable=False) # e.g., ISO 27001, NIST CSF
     version = Column(String(50))
     description = Column(Text)
-    
+
     # Professional columns
     framework_type = Column(SQLEnum(FrameworkType), nullable=False, default=FrameworkType.STANDARD, index=True)
     category = Column(SQLEnum(FrameworkCategory), nullable=False, default=FrameworkCategory.GENERAL, index=True)
@@ -34,7 +36,7 @@ class Framework(Base, TimestampMixin):
     industry = Column(String(100), nullable=True)  # e.g., "Healthcare", "Financial", "General"
     is_mandatory = Column(Boolean, default=False)  # Is it legally required?
     official_url = Column(String(512), nullable=True)  # Official documentation URL
-    
+
     # Relationships - Many-to-Many with Organizations
     organizations = relationship(
         "Organization",
@@ -48,7 +50,7 @@ class FrameworkControl(Base, TimestampMixin):
     __tablename__ = "framework_controls"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    framework_id = Column(UUID(as_uuid=True), ForeignKey("frameworks.id"), nullable=False, index=True)
+    framework_id = Column(UUID(as_uuid=True), ForeignKey("frameworks.id", ondelete="CASCADE"), nullable=False, index=True)
     code = Column(String(50), nullable=False, index=True) # e.g., A.5.1
     title = Column(String(255), nullable=False)
     description = Column(Text)
@@ -64,8 +66,8 @@ class ControlPosition(Base, TimestampMixin):
     __tablename__ = "control_positions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    control_id = Column(UUID(as_uuid=True), ForeignKey("framework_controls.id"), nullable=False, index=True)
-    position_id = Column(UUID(as_uuid=True), ForeignKey("positions.id"), nullable=False, index=True)
+    control_id = Column(UUID(as_uuid=True), ForeignKey("framework_controls.id", ondelete="CASCADE"), nullable=False, index=True)
+    position_id = Column(UUID(as_uuid=True), ForeignKey("positions.id", ondelete="CASCADE"), nullable=False, index=True)
     importance_weight = Column(Float, default=1.0) # Weight for scoring
 
     # Relationships
@@ -77,7 +79,7 @@ class AIQuestion(Base, TimestampMixin):
     __tablename__ = "ai_questions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    control_id = Column(UUID(as_uuid=True), ForeignKey("framework_controls.id"), nullable=False, index=True)
+    control_id = Column(UUID(as_uuid=True), ForeignKey("framework_controls.id", ondelete="CASCADE"), nullable=False, index=True)
     question_text = Column(Text, nullable=False)
     logic_type = Column(String(50)) # e.g., 'evidence-based', 'process-based'
     expected_evidence = Column(Text)

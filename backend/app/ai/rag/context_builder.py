@@ -3,12 +3,12 @@ Context Building for RAG
 Assembles retrieved chunks into coherent context
 """
 
-from typing import List
-import tiktoken
-import structlog
 
-from app.ai.rag.schemas import RetrievedChunk
+import structlog
+import tiktoken
+
 from app.ai.rag.prompt_templates import CONTEXT_CHUNK_TEMPLATE
+from app.ai.rag.schemas import RetrievedChunk
 
 logger = structlog.get_logger(__name__)
 
@@ -23,7 +23,7 @@ class ContextBuilder:
     - Hierarchical organization
     - Truncation handling
     """
-    
+
     def __init__(self, max_tokens: int = 4000, model: str = "gpt-3.5-turbo"):
         self.max_tokens = max_tokens
         try:
@@ -31,14 +31,14 @@ class ContextBuilder:
         except KeyError:
             # Fallback to cl100k_base if model not found
             self.encoding = tiktoken.get_encoding("cl100k_base")
-        
+
     def _count_tokens(self, text: str) -> int:
         """Count tokens in text"""
         return len(self.encoding.encode(text))
-    
+
     def build_context(
         self,
-        chunks: List[RetrievedChunk],
+        chunks: list[RetrievedChunk],
         include_metadata: bool = True
     ) -> str:
         """
@@ -53,10 +53,10 @@ class ContextBuilder:
         """
         if not chunks:
             return ""
-        
+
         context_parts = []
         total_tokens = 0
-        
+
         for i, chunk in enumerate(chunks, 1):
             # Format chunk with metadata
             if include_metadata:
@@ -69,10 +69,10 @@ class ContextBuilder:
                 )
             else:
                 chunk_text = f"{chunk.text}\n---\n"
-            
+
             # Check token limit
             chunk_tokens = self._count_tokens(chunk_text)
-            
+
             if total_tokens + chunk_tokens > self.max_tokens:
                 logger.warning(
                     "context_truncated",
@@ -81,17 +81,17 @@ class ContextBuilder:
                     tokens_used=total_tokens
                 )
                 break
-            
+
             context_parts.append(chunk_text)
             total_tokens += chunk_tokens
-        
+
         context = "\n".join(context_parts)
-        
+
         logger.info(
             "context_built",
             chunks_used=len(context_parts),
             total_tokens=total_tokens,
             max_tokens=self.max_tokens
         )
-        
+
         return context

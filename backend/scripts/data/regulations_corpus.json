@@ -1,0 +1,120 @@
+[
+  {
+    "framework": "EGYPT_PDPL",
+    "source_file": "Egypt Personal Data Protection Law No. 151 of 2020",
+    "source_url": "https://mcit.gov.eg/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Applicability", "text": "Egypt's Personal Data Protection Law No. 151 of 2020 regulates the processing of personal data that is electronically processed. It applies to Egyptians and foreigners residing in Egypt, and to controllers and processors inside Egypt, as well as those outside Egypt processing data of persons in Egypt. Processing requires the consent of the data subject unless otherwise permitted by law. A controller or processor must obtain a licence or permit from the Personal Data Protection Center."},
+      {"control_id": "Rights", "section": "Data Subject Rights and Obligations", "text": "Under Law 151/2020 the data subject has the right to be informed, to access their personal data, to correct, erase, or update it, to withdraw consent, and to object to processing. Controllers and processors must implement technical and organizational measures to protect data, notify the Personal Data Protection Center of breaches (and affected persons in serious cases), appoint a data protection officer, and observe rules for cross-border transfer which generally require an adequate level of protection and Center approval. Sensitive data (health, genetic, biometric, religious belief, etc.) and direct marketing have additional restrictions."},
+      {"control_id": "Enforcement", "section": "Regulator and Penalties", "text": "The law establishes the Personal Data Protection Center (PDPC) under the Ministry of Communications and Information Technology to supervise and enforce the law, issue licences and permits, and investigate complaints. Violations carry administrative fines and criminal penalties including fines and, for certain offences, imprisonment; unlawful cross-border transfer and processing of sensitive data without authorization attract heavier penalties."}
+    ]
+  },
+  {
+    "framework": "KSA_PDPL",
+    "source_file": "Saudi Arabia Personal Data Protection Law (PDPL)",
+    "source_url": "https://sdaia.gov.sa/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Applicability", "text": "The Saudi Personal Data Protection Law (PDPL), issued by Royal Decree and overseen by the Saudi Data and Artificial Intelligence Authority (SDAIA), regulates the processing of personal data of individuals in the Kingdom, including processing by entities outside Saudi Arabia of data relating to individuals residing in the Kingdom. Processing generally requires a lawful basis such as the data subject's consent, and additional safeguards apply to sensitive data."},
+      {"control_id": "Rights", "section": "Rights, Obligations and Transfers", "text": "Data subjects have rights to be informed, to access their data, to request correction, and to request destruction of their data. Controllers must register/notify where required, maintain records of processing activities, conduct impact assessments for high-risk processing, notify SDAIA of personal data breaches, and appoint a personal data protection officer in defined cases. Cross-border transfer of personal data is permitted under conditions ensuring an adequate level of protection. Penalties include administrative fines, and disclosure of sensitive data with intent to harm can attract imprisonment."}
+    ]
+  },
+  {
+    "framework": "UAE_PDPL",
+    "source_file": "UAE Federal Decree-Law No. 45 of 2021 on Personal Data Protection",
+    "source_url": "https://u.ae/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Applicability", "text": "The UAE Personal Data Protection Law (Federal Decree-Law No. 45 of 2021) applies to the processing of personal data of data subjects residing or having a place of business in the UAE, and to controllers/processors inside or outside the UAE that process such data. It is supervised by the UAE Data Office. Certain free zones (e.g., DIFC, ADGM) have their own data protection regimes."},
+      {"control_id": "Rights", "section": "Rights, Obligations and Transfers", "text": "Processing requires consent or another lawful basis. Data subjects have rights to information, access, correction, erasure, restriction, portability, and to object to processing and automated decision-making. Controllers must apply appropriate technical and organizational measures, maintain records, conduct data protection impact assessments for high-risk processing, notify the Data Office of breaches, and appoint a Data Protection Officer where required. Cross-border transfers are allowed to jurisdictions with adequate protection or subject to appropriate safeguards."}
+    ]
+  },
+  {
+    "framework": "CCPA",
+    "source_file": "California Consumer Privacy Act (CCPA) as amended by CPRA",
+    "source_url": "https://oag.ca.gov/privacy/ccpa",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Applicability", "text": "The California Consumer Privacy Act (CCPA), as amended by the California Privacy Rights Act (CPRA), applies to for-profit businesses that collect California residents' personal information and meet thresholds (e.g., annual gross revenue over $25 million; buying/selling/sharing personal information of 100,000+ consumers or households; or deriving 50%+ of revenue from selling/sharing personal information). The CPRA created the California Privacy Protection Agency (CPPA) to enforce the law alongside the Attorney General."},
+      {"control_id": "Rights", "section": "Consumer Rights and Business Obligations", "text": "Consumers have the rights to know what personal information is collected and how it is used and shared; to delete personal information; to correct inaccurate personal information; to opt out of the sale or sharing of personal information; to limit use and disclosure of sensitive personal information; and to non-discrimination for exercising rights. Businesses must provide privacy notices, honor opt-out signals, enter into contracts with service providers, and implement reasonable security. The CPRA adds data minimization, purpose limitation, and storage limitation obligations."}
+    ]
+  },
+  {
+    "framework": "LGPD",
+    "source_file": "Brazil Lei Geral de Protecao de Dados (LGPD - Lei 13.709/2018)",
+    "source_url": "https://www.gov.br/anpd/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Legal Bases", "text": "Brazil's LGPD (Lei 13.709/2018) governs the processing of personal data by individuals and organizations, applying when processing occurs in Brazil, aims to offer goods/services to people in Brazil, or processes data collected in Brazil. Processing must rely on one of ten legal bases, including consent, legal obligation, contract performance, legitimate interests, and protection of life or health. The national authority is the ANPD (Autoridade Nacional de Protecao de Dados)."},
+      {"control_id": "Rights", "section": "Data Subject Rights and Obligations", "text": "Data subjects have rights to confirmation of processing, access, correction, anonymization or deletion of unnecessary data, portability, information about sharing, and to revoke consent. Controllers must keep records of processing, conduct data protection impact reports, appoint a data protection officer (encarregado), adopt security measures, and report security incidents to the ANPD and affected data subjects. Penalties include warnings and fines up to 2% of revenue in Brazil, capped at R$50 million per violation."}
+    ]
+  },
+  {
+    "framework": "PIPEDA",
+    "source_file": "Canada Personal Information Protection and Electronic Documents Act (PIPEDA)",
+    "source_url": "https://www.priv.gc.ca/",
+    "sections": [
+      {"control_id": "Principles", "section": "Fair Information Principles", "text": "PIPEDA governs how private-sector organizations collect, use, and disclose personal information in the course of commercial activities. It is built on ten Fair Information Principles: accountability; identifying purposes; consent; limiting collection; limiting use, disclosure and retention; accuracy; safeguards; openness; individual access; and challenging compliance. The Office of the Privacy Commissioner of Canada (OPC) oversees compliance."},
+      {"control_id": "Breach", "section": "Consent, Access and Breach Reporting", "text": "Organizations must obtain meaningful consent, give individuals access to their personal information and the ability to challenge its accuracy, and protect information with safeguards appropriate to its sensitivity. Since 2018, organizations must report breaches of security safeguards involving a real risk of significant harm to the OPC and notify affected individuals, and keep records of all breaches."}
+    ]
+  },
+  {
+    "framework": "UK_GDPR",
+    "source_file": "UK GDPR and Data Protection Act 2018",
+    "source_url": "https://ico.org.uk/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Principles", "text": "Following Brexit, the UK retained the GDPR as the 'UK GDPR', supplemented by the Data Protection Act 2018. It largely mirrors the EU GDPR: the same data protection principles (lawfulness, fairness and transparency; purpose limitation; data minimisation; accuracy; storage limitation; integrity and confidentiality; accountability), lawful bases for processing, and data subject rights. The regulator is the Information Commissioner's Office (ICO)."},
+      {"control_id": "Rights", "section": "Rights, Obligations and Enforcement", "text": "Data subjects have rights to be informed, access, rectification, erasure, restriction, portability, objection, and rights related to automated decision-making. Controllers must demonstrate accountability, conduct DPIAs for high-risk processing, appoint a DPO where required, report personal data breaches to the ICO within 72 hours, and apply appropriate technical and organisational measures. Fines can reach the higher of £17.5 million or 4% of global annual turnover."}
+    ]
+  },
+  {
+    "framework": "PIPL",
+    "source_file": "China Personal Information Protection Law (PIPL, 2021)",
+    "source_url": "http://www.cac.gov.cn/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Legal Bases", "text": "China's Personal Information Protection Law (PIPL), effective 1 November 2021, regulates the processing of personal information of natural persons within China and applies extraterritorially where processing aims to provide products/services to individuals in China or to analyze their behavior. Processing requires a legal basis such as consent (often separate consent for sensitive data, cross-border transfer, and certain disclosures), contract necessity, legal duties, or public interest."},
+      {"control_id": "Transfers", "section": "Rights, Cross-Border Transfer and Enforcement", "text": "Individuals have rights to know, decide, access, copy, correct, and delete their personal information, and to withdraw consent. Processors must conduct impact assessments, appoint persons responsible for personal information protection, and meet strict cross-border transfer conditions: a CAC security assessment, certification, or standard contractual clauses, plus separate consent. Enforcement is led by the Cyberspace Administration of China (CAC); fines can reach RMB 50 million or 5% of annual turnover for serious violations."}
+    ]
+  },
+  {
+    "framework": "DPDP",
+    "source_file": "India Digital Personal Data Protection Act, 2023",
+    "source_url": "https://www.meity.gov.in/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Consent", "text": "India's Digital Personal Data Protection (DPDP) Act, 2023 governs the processing of digital personal data within India and outside India where it relates to offering goods or services to data principals in India. Processing requires consent (with clear notice) or 'legitimate uses' specified in the Act. Consent must be free, specific, informed, unconditional, and withdrawable, and may be managed through Consent Managers."},
+      {"control_id": "Rights", "section": "Rights, Obligations and Enforcement", "text": "Data principals have rights to access information about processing, correction and erasure, grievance redressal, and to nominate another person. Data fiduciaries must protect data, notify the Data Protection Board and affected principals of breaches, and erase data when no longer needed. 'Significant Data Fiduciaries' face extra duties (Data Protection Officer, independent audit, impact assessment). The Data Protection Board of India adjudicates; penalties can reach up to Rs 250 crore per instance."}
+    ]
+  },
+  {
+    "framework": "POPIA",
+    "source_file": "South Africa Protection of Personal Information Act (POPIA)",
+    "source_url": "https://inforegulator.org.za/",
+    "sections": [
+      {"control_id": "Conditions", "section": "Eight Conditions for Lawful Processing", "text": "South Africa's POPIA sets eight conditions for the lawful processing of personal information: accountability; processing limitation (lawfulness, minimality, consent/justification); purpose specification; further processing limitation; information quality; openness; security safeguards; and data subject participation. It applies to responsible parties domiciled in South Africa, and to others using means in South Africa."},
+      {"control_id": "Rights", "section": "Rights, Breach and Regulator", "text": "Data subjects have rights to be notified, to access their information, to request correction or deletion, to object to processing, and not to be subject to certain automated decision-making. Responsible parties must secure the integrity and confidentiality of information, notify the Information Regulator and data subjects of security compromises, and process special personal information only under specific conditions. The Information Regulator enforces the Act, with fines up to R10 million and possible imprisonment."}
+    ]
+  },
+  {
+    "framework": "PDPA_SG",
+    "source_file": "Singapore Personal Data Protection Act (PDPA)",
+    "source_url": "https://www.pdpc.gov.sg/",
+    "sections": [
+      {"control_id": "Obligations", "section": "Data Protection Obligations", "text": "Singapore's PDPA governs the collection, use, and disclosure of personal data by organizations. Its key obligations include consent, purpose limitation, notification, access and correction, accuracy, protection (security), retention limitation, transfer limitation, accountability, and data breach notification. The Personal Data Protection Commission (PDPC) administers the Act, which also operates the Do Not Call (DNC) registry."},
+      {"control_id": "Breach", "section": "Breach Notification and Transfers", "text": "Organizations must appoint a Data Protection Officer, develop policies, and protect personal data with reasonable security arrangements. Data breaches that result in significant harm to affected individuals or are of significant scale (500 or more individuals) must be notified to the PDPC and affected individuals. Transfers of personal data outside Singapore require comparable protection. Financial penalties can be substantial, scaling with organization turnover."}
+    ]
+  },
+  {
+    "framework": "APPI",
+    "source_file": "Japan Act on the Protection of Personal Information (APPI)",
+    "source_url": "https://www.ppc.go.jp/en/",
+    "sections": [
+      {"control_id": "Scope", "section": "Scope and Obligations", "text": "Japan's Act on the Protection of Personal Information (APPI) regulates business operators handling personal information. Operators must specify the purpose of use, obtain personal information lawfully, maintain accuracy, implement security control measures, supervise employees and contractors, and restrict provision of personal data to third parties without consent. The Personal Information Protection Commission (PPC) supervises and enforces the Act."},
+      {"control_id": "Rights", "section": "Rights, Breach and Cross-Border", "text": "Individuals can request disclosure, correction, addition or deletion, and cessation of use of their retained personal data. Operators must report serious data breaches to the PPC and notify affected individuals. Cross-border transfers require the individual's consent, a recipient in a country with an adequate system, or recipient measures meeting PPC standards. Special care-required personal information (e.g., health, criminal record) needs consent to obtain."}
+    ]
+  },
+  {
+    "framework": "AU_PRIVACY",
+    "source_file": "Australia Privacy Act 1988 and Australian Privacy Principles (APPs)",
+    "source_url": "https://www.oaic.gov.au/",
+    "sections": [
+      {"control_id": "APPs", "section": "Australian Privacy Principles", "text": "Australia's Privacy Act 1988 contains 13 Australian Privacy Principles (APPs) governing the handling of personal information by APP entities: open and transparent management of personal information; anonymity and pseudonymity; collection of solicited personal information; dealing with unsolicited information; notification of collection; use or disclosure; direct marketing; cross-border disclosure; government related identifiers; quality; security; access; and correction."},
+      {"control_id": "Breach", "section": "Notifiable Data Breaches and Regulator", "text": "The Notifiable Data Breaches (NDB) scheme requires entities to notify the Office of the Australian Information Commissioner (OAIC) and affected individuals of 'eligible data breaches' likely to result in serious harm. The OAIC regulates and can investigate and seek civil penalties; reforms have substantially increased maximum penalties for serious or repeated interferences with privacy."}
+    ]
+  }
+]
