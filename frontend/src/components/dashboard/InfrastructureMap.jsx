@@ -2,7 +2,7 @@ import { memo, useMemo, useCallback, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ASSET_TYPE_META } from '../../constants/assetConstants'
 import { useDashboard } from '../../context/DashboardContext'
-import { listInfrastructureAssets } from '../../api/assets'
+import { getInfrastructureMap, listVulnerabilities } from '../../api/assets'
 import AssetNode from './AssetNode'
 import AssetListView from './AssetListView'
 
@@ -108,46 +108,53 @@ const InfrastructureMap = () => {
   const [loading, setLoading] = useState(true)
   const [connections, setConnections] = useState([])
 
-  // Fetch assets from API
+  // Fetch the real infrastructure map (nodes + edges) and per-asset CVEs.
   useEffect(() => {
-    const fetchAssets = async () => {
+    const fetchMap = async () => {
       try {
         setLoading(true)
-        const response = await listInfrastructureAssets()
-        const assetsData = response.data?.data?.assets || response.data?.assets || []
-        
-        // Transform API data to match expected format
-        const transformedAssets = assetsData.map((asset, index) => ({
-          id: asset.id,
-          name: asset.asset_name,
-          type: toDisplayAssetType(asset.asset_type),
-          status: asset.criticality === 'high' ? 'critical' : asset.criticality === 'medium' ? 'warning' : 'secure',
-          gridX: 10 + (index % 5) * 20,
-          gridY: 10 + Math.floor(index / 5) * 20,
-          risk_score: asset.asset_metadata?.risk_score || 30,
-          compliance_score: asset.asset_metadata?.compliance_score || 70,
-          department: asset.asset_metadata?.department || 'Unassigned',
-          vulnerabilities: [],
-          metadata: asset.asset_metadata,
-        }))
-        
-        setAssets(transformedAssets)
-        
-        // Generate connections between assets
-        const generatedConnections = []
-        for (let i = 0; i < transformedAssets.length - 1; i++) {
-          generatedConnections.push([transformedAssets[i].id, transformedAssets[i + 1].id])
+        const [mapRes, vulnRes] = await Promise.all([
+          getInfrastructureMap(),
+          listVulnerabilities().catch(() => null),
+        ])
+        const nodes = mapRes?.data?.nodes || []
+        const edges = mapRes?.data?.edges || []
+        const vulns = vulnRes?.data?.vulnerabilities || []
+
+        // Group real vulnerabilities by asset so the detail panel shows CVEs.
+        const byAsset = {}
+        for (const v of vulns) {
+          ;(byAsset[v.asset_id] ||= []).push(v)
         }
-        setConnections(generatedConnections)
+
+        const transformedAssets = nodes.map((n) => ({
+          id: n.id,
+          name: n.name,
+          type: toDisplayAssetType(n.type),
+          status: n.status || 'secure',
+          gridX: n.grid_x,
+          gridY: n.grid_y,
+          risk_score: n.risk_score ?? 0,
+          compliance_score: n.compliance_score ?? 100,
+          department: 'Unassigned',
+          ip: n.ip_address,
+          vulnerability_count: n.vulnerability_count ?? (byAsset[n.id]?.length || 0),
+          vulnerabilities: byAsset[n.id] || [],
+          metadata: {},
+        }))
+
+        setAssets(transformedAssets)
+        setConnections(edges.map((e) => [e.source, e.target]))
       } catch (error) {
-        console.error('Failed to fetch assets:', error)
+        console.error('Failed to fetch infrastructure map:', error)
         setAssets([])
+        setConnections([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchAssets()
+    fetchMap()
   }, [])
 
   // Memoize filtered assets

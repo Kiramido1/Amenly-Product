@@ -19,3 +19,21 @@ export const getAssetStatistics = async () => {
   const response = await api.get('/assets/statistics')
   return response.data
 }
+
+// --- Vulnerabilities + infrastructure map (admin) ---
+
+export const scanVulnerabilities = async () => {
+  const response = await api.post('/assets/scan-vulnerabilities')
+  return response.data
+}
+
+export const listVulnerabilities = async (onlyOpen = false) => {
+  const params = onlyOpen ? { only_open: true } : {}
+  const response = await api.get('/assets/vulnerabilities', { params })
+  return response.data
+}
+
+export const getInfrastructureMap = async () => {
+  const response = await api.get('/assets/map')
+  return response.data
+}

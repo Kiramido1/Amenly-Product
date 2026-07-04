@@ -335,12 +335,14 @@ const PanelContent = ({ asset, onClose }) => {
         ) : (
           <div className="space-y-2">
             {vulnerabilities.map((vuln, i) => {
-              const isCritical = vuln.includes('Critical')
-              const isOpen = vuln.includes('Open')
-              const vulnColor = isCritical ? '#ef4444' : isOpen ? '#94A3B8' : '#10b981'
+              // Supports both real CVE objects and legacy string entries.
+              const isObj = vuln && typeof vuln === 'object'
+              const sev = isObj ? String(vuln.severity || '').toLowerCase() : (vuln.includes('Critical') ? 'critical' : vuln.includes('Open') ? 'medium' : 'low')
+              const vulnColor = sev === 'critical' ? '#ef4444' : sev === 'high' ? '#f59e0b' : sev === 'medium' ? '#94A3B8' : '#10b981'
+              const label = isObj ? (vuln.cve_id || vuln.title) : vuln
               return (
                 <motion.div
-                  key={i}
+                  key={isObj ? (vuln.id || vuln.cve_id || i) : i}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.1 }}
@@ -353,12 +355,29 @@ const PanelContent = ({ asset, onClose }) => {
                     animate={{
                       boxShadow: [`0 0 4px ${vulnColor}`, `0 0 8px ${vulnColor}`, `0 0 4px ${vulnColor}`],
                     }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
-                  <span className="text-[11px] text-white/70 leading-relaxed flex-1">{vuln}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {isObj && vuln.cve_id ? (
+                        vuln.reference_url ? (
+                          <a href={vuln.reference_url} target="_blank" rel="noreferrer"
+                             className="text-[11px] font-semibold text-[#5F9BD8] hover:underline">{vuln.cve_id}</a>
+                        ) : <span className="text-[11px] font-semibold text-white/80">{vuln.cve_id}</span>
+                      ) : null}
+                      {isObj && (
+                        <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded" style={{ color: vulnColor, backgroundColor: `${vulnColor}22` }}>
+                          {sev}{vuln.cvss_score != null ? ` · ${vuln.cvss_score}` : ''}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-white/60 leading-relaxed mt-1">
+                      {isObj ? (vuln.title || vuln.description || '') : label}
+                    </p>
+                    {isObj && vuln.remediation && (
+                      <p className="text-[10px] text-emerald-300/70 leading-relaxed mt-1">Fix: {vuln.remediation}</p>
+                    )}
+                  </div>
                 </motion.div>
               )
             })}

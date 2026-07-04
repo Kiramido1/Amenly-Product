@@ -56,3 +56,30 @@ export const getChatHistory = async (sessionId) => {
   const response = await api.get(`/assessments/sessions/${sessionId}/chat`)
   return response.data
 }
+
+// --- Campaign lifecycle (admin only) ---
+
+export const launchCampaign = async (assessmentId) => {
+  const response = await api.post(`/assessments/${assessmentId}/launch`)
+  return response.data
+}
+
+export const advanceCampaignPhase = async (assessmentId) => {
+  const response = await api.post(`/assessments/${assessmentId}/advance-phase`)
+  return response.data
+}
+
+export const closeCampaign = async (assessmentId) => {
+  const response = await api.post(`/assessments/${assessmentId}/close`)
+  return response.data
+}
+
+export const listCampaignSessions = async (assessmentId) => {
+  const response = await api.get(`/assessments/${assessmentId}/sessions`)
+  return response.data
+}
+
+export const getCampaignOverview = async (assessmentId) => {
+  const response = await api.get(`/assessments/${assessmentId}/overview`)
+  return response.data
+}

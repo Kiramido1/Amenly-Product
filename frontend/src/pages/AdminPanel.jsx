@@ -9,16 +9,29 @@ import {
   rejectJoinRequest,
   regenerateInviteCode,
 } from '../api/organizations'
+import {
+  listAssessments,
+  launchCampaign,
+  advanceCampaignPhase,
+  closeCampaign,
+  listCampaignSessions,
+  getCampaignOverview,
+} from '../api/assessments'
 
 const EASE = [0.25, 0.46, 0.45, 0.94]
 const titleCase = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
 const TABS = [
+  { key: 'assessment', label: 'Assessment' },
   { key: 'frameworks', label: 'Frameworks' },
   { key: 'regulations', label: 'Regulations' },
   { key: 'requests', label: 'Join Requests' },
   { key: 'invite', label: 'Invite Code' },
 ]
+
+const scoreColor = (s) =>
+  s == null ? 'text-white/40' : s >= 80 ? 'text-emerald-300' : s >= 40 ? 'text-amber-300' : 'text-red-300'
+const fmtScore = (s) => (s == null ? '—' : `${Math.round(s)}%`)
 
 // Catalog tab config: frameworks (standards/guidelines) vs regulations.
 const CATALOG_KINDS = {
@@ -250,9 +263,209 @@ const InviteTab = () => {
   )
 }
 
+// ─── Assessment campaign tab (admin-driven) ────────────────────────
+const StatusBadge = ({ status, phase }) => {
+  const map = {
+    pending: 'bg-white/[0.06] text-white/60',
+    in_progress: 'bg-[#2C74B3]/15 text-[#2C74B3]',
+    completed: 'bg-emerald-500/15 text-emerald-300',
+  }
+  return (
+    <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${map[status] || map.pending}`}>
+      {titleCase(status)}{phase && status === 'in_progress' ? ` · ${titleCase(phase)}` : ''}
+    </span>
+  )
+}
+
+const CampaignTab = () => {
+  const [assessments, setAssessments] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [overview, setOverview] = useState(null)
+  const [sessions, setSessions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const loadList = useCallback(async () => {
+    try {
+      const res = await listAssessments()
+      const items = res?.data?.assessments || []
+      setAssessments(items)
+      setSelected((cur) => cur || (items[0]?.id ?? null))
+    } catch {
+      setAssessments([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const loadDetail = useCallback(async (id) => {
+    if (!id) { setOverview(null); setSessions([]); return }
+    try {
+      const [ov, ss] = await Promise.all([getCampaignOverview(id), listCampaignSessions(id)])
+      setOverview(ov?.data?.overview || null)
+      setSessions(ss?.data?.sessions || [])
+    } catch {
+      setOverview(null); setSessions([])
+    }
+  }, [])
+
+  useEffect(() => { loadList() }, [loadList])
+  useEffect(() => { loadDetail(selected) }, [selected, loadDetail])
+
+  const act = async (fn) => {
+    if (!selected) return
+    setBusy(true); setError('')
+    try {
+      await fn(selected)
+      await Promise.all([loadDetail(selected), loadList()])
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Action failed. Please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (loading) return <Spinner />
+
+  if (assessments.length === 0) {
+    return (
+      <p className="text-sm text-white/40 py-10 text-center">
+        No assessments yet. Create one from the AI Compliance chat to launch a campaign here.
+      </p>
+    )
+  }
+
+  const status = overview?.status
+  const phase = overview?.current_phase
+  const canLaunch = status === 'pending'
+  const canAdvance = status === 'in_progress' && phase === 'baseline'
+  const canClose = status === 'in_progress'
+
+  return (
+    <div>
+      <p className="text-sm text-white/50 mb-5">
+        Launch and control organization-wide assessments. Only you (admin) can start, advance, and close them —
+        members answer their position-specific questions, and you see everyone's progress and scores here.
+      </p>
+
+      {/* Assessment selector */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {assessments.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => setSelected(a.id)}
+            className={`px-3.5 py-2 rounded-lg text-xs font-medium border transition-colors ${
+              selected === a.id
+                ? 'border-[#2C74B3]/50 bg-[#2C74B3]/15 text-white'
+                : 'border-white/[0.06] bg-white/[0.02] text-white/55 hover:text-white/80'
+            }`}
+          >
+            {a.name}
+          </button>
+        ))}
+      </div>
+
+      {overview && (
+        <>
+          {/* Before / After scorecards */}
+          <div className="grid sm:grid-cols-3 gap-3 mb-4">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Baseline (before)</div>
+              <div className={`text-3xl font-bold ${scoreColor(overview.baseline_score)}`}>{fmtScore(overview.baseline_score)}</div>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Remediation (after)</div>
+              <div className={`text-3xl font-bold ${scoreColor(overview.remediation_score)}`}>{fmtScore(overview.remediation_score)}</div>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Improvement</div>
+              <div className={`text-3xl font-bold ${overview.improvement > 0 ? 'text-emerald-300' : overview.improvement < 0 ? 'text-red-300' : 'text-white/40'}`}>
+                {overview.improvement == null ? '—' : `${overview.improvement > 0 ? '+' : ''}${Math.round(overview.improvement)}%`}
+              </div>
+            </div>
+          </div>
+
+          {/* Status + participation */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <StatusBadge status={status} phase={phase} />
+                {overview.framework_name && <span className="text-xs text-white/45">{overview.framework_name}</span>}
+              </div>
+              <span className="text-xs text-white/50">
+                {overview.completed_sessions}/{overview.participants_total} members done · {Math.round(overview.completion_rate)}%
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="h-full bg-[#2C74B3] rounded-full transition-all" style={{ width: `${Math.min(100, overview.completion_rate)}%` }} />
+            </div>
+          </div>
+
+          {error && <div className="mb-4 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</div>}
+
+          {/* Controls */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {canLaunch && (
+              <button onClick={() => act(launchCampaign)} disabled={busy}
+                className="px-4 py-2 text-xs rounded-lg bg-[#2C74B3]/20 text-[#2C74B3] border border-[#2C74B3]/30 hover:bg-[#2C74B3]/30 transition-colors disabled:opacity-50">
+                {busy ? '...' : '▶ Launch Campaign'}
+              </button>
+            )}
+            {canAdvance && (
+              <button onClick={() => act(advanceCampaignPhase)} disabled={busy}
+                className="px-4 py-2 text-xs rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 transition-colors disabled:opacity-50">
+                {busy ? '...' : '⤴ Advance to Remediation'}
+              </button>
+            )}
+            {canClose && (
+              <button onClick={() => act(closeCampaign)} disabled={busy}
+                className="px-4 py-2 text-xs rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-50">
+                {busy ? '...' : '■ Close Campaign'}
+              </button>
+            )}
+            {status === 'completed' && (
+              <span className="px-4 py-2 text-xs rounded-lg bg-emerald-500/10 text-emerald-300/80 border border-emerald-500/20">
+                ✓ Completed — final score {fmtScore(overview.overall_score)}
+              </span>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Member sessions */}
+      <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+        <div className="px-4 py-3 bg-white/[0.02] text-[10px] text-white/40 uppercase tracking-wider grid grid-cols-12 gap-2">
+          <span className="col-span-4">Member</span>
+          <span className="col-span-3">Position</span>
+          <span className="col-span-2">Status</span>
+          <span className="col-span-1 text-right">Answers</span>
+          <span className="col-span-2 text-right">Avg score</span>
+        </div>
+        {sessions.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-white/40">No member sessions yet.</div>
+        ) : (
+          sessions.map((s) => (
+            <div key={s.session_id} className="px-4 py-3 grid grid-cols-12 gap-2 items-center border-t border-white/[0.04]">
+              <div className="col-span-4 min-w-0">
+                <div className="text-sm text-white truncate">{s.user_full_name || s.user_email}</div>
+                {s.user_full_name && <div className="text-[11px] text-white/35 truncate">{s.user_email}</div>}
+              </div>
+              <div className="col-span-3 text-xs text-white/55 truncate">{s.position_name || '—'}</div>
+              <div className="col-span-2"><StatusBadge status={s.status} phase={s.phase} /></div>
+              <div className="col-span-1 text-right text-xs text-white/55">{s.answers_count}</div>
+              <div className={`col-span-2 text-right text-sm font-semibold ${scoreColor(s.avg_score)}`}>{fmtScore(s.avg_score)}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Admin Panel ───────────────────────────────────────────────────
 const AdminPanel = () => {
-  const [tab, setTab] = useState('frameworks')
+  const [tab, setTab] = useState('assessment')
 
   return (
     <div className="min-h-screen bg-[#050505]">
@@ -300,6 +513,7 @@ const AdminPanel = () => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease: EASE }}
           >
+            {tab === 'assessment' && <CampaignTab />}
             {tab === 'frameworks' && <CatalogTab kind="frameworks" />}
             {tab === 'regulations' && <CatalogTab kind="regulations" />}
             {tab === 'requests' && <RequestsTab />}
