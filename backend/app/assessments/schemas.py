@@ -99,12 +99,47 @@ class AssessmentAnswerResponse(BaseModel):
     compliance_score: float | None
     evidence_urls: list[str] | None
     ai_feedback: str | None
+    remediation: str | None = None
+    regulation_note: str | None = None
     status: ControlStatus
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
+
+# Campaign lifecycle Schemas
+class CampaignSessionSummary(BaseModel):
+    session_id: UUID
+    user_id: UUID
+    user_email: str | None = None
+    user_full_name: str | None = None
+    position_name: str | None = None
+    department_name: str | None = None
+    status: str
+    phase: str
+    answers_count: int = 0
+    avg_score: float | None = None
+
+
+class CampaignOverviewResponse(BaseModel):
+    assessment_id: UUID
+    name: str
+    framework_name: str | None = None
+    status: str
+    current_phase: str
+    launched_at: datetime | None = None
+    closed_at: datetime | None = None
+    baseline_score: float | None = None
+    remediation_score: float | None = None
+    regulation_score: float | None = None
+    overall_score: float | None = None
+    total_sessions: int = 0
+    completed_sessions: int = 0
+    participants_total: int = 0
+    completion_rate: float = 0.0
+    improvement: float | None = None  # remediation_score - baseline_score
 
 
 # Chat Message Schemas

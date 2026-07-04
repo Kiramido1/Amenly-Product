@@ -350,10 +350,143 @@ async def complete_assessment_session(
     # Update assessment score
     await assessment_service.update_assessment_score(assessment_id=session.assessment_id)
 
+    # Auto-finalize the current phase once every participant has completed.
+    assessment = await assessment_service.get_assessment(
+        assessment_id=session.assessment_id,
+        organization_id=current_user.organization_id,
+    )
+    if assessment is not None:
+        await assessment_service.maybe_autoclose(assessment)
+
     return {
         "success": True,
         "message": "Assessment session completed successfully",
         "data": {"session": AssessmentSessionResponse.model_validate(completed_session)},
+    }
+
+
+# --- Campaign Lifecycle Endpoints (Admin only) ---
+
+
+async def _get_admin_assessment(assessment_service, assessment_id, current_user):
+    """Load an assessment scoped to the admin's org or raise 404."""
+    if current_user.organization_id is None:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    assessment = await assessment_service.get_assessment(
+        assessment_id=assessment_id,
+        organization_id=current_user.organization_id,
+    )
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    return assessment
+
+
+@router.post(
+    "/{assessment_id}/launch",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.LAUNCH_ASSESSMENT))],
+)
+async def launch_campaign(
+    assessment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Launch the assessment campaign (Admin only). Opens the baseline phase."""
+    assessment_service = AssessmentService(db)
+    _require_completed_profile(current_user)
+    assessment = await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    assessment = await assessment_service.launch_campaign(assessment, current_user.id)
+    return {
+        "success": True,
+        "message": "Assessment campaign launched",
+        "data": {"assessment": AssessmentResponse.model_validate(assessment)},
+    }
+
+
+@router.post(
+    "/{assessment_id}/advance-phase",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.LAUNCH_ASSESSMENT))],
+)
+async def advance_phase(
+    assessment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Snapshot the baseline score and open the remediation (second) pass (Admin only)."""
+    assessment_service = AssessmentService(db)
+    assessment = await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    assessment = await assessment_service.advance_to_remediation(assessment)
+    return {
+        "success": True,
+        "message": "Advanced to remediation phase",
+        "data": {"assessment": AssessmentResponse.model_validate(assessment)},
+    }
+
+
+@router.post(
+    "/{assessment_id}/close",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.CLOSE_ASSESSMENT))],
+)
+async def close_campaign(
+    assessment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Close the campaign and lock in the final score (Admin only)."""
+    assessment_service = AssessmentService(db)
+    assessment = await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    assessment = await assessment_service.close_campaign(assessment)
+    return {
+        "success": True,
+        "message": "Assessment campaign closed",
+        "data": {"assessment": AssessmentResponse.model_validate(assessment)},
+    }
+
+
+@router.get(
+    "/{assessment_id}/sessions",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.VIEW_ALL_SESSIONS))],
+)
+async def list_campaign_sessions(
+    assessment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """List every member's session for the assessment (Admin only)."""
+    assessment_service = AssessmentService(db)
+    await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    sessions = await assessment_service.list_all_sessions(assessment_id)
+    return {
+        "success": True,
+        "message": "Sessions retrieved successfully",
+        "data": {"sessions": sessions},
+    }
+
+
+@router.get(
+    "/{assessment_id}/overview",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_any_permission(
+        Permission.VIEW_ALL_SCORES,
+        Permission.VIEW_ORG_TOTAL_SCORE,
+    ))],
+)
+async def campaign_overview(
+    assessment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Before/after scores + participation summary for the admin dashboard."""
+    assessment_service = AssessmentService(db)
+    assessment = await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    overview = await assessment_service.get_campaign_overview(assessment)
+    return {
+        "success": True,
+        "message": "Overview retrieved successfully",
+        "data": {"overview": overview},
     }
 
 
@@ -397,8 +530,9 @@ async def save_assessment_answer(
             detail="This assessment session is already completed and cannot be modified.",
         )
 
-    answer = await assessment_service.save_answer(
-        session_id=answer_in.session_id,
+    # Evaluate the answer with the AI engine and persist score + remediation.
+    answer = await assessment_service.submit_answer(
+        session=session,
         question_id=answer_in.question_id,
         # H-8: always derive the position from the authenticated user. A client-supplied
         # position_id let users attribute answers to positions outside their scope.
@@ -409,7 +543,7 @@ async def save_assessment_answer(
 
     return {
         "success": True,
-        "message": "Answer saved successfully",
+        "message": "Answer submitted and evaluated successfully",
         "data": {"answer": AssessmentAnswerResponse.model_validate(answer)},
     }
 

@@ -12,12 +12,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.assessments.evaluation import get_evaluation_service
 from app.assessments.question_generator import QuestionGenerator
 from app.models.assessments import Assessment, AssessmentAnswer, AssessmentSession
 from app.models.chat import ChatMessage
 from app.models.compliance import AIQuestion, ControlPosition, Framework, FrameworkControl
-from app.models.enums import AssessmentStatus, ControlStatus
-from app.models.identity import Department, Position, User
+from app.models.enums import AssessmentPhase, AssessmentStatus, ControlStatus
+from app.models.identity import Department, Organization, Position, User
 
 logger = structlog.get_logger(__name__)
 
@@ -322,6 +323,292 @@ class AssessmentService:
             question_id=str(question_id),
         )
         return answer
+
+    async def submit_answer(
+        self,
+        session: AssessmentSession,
+        question_id: UUID,
+        position_id: UUID,
+        answer_text: str,
+        evidence_urls: list[str] | None = None,
+    ) -> AssessmentAnswer:
+        """Save an answer AND evaluate it with the AI engine.
+
+        Loads the question's control and the org region, runs the evaluation,
+        and persists the score/feedback/remediation/regulation note along with
+        the session's current phase (for before/after comparison).
+        """
+        # Load the question with its control (+ framework) for evaluation context.
+        result = await self.db.execute(
+            select(AIQuestion)
+            .where(AIQuestion.id == question_id)
+            .options(selectinload(AIQuestion.control).selectinload(FrameworkControl.framework))
+        )
+        question = result.scalar_one_or_none()
+        if question is None:
+            raise HTTPException(status_code=404, detail="Question not found for this assessment.")
+
+        control = question.control
+
+        # Resolve the organization's region for regulatory alignment.
+        region = "Global"
+        assessment = getattr(session, "assessment", None)
+        org_id = assessment.organization_id if assessment else None
+        if org_id is not None:
+            org_res = await self.db.execute(
+                select(Organization.region).where(Organization.id == org_id)
+            )
+            region = org_res.scalar_one_or_none() or "Global"
+
+        evaluation = await get_evaluation_service().evaluate(
+            answer_text=answer_text,
+            control_code=getattr(control, "code", "") or "",
+            control_title=getattr(control, "title", "") or "",
+            control_description=getattr(control, "description", "") or "",
+            control_guidance=getattr(control, "guidance", "") or "",
+            question_text=question.question_text or "",
+            config_focus=getattr(question, "config_focus", "") or "",
+            expected_evidence=question.expected_evidence or "",
+            region=region,
+        )
+
+        answer = AssessmentAnswer(
+            session_id=session.id,
+            question_id=question_id,
+            position_id=position_id,
+            phase=getattr(session, "phase", AssessmentPhase.BASELINE),
+            answer_text=answer_text,
+            compliance_score=evaluation.compliance_score,
+            evidence_urls=evidence_urls,
+            ai_feedback=evaluation.feedback,
+            remediation=evaluation.remediation,
+            regulation_note=evaluation.regulation_note,
+            status=evaluation.status,
+        )
+        self.db.add(answer)
+        try:
+            await self.db.commit()
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(status_code=404, detail="Invalid reference (question or position) for this answer.")
+        await self.db.refresh(answer)
+
+        logger.info(
+            "assessment_answer_evaluated",
+            answer_id=str(answer.id),
+            session_id=str(session.id),
+            score=evaluation.compliance_score,
+            status=evaluation.status.value,
+        )
+        return answer
+
+    # --- Campaign lifecycle (admin-driven) ---
+
+    async def launch_campaign(self, assessment: Assessment, admin_user_id: UUID) -> Assessment:
+        """Launch a campaign: only the org admin does this. Opens the baseline phase."""
+        assessment.status = AssessmentStatus.IN_PROGRESS
+        assessment.current_phase = AssessmentPhase.BASELINE
+        assessment.launched_by_id = admin_user_id
+        assessment.launched_at = datetime.utcnow()
+        assessment.closed_at = None
+        await self.db.commit()
+        await self.db.refresh(assessment)
+        logger.info("assessment_campaign_launched", assessment_id=str(assessment.id))
+        return assessment
+
+    async def advance_to_remediation(self, assessment: Assessment) -> Assessment:
+        """Snapshot the baseline score and open the remediation (second) pass."""
+        assessment.baseline_score = await self.calculate_phase_score(
+            assessment.id, AssessmentPhase.BASELINE
+        )
+        assessment.current_phase = AssessmentPhase.REMEDIATION
+        assessment.status = AssessmentStatus.IN_PROGRESS
+        # Reopen sessions so members can re-answer for the remediation pass.
+        await self.db.execute(
+            AssessmentSession.__table__.update()
+            .where(AssessmentSession.assessment_id == assessment.id)
+            .values(status=AssessmentStatus.IN_PROGRESS, phase=AssessmentPhase.REMEDIATION, completed_at=None)
+        )
+        await self.db.commit()
+        await self.db.refresh(assessment)
+        logger.info("assessment_advanced_to_remediation", assessment_id=str(assessment.id),
+                    baseline_score=assessment.baseline_score)
+        return assessment
+
+    async def close_campaign(self, assessment: Assessment) -> Assessment:
+        """Close the campaign, snapshotting the score for the current phase."""
+        phase_score = await self.calculate_phase_score(assessment.id, assessment.current_phase)
+        if assessment.current_phase == AssessmentPhase.REMEDIATION:
+            assessment.remediation_score = phase_score
+        elif assessment.baseline_score is None:
+            assessment.baseline_score = phase_score
+        assessment.overall_score = assessment.remediation_score or phase_score
+        assessment.current_phase = AssessmentPhase.COMPLETED
+        assessment.status = AssessmentStatus.COMPLETED
+        assessment.closed_at = datetime.utcnow()
+        await self.db.commit()
+        await self.db.refresh(assessment)
+        logger.info("assessment_campaign_closed", assessment_id=str(assessment.id),
+                    overall_score=assessment.overall_score)
+        return assessment
+
+    async def calculate_phase_score(
+        self, assessment_id: UUID, phase: AssessmentPhase
+    ) -> float | None:
+        """Weighted average compliance score for a phase, using ControlPosition weights."""
+        result = await self.db.execute(
+            select(
+                AssessmentAnswer.compliance_score,
+                ControlPosition.importance_weight,
+            )
+            .join(AssessmentSession, AssessmentAnswer.session_id == AssessmentSession.id)
+            .join(AIQuestion, AssessmentAnswer.question_id == AIQuestion.id)
+            .outerjoin(
+                ControlPosition,
+                and_(
+                    ControlPosition.control_id == AIQuestion.control_id,
+                    ControlPosition.position_id == AssessmentAnswer.position_id,
+                ),
+            )
+            .where(
+                and_(
+                    AssessmentSession.assessment_id == assessment_id,
+                    AssessmentAnswer.phase == phase,
+                    AssessmentAnswer.compliance_score.isnot(None),
+                )
+            )
+        )
+        rows = result.all()
+        if not rows:
+            return None
+        total_w = 0.0
+        acc = 0.0
+        for score, weight in rows:
+            w = float(weight) if weight is not None else 1.0
+            acc += float(score) * w
+            total_w += w
+        return round(acc / total_w, 2) if total_w else None
+
+    async def list_all_sessions(self, assessment_id: UUID) -> list[dict]:
+        """Admin view: every member's session with user/position and score summary."""
+        result = await self.db.execute(
+            select(AssessmentSession, User, Position, Department)
+            .join(User, AssessmentSession.user_id == User.id)
+            .outerjoin(Position, User.position_id == Position.id)
+            .outerjoin(Department, Position.department_id == Department.id)
+            .where(AssessmentSession.assessment_id == assessment_id)
+            .order_by(AssessmentSession.created_at.desc())
+        )
+        rows = result.all()
+
+        summaries: list[dict] = []
+        for session, user, position, department in rows:
+            score_res = await self.db.execute(
+                select(AssessmentAnswer.compliance_score).where(
+                    and_(
+                        AssessmentAnswer.session_id == session.id,
+                        AssessmentAnswer.compliance_score.isnot(None),
+                    )
+                )
+            )
+            scores = score_res.scalars().all()
+            avg = round(sum(scores) / len(scores), 2) if scores else None
+            summaries.append(
+                {
+                    "session_id": session.id,
+                    "user_id": user.id,
+                    "user_email": user.email,
+                    "user_full_name": getattr(user, "full_name", None),
+                    "position_name": position.name if position else None,
+                    "department_name": department.name if department else None,
+                    "status": str(session.status.value if hasattr(session.status, "value") else session.status),
+                    "phase": str(session.phase.value if hasattr(session.phase, "value") else session.phase),
+                    "answers_count": len(scores),
+                    "avg_score": avg,
+                }
+            )
+        return summaries
+
+    async def count_participants(self, organization_id: UUID) -> int:
+        """Members eligible to participate (active users with a position)."""
+        result = await self.db.execute(
+            select(User.id).where(
+                and_(
+                    User.organization_id == organization_id,
+                    User.position_id.isnot(None),
+                    User.is_active.is_(True),
+                )
+            )
+        )
+        return len(result.scalars().all())
+
+    async def maybe_autoclose(self, assessment: Assessment) -> Assessment:
+        """Auto-finalize the current phase once every participant's session is completed."""
+        participants = await self.count_participants(assessment.organization_id)
+        if participants == 0:
+            return assessment
+        completed_res = await self.db.execute(
+            select(AssessmentSession.id).where(
+                and_(
+                    AssessmentSession.assessment_id == assessment.id,
+                    AssessmentSession.status == AssessmentStatus.COMPLETED,
+                )
+            )
+        )
+        completed = len(completed_res.scalars().all())
+        if completed >= participants:
+            # Snapshot the phase score; keep the campaign open for the admin to
+            # either advance to remediation or close it explicitly.
+            phase_score = await self.calculate_phase_score(assessment.id, assessment.current_phase)
+            if assessment.current_phase == AssessmentPhase.BASELINE:
+                assessment.baseline_score = phase_score
+            elif assessment.current_phase == AssessmentPhase.REMEDIATION:
+                assessment.remediation_score = phase_score
+            assessment.overall_score = phase_score
+            await self.db.commit()
+            await self.db.refresh(assessment)
+            logger.info("assessment_phase_autoscored", assessment_id=str(assessment.id),
+                        phase=assessment.current_phase.value, score=phase_score)
+        return assessment
+
+    async def get_campaign_overview(self, assessment: Assessment) -> dict:
+        """Before/after + participation summary for the admin dashboard."""
+        participants = await self.count_participants(assessment.organization_id)
+        # Fetch the framework name directly to avoid a lazy relationship load
+        # (the relationship may be expired after a refresh in async context).
+        fw_res = await self.db.execute(
+            select(Framework.name).where(Framework.id == assessment.framework_id)
+        )
+        framework_name = fw_res.scalar_one_or_none()
+        sessions = await self.db.execute(
+            select(AssessmentSession.status).where(
+                AssessmentSession.assessment_id == assessment.id
+            )
+        )
+        statuses = [str(s.value if hasattr(s, "value") else s) for s in sessions.scalars().all()]
+        total = len(statuses)
+        completed = sum(1 for s in statuses if s == "completed")
+        improvement = None
+        if assessment.baseline_score is not None and assessment.remediation_score is not None:
+            improvement = round(assessment.remediation_score - assessment.baseline_score, 2)
+        return {
+            "assessment_id": assessment.id,
+            "name": assessment.name,
+            "framework_name": framework_name,
+            "status": str(assessment.status.value if hasattr(assessment.status, "value") else assessment.status),
+            "current_phase": str(assessment.current_phase.value if hasattr(assessment.current_phase, "value") else assessment.current_phase),
+            "launched_at": assessment.launched_at,
+            "closed_at": assessment.closed_at,
+            "baseline_score": assessment.baseline_score,
+            "remediation_score": assessment.remediation_score,
+            "regulation_score": assessment.regulation_score,
+            "overall_score": assessment.overall_score,
+            "total_sessions": total,
+            "completed_sessions": completed,
+            "participants_total": participants,
+            "completion_rate": round(completed / participants * 100, 1) if participants else 0.0,
+            "improvement": improvement,
+        }
 
     async def complete_session(
         self,
