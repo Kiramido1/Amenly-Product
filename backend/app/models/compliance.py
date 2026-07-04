@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, String, Table, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -83,6 +83,12 @@ class AIQuestion(Base, TimestampMixin):
     question_text = Column(Text, nullable=False)
     logic_type = Column(String(50)) # e.g., 'evidence-based', 'process-based'
     expected_evidence = Column(Text)
+
+    # Device / configuration dimension — lets questions target specific assets
+    # (servers, firewalls, workstations, network gear) and the exact settings to probe.
+    device_category = Column(String(100), nullable=True, index=True)  # e.g. 'server', 'firewall', 'workstation', 'network', 'cloud'
+    config_focus = Column(Text, nullable=True)   # the specific configuration detail this question inspects
+    order_index = Column(Integer, default=0, nullable=False)  # ordering within a position's question set
 
     # Relationships
     control = relationship("FrameworkControl", back_populates="ai_questions")

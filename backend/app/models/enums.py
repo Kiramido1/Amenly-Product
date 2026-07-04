@@ -37,6 +37,28 @@ class ControlStatus(str, Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class AssessmentPhase(str, Enum):
+    """Phase of an assessment campaign — supports the before/after (run-twice) flow."""
+    BASELINE = "baseline"        # first pass: capture current state + gaps
+    REMEDIATION = "remediation"  # second pass: verify fixes after remediation
+    COMPLETED = "completed"      # both passes done, final scores locked
+
+
+class ConnectionType(str, Enum):
+    """How two infrastructure assets relate in the topology map."""
+    NETWORK = "network"        # network reachability / same segment
+    DEPENDENCY = "dependency"  # one asset depends on another (app -> db)
+    DATA_FLOW = "data_flow"    # data flows between assets
+    TRUST = "trust"            # trust/authentication relationship
+
+
+class VulnerabilitySource(str, Enum):
+    """Where a detected vulnerability came from."""
+    NVD = "nvd"          # matched against the NIST NVD CVE feed
+    AI = "ai"            # inferred by the AI from the asset/config description
+    MANUAL = "manual"    # entered by a user
+
+
 class FrameworkType(str, Enum):
     """Type of compliance framework"""
     STANDARD = "standard"  # ISO 27001, NIST CSF, SOC 2, PCI DSS, COBIT, TISAX
@@ -82,10 +104,15 @@ class Permission(str, Enum):
     SELECT_FRAMEWORK = "select_framework"
     MANAGE_FRAMEWORKS = "manage_frameworks"
 
+    # Campaign lifecycle (admin-driven assessment)
+    LAUNCH_ASSESSMENT = "launch_assessment"
+    CLOSE_ASSESSMENT = "close_assessment"
+
     # Dashboard Permissions
     VIEW_DASHBOARD = "view_dashboard"
     VIEW_ASSETS = "view_assets"
     VIEW_VULNERABILITIES = "view_vulnerabilities"
+    VIEW_INFRASTRUCTURE_MAP = "view_infrastructure_map"
     MANAGE_DASHBOARD_ACCESS = "manage_dashboard_access"
 
     # Member Management

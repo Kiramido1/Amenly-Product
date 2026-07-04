@@ -92,10 +92,15 @@ ROLE_PERMISSIONS = {
         PermissionEnum.SELECT_FRAMEWORK,
         PermissionEnum.MANAGE_FRAMEWORKS,
 
+        # Campaign lifecycle (admin only)
+        PermissionEnum.LAUNCH_ASSESSMENT,
+        PermissionEnum.CLOSE_ASSESSMENT,
+
         # Dashboard Permissions
         PermissionEnum.VIEW_DASHBOARD,
         PermissionEnum.VIEW_ASSETS,
         PermissionEnum.VIEW_VULNERABILITIES,
+        PermissionEnum.VIEW_INFRASTRUCTURE_MAP,
         PermissionEnum.MANAGE_DASHBOARD_ACCESS,
 
         # Member Management
