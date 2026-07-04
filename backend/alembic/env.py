@@ -76,6 +76,9 @@ async def run_migrations_online() -> None:
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        # Disable psycopg server-side prepared statements for pgbouncer /
+        # Supabase transaction-pooler compatibility (matches app/database/session.py).
+        connect_args={"prepare_threshold": None},
     )
 
     async with connectable.connect() as connection:
