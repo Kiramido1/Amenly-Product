@@ -187,6 +187,31 @@ async def test_cross_org_isolation(client, db):
 
 
 @pytest.mark.asyncio
+async def test_start_session_is_safe_with_multiple_prior_sessions(client, db):
+    """Regression: a user who accumulates >1 session for an assessment must not
+    trigger a 500 (get_user_session used scalar_one_or_none -> MultipleResults)."""
+    admin = await AuthTestHelper.register_admin(client)
+    admin_c = TestClient(client, admin["access_token"])
+    org_id = UUID(admin["user"]["organization_id"])
+    seed = await _seed_member_and_framework(db, org_id)
+    r = await admin_c.post("/api/v1/assessments", json={"name": "Q", "framework_id": str(seed["fw_id"])})
+    aid = r.json()["data"]["assessment"]["id"]
+    await admin_c.post(f"/api/v1/assessments/{aid}/launch")
+
+    member_login = await AuthTestHelper.login_user(client, seed["member_email"], seed["member_pw"])
+    member_c = TestClient(client, member_login["access_token"])
+
+    # 1st session, complete it -> then starting again creates a 2nd session.
+    s1 = (await member_c.post(f"/api/v1/assessments/{aid}/sessions/start")).json()["data"]["session"]["id"]
+    await member_c.post(f"/api/v1/assessments/sessions/{s1}/complete")
+    r2 = await member_c.post(f"/api/v1/assessments/{aid}/sessions/start")  # creates session #2
+    assert r2.status_code == 201
+    # With two sessions on record, starting yet again must still succeed (not 500).
+    r3 = await member_c.post(f"/api/v1/assessments/{aid}/sessions/start")
+    assert r3.status_code == 201, r3.text
+
+
+@pytest.mark.asyncio
 async def test_unauthenticated_rejected(client):
     r = await client.get("/api/v1/assessments/00000000-0000-0000-0000-000000000000/overview")
     assert r.status_code == 401

@@ -227,7 +227,10 @@ class AssessmentService:
             .options(selectinload(AssessmentSession.assessment))
             .order_by(AssessmentSession.created_at.desc())
         )
-        return result.scalar_one_or_none()
+        # A user can accumulate several sessions for one assessment (e.g. a
+        # completed baseline plus a remediation run), so return the most recent
+        # one — scalar_one_or_none() would raise MultipleResultsFound here.
+        return result.scalars().first()
 
     async def get_session_with_messages(
         self,

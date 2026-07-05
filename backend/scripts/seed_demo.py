@@ -18,7 +18,9 @@ from app.auth.security import get_password_hash
 from app.database.session import AsyncSessionLocal
 from app.models.assessments import Assessment, AssessmentAnswer, AssessmentSession
 from app.models.chat import AssetConnection, InfrastructureAsset, Vulnerability
-from app.models.compliance import AIQuestion, ControlPosition, Framework, FrameworkControl
+from app.models.compliance import (
+    AIQuestion, ControlPosition, Framework, FrameworkControl, organization_frameworks,
+)
 from app.models.enums import (
     AssessmentPhase, AssessmentStatus, ControlStatus, RiskSeverity,
     UserRole, VulnerabilitySource,
@@ -112,9 +114,18 @@ async def main():
 
             # Map controls -> positions + questions for the org's chosen framework.
             fw = frameworks[random.choice([f[0] for f in FRAMEWORKS])]
+
+            # Associate a realistic catalog of frameworks with the org (incl. the
+            # one it will be assessed against) so /frameworks/ is populated.
+            assoc = {fw.name} | set(random.sample([f[0] for f in FRAMEWORKS], k=2))
+            for fname in assoc:
+                await db.execute(organization_frameworks.insert().values(
+                    organization_id=org.id, framework_id=frameworks[fname].id))
             questions = []
             for ctrl, dev, focus in fw._controls:
-                for pos in random.sample(positions, k=min(2, len(positions))):
+                # Map every control to every position (weights vary) so each member
+                # gets a full, position-scoped question set.
+                for pos in positions:
                     db.add(ControlPosition(control_id=ctrl.id, position_id=pos.id,
                                            importance_weight=round(random.uniform(1.0, 3.0), 1)))
                 q = AIQuestion(control_id=ctrl.id, question_text=f"Describe how you implement {ctrl.title}.",
