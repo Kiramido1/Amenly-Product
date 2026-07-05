@@ -91,10 +91,12 @@ async def main():
                 db.add(RolePermission(role=role, permission_id=perm_models[p.value].id))
                 counts["role_permissions"] += 1
 
-        # Shared framework catalog (global, not org-specific).
+        # Shared framework catalog (global, not org-specific). Names are tagged
+        # "(Demo)" so this data never collides with an existing real catalog when
+        # seeded into a populated database.
         frameworks = {}
         for name, ftype, cat in FRAMEWORKS:
-            fw = Framework(name=name, framework_type=ftype, category=cat,
+            fw = Framework(name=f"{name} (Demo)", framework_type=ftype, category=cat,
                            region="Global", description=f"{name} controls")
             db.add(fw); await db.flush()
             frameworks[name] = fw
@@ -120,14 +122,14 @@ async def main():
                     positions.append(pos)
 
             # Admin (oversight, no position) + members with positions.
-            admin = User(organization_id=org.id, email=f"admin@{oname.split()[0].lower()}.com",
+            admin = User(organization_id=org.id, email=f"admin@{oname.split()[0].lower()}-demo.com",
                          hashed_password=get_password_hash("Test@1234"), full_name=f"{oname} Admin",
                          role=UserRole.ORG_ADMIN, is_active=True)
             db.add(admin); await db.flush(); counts["users"] += 1
             members = []
             for mi in range(random.randint(4, 6)):
                 pos = random.choice(positions)
-                m = User(organization_id=org.id, email=f"user{mi}@{oname.split()[0].lower()}.com",
+                m = User(organization_id=org.id, email=f"user{mi}@{oname.split()[0].lower()}-demo.com",
                          hashed_password=get_password_hash("Test@1234"), full_name=f"Member {mi}",
                          role=UserRole.ORG_MEMBER, is_active=True, position_id=pos.id)
                 db.add(m); await db.flush(); members.append(m); counts["users"] += 1
@@ -135,7 +137,7 @@ async def main():
             # Pending join requests (people awaiting admin approval).
             for ri in range(random.randint(1, 3)):
                 db.add(OrganizationJoinRequest(
-                    organization_id=org.id, email=f"applicant{ri}@{oname.split()[0].lower()}.com",
+                    organization_id=org.id, email=f"applicant{ri}@{oname.split()[0].lower()}-demo.com",
                     hashed_password=get_password_hash("Test@1234"), full_name=f"Applicant {ri}",
                     status=random.choice([JoinRequestStatus.PENDING, JoinRequestStatus.PENDING,
                                           JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED])))
@@ -149,11 +151,12 @@ async def main():
                 counts["user_permissions"] += 1
 
             # Map controls -> positions + questions for the org's chosen framework.
-            fw = frameworks[random.choice([f[0] for f in FRAMEWORKS])]
+            fw_key = random.choice([f[0] for f in FRAMEWORKS])
+            fw = frameworks[fw_key]
 
             # Associate a realistic catalog of frameworks with the org (incl. the
             # one it will be assessed against) so /frameworks/ is populated.
-            assoc = {fw.name} | set(random.sample([f[0] for f in FRAMEWORKS], k=2))
+            assoc = {fw_key} | set(random.sample([f[0] for f in FRAMEWORKS], k=2))
             for fname in assoc:
                 await db.execute(organization_frameworks.insert().values(
                     organization_id=org.id, framework_id=frameworks[fname].id))
@@ -281,7 +284,7 @@ async def main():
         print("Seed complete:")
         for k, v in counts.items():
             print(f"  {k:14} {v}")
-        print("\nLogin for any org admin: admin@<org>.com / Test@1234  (members: user0@<org>.com ...)")
+        print("\nLogin for any org admin: admin@<org>-demo.com / Test@1234  (members: user0@<org>-demo.com ...)")
 
 
 if __name__ == "__main__":
