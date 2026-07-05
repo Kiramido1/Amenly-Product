@@ -74,6 +74,7 @@ class AssessmentAnswer(Base, TimestampMixin):
     phase = Column(SQLEnum(AssessmentPhase), default=AssessmentPhase.BASELINE, nullable=False, index=True)
     answer_text = Column(Text)
     compliance_score = Column(Float) # 0-100, calculated by the AI evaluation engine
+    regulation_score = Column(Float) # 0-100, alignment with the region's regulations
     evidence_urls = Column(JSONB) # List of document links
     ai_feedback = Column(Text)               # AI assessment of the answer
     remediation = Column(Text)               # concrete steps to become compliant

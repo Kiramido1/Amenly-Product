@@ -141,6 +141,7 @@ class CampaignOverviewResponse(BaseModel):
     baseline_score: float | None = None
     remediation_score: float | None = None
     regulation_score: float | None = None
+    region: str | None = None
     overall_score: float | None = None
     total_sessions: int = 0
     completed_sessions: int = 0

@@ -368,14 +368,14 @@ const CampaignTab = () => {
 
       {overview && (
         <>
-          {/* Before / After scorecards */}
-          <div className="grid sm:grid-cols-3 gap-3 mb-4">
+          {/* Before / After / Regulation scorecards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
-              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Baseline (before)</div>
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Framework · before</div>
               <div className={`text-3xl font-bold ${scoreColor(overview.baseline_score)}`}>{fmtScore(overview.baseline_score)}</div>
             </div>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
-              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Remediation (after)</div>
+              <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Framework · after</div>
               <div className={`text-3xl font-bold ${scoreColor(overview.remediation_score)}`}>{fmtScore(overview.remediation_score)}</div>
             </div>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
@@ -383,6 +383,10 @@ const CampaignTab = () => {
               <div className={`text-3xl font-bold ${overview.improvement > 0 ? 'text-emerald-300' : overview.improvement < 0 ? 'text-red-300' : 'text-white/40'}`}>
                 {overview.improvement == null ? '—' : `${overview.improvement > 0 ? '+' : ''}${Math.round(overview.improvement)}%`}
               </div>
+            </div>
+            <div className="rounded-xl border border-[#2C74B3]/20 bg-[#2C74B3]/[0.05] p-4">
+              <div className="text-[10px] text-[#5F9BD8] uppercase tracking-wider mb-1">Regulation{overview.region ? ` · ${overview.region}` : ''}</div>
+              <div className={`text-3xl font-bold ${scoreColor(overview.regulation_score)}`}>{fmtScore(overview.regulation_score)}</div>
             </div>
           </div>
 

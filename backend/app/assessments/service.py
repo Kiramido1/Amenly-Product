@@ -382,6 +382,7 @@ class AssessmentService:
             phase=getattr(session, "phase", AssessmentPhase.BASELINE),
             answer_text=answer_text,
             compliance_score=evaluation.compliance_score,
+            regulation_score=evaluation.regulation_score,
             evidence_urls=evidence_urls,
             ai_feedback=evaluation.feedback,
             remediation=evaluation.remediation,
@@ -424,6 +425,9 @@ class AssessmentService:
         assessment.baseline_score = await self.calculate_phase_score(
             assessment.id, AssessmentPhase.BASELINE
         )
+        assessment.regulation_score = await self.calculate_phase_score(
+            assessment.id, AssessmentPhase.BASELINE, AssessmentAnswer.regulation_score
+        )
         assessment.current_phase = AssessmentPhase.REMEDIATION
         assessment.status = AssessmentStatus.IN_PROGRESS
         # Reopen sessions so members can re-answer for the remediation pass.
@@ -445,6 +449,10 @@ class AssessmentService:
             assessment.remediation_score = phase_score
         elif assessment.baseline_score is None:
             assessment.baseline_score = phase_score
+        # Regulation-alignment score for the phase just closed.
+        assessment.regulation_score = await self.calculate_phase_score(
+            assessment.id, assessment.current_phase, AssessmentAnswer.regulation_score
+        )
         assessment.overall_score = assessment.remediation_score or phase_score
         assessment.current_phase = AssessmentPhase.COMPLETED
         assessment.status = AssessmentStatus.COMPLETED
@@ -456,12 +464,17 @@ class AssessmentService:
         return assessment
 
     async def calculate_phase_score(
-        self, assessment_id: UUID, phase: AssessmentPhase
+        self, assessment_id: UUID, phase: AssessmentPhase, column=None
     ) -> float | None:
-        """Weighted average compliance score for a phase, using ControlPosition weights."""
+        """Weighted average of a score column for a phase, using ControlPosition weights.
+
+        Defaults to the compliance score; pass ``AssessmentAnswer.regulation_score``
+        to aggregate the regulation-alignment score instead.
+        """
+        score_col = column if column is not None else AssessmentAnswer.compliance_score
         result = await self.db.execute(
             select(
-                AssessmentAnswer.compliance_score,
+                score_col,
                 ControlPosition.importance_weight,
             )
             .join(AssessmentSession, AssessmentAnswer.session_id == AssessmentSession.id)
@@ -477,7 +490,7 @@ class AssessmentService:
                 and_(
                     AssessmentSession.assessment_id == assessment_id,
                     AssessmentAnswer.phase == phase,
-                    AssessmentAnswer.compliance_score.isnot(None),
+                    score_col.isnot(None),
                 )
             )
         )
@@ -567,6 +580,9 @@ class AssessmentService:
                 assessment.baseline_score = phase_score
             elif assessment.current_phase == AssessmentPhase.REMEDIATION:
                 assessment.remediation_score = phase_score
+            assessment.regulation_score = await self.calculate_phase_score(
+                assessment.id, assessment.current_phase, AssessmentAnswer.regulation_score
+            )
             assessment.overall_score = phase_score
             await self.db.commit()
             await self.db.refresh(assessment)
@@ -583,6 +599,9 @@ class AssessmentService:
             select(Framework.name).where(Framework.id == assessment.framework_id)
         )
         framework_name = fw_res.scalar_one_or_none()
+        region = (await self.db.execute(
+            select(Organization.region).where(Organization.id == assessment.organization_id)
+        )).scalar_one_or_none()
         sessions = await self.db.execute(
             select(AssessmentSession.status).where(
                 AssessmentSession.assessment_id == assessment.id
@@ -605,6 +624,7 @@ class AssessmentService:
             "baseline_score": assessment.baseline_score,
             "remediation_score": assessment.remediation_score,
             "regulation_score": assessment.regulation_score,
+            "region": region,
             "overall_score": assessment.overall_score,
             "total_sessions": total,
             "completed_sessions": completed,

@@ -58,7 +58,8 @@ Return ONLY this JSON object:
   "status": "<one of: not_implemented, partially_implemented, fully_implemented, not_applicable>",
   "feedback": "<2-3 sentences: what is compliant and what is missing/misconfigured>",
   "remediation": "<concrete, ordered steps to make this configuration compliant with the control; empty string if already fully compliant>",
-  "regulation_note": "<how this relates to data-protection/cyber regulations relevant to the region; empty string if not applicable>"
+  "regulation_note": "<how this relates to data-protection/cyber regulations relevant to the region; empty string if not applicable>",
+  "regulation_score": <integer 0-100: how well this answer satisfies the data-protection/cyber regulations of the region>
 }}"""
 
 
@@ -77,6 +78,7 @@ class AnswerEvaluation:
     feedback: str
     remediation: str
     regulation_note: str
+    regulation_score: float = 0.0
 
     @classmethod
     def default(cls, reason: str = "") -> "AnswerEvaluation":
@@ -87,6 +89,7 @@ class AnswerEvaluation:
             feedback=reason or "Answer could not be automatically evaluated; manual review required.",
             remediation="",
             regulation_note="",
+            regulation_score=0.0,
         )
 
 
@@ -175,12 +178,21 @@ class AnswerEvaluationService:
         status_raw = str(data.get("status", "")).strip().lower()
         status = _STATUS_MAP.get(status_raw) or _status_from_score(score)
 
+        # Regulation alignment score — fall back to the compliance score if the
+        # model omitted it (they usually track closely).
+        try:
+            reg_score = float(data.get("regulation_score", score))
+        except (TypeError, ValueError):
+            reg_score = score
+        reg_score = max(0.0, min(100.0, reg_score))
+
         return AnswerEvaluation(
             compliance_score=score,
             status=status,
             feedback=str(data.get("feedback", "")).strip(),
             remediation=str(data.get("remediation", "")).strip(),
             regulation_note=str(data.get("regulation_note", "")).strip(),
+            regulation_score=reg_score,
         )
 
 

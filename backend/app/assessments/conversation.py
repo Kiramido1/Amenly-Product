@@ -307,7 +307,8 @@ class ConversationOrchestrator:
         self.db.add(AssessmentAnswer(
             session_id=session.id, question_id=current.id, position_id=position.id,
             phase=AssessmentPhase.BASELINE, answer_text=text,
-            compliance_score=evaluation.compliance_score, ai_feedback=evaluation.feedback,
+            compliance_score=evaluation.compliance_score, regulation_score=evaluation.regulation_score,
+            ai_feedback=evaluation.feedback,
             remediation=evaluation.remediation, regulation_note=evaluation.regulation_note,
             status=evaluation.status))
         await self.db.commit()
