@@ -181,6 +181,25 @@ Return the extracted assets as JSON."""
                 logger.warning("invalid_asset_type", asset_type=asset_type)
                 asset_type = "application"  # Default fallback
 
+            # Dedupe: the same device is often mentioned across several answers.
+            # If one with the same org + name + type already exists, reuse it
+            # (refresh its metadata/description) instead of creating a duplicate.
+            from sqlalchemy import and_, func, select as _select
+            existing = (await self.db.execute(
+                _select(InfrastructureAsset).where(and_(
+                    InfrastructureAsset.organization_id == organization_id,
+                    func.lower(InfrastructureAsset.asset_name) == asset_name.lower(),
+                    InfrastructureAsset.asset_type == asset_type,
+                )))).scalar_one_or_none()
+            if existing is not None:
+                if description:
+                    existing.description = description
+                if metadata:
+                    existing.asset_metadata = {**(existing.asset_metadata or {}), **metadata}
+                await self.db.commit()
+                await self.db.refresh(existing)
+                return existing
+
             # Create infrastructure asset record
             infra_asset = InfrastructureAsset(
                 organization_id=organization_id,
