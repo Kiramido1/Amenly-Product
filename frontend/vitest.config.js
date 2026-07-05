@@ -8,6 +8,10 @@ export default defineConfig({
   plugins: [react({ include: /\.(js|jsx)$/ })],
   test: {
     environment: 'jsdom',
+    // Force an ABSOLUTE API base URL in tests so requests match the MSW handlers
+    // (which register absolute http://localhost:8001 URLs), regardless of any
+    // .env.local that sets a relative /api/v1 for the dev proxy.
+    env: { VITE_API_BASE_URL: 'http://localhost:8001/api/v1' },
     // axios resolves request URLs against window.location at import time; give
     // jsdom a real base URL so `new URL('/')` does not throw "Invalid URL".
     environmentOptions: { jsdom: { url: 'http://localhost:3000' } },

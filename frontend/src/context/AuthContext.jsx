@@ -54,7 +54,9 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, message: res.message || 'Login failed' }
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.detail || err.message || 'Login failed'
+      const msg = err.response
+        ? (err.response.data?.message || err.response.data?.detail || 'Invalid email or password.')
+        : 'Cannot reach the server. Make sure the backend is running, then try again.'
       return { success: false, message: msg }
     } finally {
       setIsLoading(false)
@@ -72,7 +74,9 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, message: res.message || 'Registration failed' }
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.detail || err.message || 'Registration failed'
+      const msg = err.response
+        ? (err.response.data?.message || err.response.data?.detail || 'Registration failed.')
+        : 'Cannot reach the server. Make sure the backend is running, then try again.'
       return { success: false, message: msg }
     } finally {
       setIsLoading(false)

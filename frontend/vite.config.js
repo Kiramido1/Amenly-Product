@@ -7,6 +7,20 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+    // Proxy API + WebSocket to the backend so the browser talks same-origin
+    // (no CORS, and resilient to localhost/127 or port differences in dev).
+    // The frontend uses a relative base URL (/api/v1, /ws) so these apply.
+    proxy: {
+      '/api': {
+        target: process.env.VITE_BACKEND_ORIGIN || 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: process.env.VITE_BACKEND_ORIGIN || 'http://localhost:8001',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
   build: {
     // Production optimizations

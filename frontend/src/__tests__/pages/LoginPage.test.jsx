@@ -89,7 +89,7 @@ describe('LoginPage - Authentication', () => {
     await user.click(screen.getByRole('button', { name: /log in/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/connection failed|something went wrong|network/i)).toBeInTheDocument()
+      expect(screen.getByText(/cannot reach the server|connection failed|network/i)).toBeInTheDocument()
     })
   })
 

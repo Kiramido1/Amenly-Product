@@ -1,7 +1,22 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1'
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '/ws')
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+
+// WebSocket needs an ABSOLUTE ws:// URL. If the API base is relative (proxy
+// mode), build it from the current page origin; otherwise derive it from the
+// absolute API URL.
+const deriveWsBaseUrl = () => {
+  if (import.meta.env.VITE_WS_BASE_URL) return import.meta.env.VITE_WS_BASE_URL
+  if (API_BASE_URL.startsWith('http')) {
+    return API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '/ws')
+  }
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${window.location.host}/ws`
+  }
+  return 'ws://localhost:8001/ws'
+}
+const WS_BASE_URL = deriveWsBaseUrl()
 
 let accessToken = null
 let refreshPromise = null
