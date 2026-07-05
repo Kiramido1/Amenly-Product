@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getAccessToken, WS_BASE_URL } from '../api/client'
 
-export const useWebSocket = (sessionId, onMessage, onTyping, onConnected, onError) => {
+export const useWebSocket = (sessionId, onMessage, onTyping, onConnected, onError, onComplete) => {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const wsRef = useRef(null)
@@ -42,6 +42,8 @@ export const useWebSocket = (sessionId, onMessage, onTyping, onConnected, onErro
             onMessage?.([data], false)
           } else if (data.type === 'typing') {
             onTyping?.(data.is_typing)
+          } else if (data.type === 'complete') {
+            onComplete?.(data.metadata || {})
           } else if (data.type === 'error') {
             onError?.(data.message)
           } else if (data.type === 'pong') {
@@ -74,7 +76,7 @@ export const useWebSocket = (sessionId, onMessage, onTyping, onConnected, onErro
       setIsConnecting(false)
       onError?.(error.message)
     }
-  }, [sessionId, isConnecting, isConnected, onMessage, onTyping, onConnected, onError])
+  }, [sessionId, isConnecting, isConnected, onMessage, onTyping, onConnected, onError, onComplete])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
