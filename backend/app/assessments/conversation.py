@@ -193,32 +193,50 @@ class ConversationOrchestrator:
                     f"The more specific you are, the stronger your compliance coverage.")
         return text
 
-    async def _ack_and_next(self, done_ctrl, next_question, framework, position, evaluation=None) -> str:
-        # If the control was only partially met / misconfigured, coach the fix
-        # before moving on so the person knows how to raise their compliance.
-        coaching = ""
-        if evaluation and evaluation.compliance_score < 70 and evaluation.remediation:
-            coaching = (f" Their coverage of this control is only partial (score "
-                        f"{round(evaluation.compliance_score)}/100). Before moving on, kindly tell them the "
-                        f"specific fix that would make them compliant: {evaluation.remediation}. ")
+    async def _ack_and_next(self, done_ctrl, next_question, framework, position, evaluation=None, region="Global") -> str:
+        # ALWAYS, after every control, tell the employee exactly what to do to be
+        # compliant with the framework AND their region's regulations.
+        parts, fallback_parts = [], []
+        if evaluation:
+            if evaluation.remediation:
+                parts.append(f"to be fully compliant with {framework.name} here, they should: {evaluation.remediation}")
+                fallback_parts.append(f"To fully comply with {framework.name}: {evaluation.remediation}")
+            else:
+                parts.append(f"they currently meet the {framework.name} requirement for this control — affirm it and, "
+                             f"if useful, one best-practice to keep it strong")
+                fallback_parts.append(f"You meet the {framework.name} requirement here — keep the evidence current")
+            if evaluation.regulation_note:
+                parts.append(f"and under {region} regulations this maps to: {evaluation.regulation_note}")
+                fallback_parts.append(f"Under {region} regulations: {evaluation.regulation_note}")
+        guidance = (f" BEFORE the next question, clearly and concisely tell the employee what to do to be compliant: "
+                    f"{'; '.join(parts)}. " if parts else " ")
         text = await self._phrase(
-            f"The employee has finished discussing '{done_ctrl.title}'.{coaching} "
-            f"{'Acknowledge briefly' if coaching else 'Acknowledge that it is well covered'}, then move on and "
-            f"ask about the next control '{next_question.control.title}' "
+            f"The employee has finished '{done_ctrl.title}'.{guidance}"
+            f"Then move on and ask about the next control '{next_question.control.title}' "
             f"(probe: {next_question.config_focus or next_question.control.title}). "
-            f"Write only your spoken message (2-4 sentences).")
+            f"Write only your spoken message (3-5 sentences).")
         if not text:
-            fix = f" To strengthen it, {evaluation.remediation}" if coaching else ""
+            fix = (" " + " ".join(fallback_parts) + ".") if fallback_parts else ""
             text = (f"Got it — that covers {done_ctrl.title}.{fix} Now, about **{next_question.control.title}**: "
                     f"how do you handle {next_question.config_focus or 'this'}?")
         return text
 
-    async def _closing(self, framework, done_count) -> str:
+    async def _closing(self, framework, done_count, done_ctrl=None, evaluation=None, region="Global") -> str:
+        # Give the compliance guidance for the FINAL control too, then close.
+        guidance = ""
+        if evaluation and done_ctrl:
+            bits = []
+            if evaluation.remediation:
+                bits.append(f"to fully comply with {framework.name} on '{done_ctrl.title}', they should: {evaluation.remediation}")
+            if evaluation.regulation_note:
+                bits.append(f"under {region} regulations this maps to: {evaluation.regulation_note}")
+            if bits:
+                guidance = f" First, tell them what to do to be compliant on this last control — {'; '.join(bits)}. Then, "
         text = await self._phrase(
             f"The interview is complete — the employee covered all {done_count} controls for "
-            f"{framework.name}. Thank them warmly and tell them their responses have been recorded "
-            f"for the compliance report. Write only your spoken message (1-2 sentences).",
-            temperature=0.7)
+            f"{framework.name}.{guidance}thank them warmly and tell them their responses have been recorded "
+            f"for the compliance report. Write only your spoken message (2-4 sentences).",
+            temperature=0.6)
         return text or ("That's everything I needed — thank you! Your responses have been recorded "
                         "for the compliance report.")
 
@@ -297,11 +315,11 @@ class ConversationOrchestrator:
         answered_q.add(current.id)
         still = [q for q in questions if q.id not in answered_q]
         if not still:
-            return TurnResult(content=await self._closing(framework, len(questions)),
+            return TurnResult(content=await self._closing(framework, len(questions), ctrl, evaluation, region),
                               metadata={"kind": "complete", **await self._progress(session.id, len(questions), len(questions))},
                               done=True)
         nxt = still[0]
-        content = await self._ack_and_next(ctrl, nxt, framework, position, evaluation)
+        content = await self._ack_and_next(ctrl, nxt, framework, position, evaluation, region)
         return TurnResult(content=content, metadata={
             "kind": "question", "control_id": str(nxt.control_id), "question_id": str(nxt.id),
             "probe_count": 0, **await self._progress(session.id, len(answered_q), len(questions))})
