@@ -5,7 +5,7 @@ import {
   COMPANY_SIZES, getRecommendations,
 } from '../../data/chatFlowData'
 
-const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplete }) => {
+const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplete, live = null }) => {
   const frameworkId = typeof session.framework === 'object' ? session.framework?.id : session.framework
   const framework = useMemo(() => {
     if (typeof session.framework === 'object' && session.framework) {
@@ -24,7 +24,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
   const companySize = useMemo(() => COMPANY_SIZES.find(s => s.id === session.companySize), [session.companySize])
 
   // Calculate live compliance score
-  const { score, riskLevel, riskColor, answeredCount, yesCount, partialCount, noCount } = useMemo(() => {
+  const { score: baseScore, riskLevel: baseRisk, riskColor, answeredCount, yesCount, partialCount, noCount } = useMemo(() => {
     const entries = Object.entries(answers)
     const total = questions.length || 1
     const answered = entries.length
@@ -50,9 +50,20 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
     return getRecommendations(frameworkId, answers)
   }, [isComplete, frameworkId, answers])
 
-  const progress = questions.length > 0
+  const baseProgress = questions.length > 0
     ? Math.round(((isComplete ? questions.length : questionIndex) / questions.length) * 100)
     : 0
+
+  // Prefer the AI-driven interview's LIVE metrics (running score, risk, progress)
+  // whenever the interview is active; fall back to the legacy computed values.
+  const hasLive = !!(live && (live.total || live.percent || live.done))
+  const effHasScore = hasLive ? typeof live.score === 'number' : answeredCount > 0
+  const score = hasLive ? (typeof live.score === 'number' ? live.score : 0) : baseScore
+  const riskLevel = hasLive
+    ? (live.riskLevel && live.riskLevel !== 'unknown'
+        ? live.riskLevel.charAt(0).toUpperCase() + live.riskLevel.slice(1) : 'Unknown')
+    : baseRisk
+  const progress = hasLive ? live.percent : baseProgress
 
   const scoreColor = score >= 70 ? 'text-emerald-400' : score >= 40 ? 'text-amber-400' : score > 0 ? 'text-rose-400' : 'text-white/25'
   const scoreRingColor = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : score > 0 ? '#f43f5e' : 'rgba(255,255,255,0.06)'
@@ -138,7 +149,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
                 transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className={`text-3xl font-bold ${scoreColor}`}
               >
-                {answeredCount > 0 ? `${score}%` : '—'}
+                {effHasScore ? `${score}%` : '—'}
               </motion.span>
               <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold mt-0.5">
                 Compliance
@@ -147,7 +158,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
           </div>
 
           <p className="text-xs text-white/30">
-            {answeredCount > 0 ? 'Live score based on your answers' : 'Score will appear as you answer'}
+            {effHasScore ? 'Live score, updated as you answer' : 'Score will appear as you answer'}
           </p>
         </motion.div>
 
@@ -246,7 +257,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
         )}
 
         {/* Answer Breakdown */}
-        {answeredCount > 0 && (
+        {!hasLive && answeredCount > 0 && (
           <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
             <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold block mb-3">Answers</span>
             <div className="grid grid-cols-3 gap-2">
@@ -331,10 +342,10 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
             <svg className="w-3.5 h-3.5 text-[#144272]/60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span className="text-[11px] font-semibold text-white/40">Privacy First</span>
+            <span className="text-[11px] font-semibold text-white/40">Secure &amp; Confidential</span>
           </div>
           <p className="text-[10px] text-white/25 leading-relaxed">
-            All data stays on your device. Nothing is sent to servers.
+            Your responses are encrypted in transit and scoped to your organization.
           </p>
         </div>
 

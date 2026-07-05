@@ -57,6 +57,7 @@ const AIComplianceChat = () => {
   const [answers, setAnswers] = useState({})
   const [questionIndex, setQuestionIndex] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [liveProgress, setLiveProgress] = useState(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [org, setOrg] = useState(null)
   const [orgLoading, setOrgLoading] = useState(true)
@@ -316,7 +317,7 @@ const AIComplianceChat = () => {
                         <FrameworkSelector key="framework" onSelect={handleFrameworkSelect} selected={session.framework?.id} onBack={handleBack} />
                       )}
                       {(step === STEPS.SECURITY_QUESTIONS || step === STEPS.SUMMARY) && (
-                        <ChatBox key="chat" session={session} framework={session.framework} onAnswer={handleAnswer} onComplete={handleComplete} onBack={handleBack} />
+                        <ChatBox key="chat" session={session} framework={session.framework} onComplete={handleComplete} onBack={handleBack} onProgress={setLiveProgress} />
                       )}
                     </AnimatePresence>
                   )}
@@ -334,7 +335,7 @@ const AIComplianceChat = () => {
                 transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="hidden lg:block w-80 xl:w-96 flex-shrink-0 border-l border-white/[0.04] bg-[#060606]/70 backdrop-blur-xl h-full overflow-hidden"
               >
-                <ProgressPanel session={session} answers={answers} currentStep={step} questionIndex={questionIndex} isComplete={isComplete} />
+                <ProgressPanel session={session} answers={answers} currentStep={step} questionIndex={questionIndex} isComplete={isComplete} live={liveProgress} />
               </motion.aside>
 
               {/* Mobile panel overlay */}
@@ -353,7 +354,7 @@ const AIComplianceChat = () => {
                       <button onClick={() => setPanelOpen(false)} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center transition-colors duration-200" aria-label="Close panel">
                         <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
-                      <ProgressPanel session={session} answers={answers} currentStep={step} questionIndex={questionIndex} isComplete={isComplete} />
+                      <ProgressPanel session={session} answers={answers} currentStep={step} questionIndex={questionIndex} isComplete={isComplete} live={liveProgress} />
                     </motion.aside>
                   </>
                 )}

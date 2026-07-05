@@ -34,7 +34,7 @@ const normalize = (m, userInitial) => ({
   userInitial,
 })
 
-const ChatBox = ({ session, framework, onComplete, onBack }) => {
+const ChatBox = ({ session, framework, onComplete, onBack, onProgress }) => {
   const [assessmentSession, setAssessmentSession] = useState(null)
   const [messages, setMessages] = useState([])
   const [isInitializing, setIsInitializing] = useState(true)
@@ -42,7 +42,7 @@ const ChatBox = ({ session, framework, onComplete, onBack }) => {
   const [inputValue, setInputValue] = useState('')
   const [error, setError] = useState(null)
   const [isComplete, setIsComplete] = useState(false)
-  const [progress, setProgress] = useState({ percent: 0, done: 0, total: 0 })
+  const [progress, setProgress] = useState({ percent: 0, done: 0, total: 0, score: null, riskLevel: 'unknown' })
 
   const bottomRef = useRef(null)
   const initializedRef = useRef(false)
@@ -56,11 +56,17 @@ const ChatBox = ({ session, framework, onComplete, onBack }) => {
     for (let i = normalized.length - 1; i >= 0; i--) {
       const meta = normalized[i].metadata
       if (meta && typeof meta.percent === 'number') {
-        setProgress({ percent: meta.percent, done: meta.controls_done ?? 0, total: meta.controls_total ?? 0 })
+        const p = {
+          percent: meta.percent, done: meta.controls_done ?? 0, total: meta.controls_total ?? 0,
+          score: typeof meta.score === 'number' ? meta.score : null,
+          riskLevel: meta.risk_level || 'unknown',
+        }
+        setProgress(p)
+        onProgress?.(p)
         break
       }
     }
-  }, [])
+  }, [onProgress])
 
   const appendMessages = useCallback((incoming, replace = false) => {
     const normalized = incoming.map((m) => normalize(m, userInitial))
@@ -74,12 +80,16 @@ const ChatBox = ({ session, framework, onComplete, onBack }) => {
 
   const handleWsError = useCallback((m) => setError(m || 'Realtime connection failed'), [])
   const handleComplete = useCallback((meta) => {
-    if (meta && typeof meta.percent === 'number') {
-      setProgress({ percent: 100, done: meta.controls_total ?? 0, total: meta.controls_total ?? 0 })
+    const p = {
+      percent: 100, done: meta?.controls_total ?? 0, total: meta?.controls_total ?? 0,
+      score: typeof meta?.score === 'number' ? meta.score : null,
+      riskLevel: meta?.risk_level || 'unknown',
     }
+    setProgress(p)
+    onProgress?.(p)
     setIsComplete(true)
     onComplete?.()
-  }, [onComplete])
+  }, [onComplete, onProgress])
 
   const { isConnected, isConnecting, connect, sendMessage } = useWebSocket(
     assessmentSession?.id, appendMessages, setIsTyping, undefined, handleWsError, handleComplete,

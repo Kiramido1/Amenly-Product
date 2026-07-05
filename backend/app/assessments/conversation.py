@@ -106,11 +106,29 @@ class ConversationOrchestrator:
         )
         return set(res.scalars().all())
 
-    def _progress(self, done_count, total):
+    async def _progress(self, session_id, done_count, total):
+        # Running compliance score = average of the answers scored so far.
+        res = await self.db.execute(
+            select(AssessmentAnswer.compliance_score).where(
+                and_(AssessmentAnswer.session_id == session_id,
+                     AssessmentAnswer.phase == AssessmentPhase.BASELINE,
+                     AssessmentAnswer.compliance_score.isnot(None))))
+        scores = [s for s in res.scalars().all() if s is not None]
+        avg = round(sum(scores) / len(scores)) if scores else None
+        if avg is None:
+            risk = "unknown"
+        elif avg >= 70:
+            risk = "low"
+        elif avg >= 40:
+            risk = "medium"
+        else:
+            risk = "high"
         return {
             "controls_done": done_count,
             "controls_total": total,
             "percent": round(done_count / total * 100) if total else 100,
+            "score": avg,
+            "risk_level": risk,
         }
 
     # ---- message phrasing (LLM) ----------------------------------------
@@ -186,13 +204,13 @@ class ConversationOrchestrator:
         remaining = [q for q in questions if q.id not in answered_q]
         if not remaining:
             return TurnResult(content=await self._closing(framework, len(questions)),
-                              metadata={"kind": "complete", **self._progress(len(questions), len(questions))},
+                              metadata={"kind": "complete", **await self._progress(session.id, len(questions), len(questions))},
                               done=True)
         q = remaining[0]
         content = await self._ask_question(q, framework, position, first=(len(answered_q) == 0))
         return TurnResult(content=content, metadata={
             "kind": "question", "control_id": str(q.control_id), "question_id": str(q.id),
-            "probe_count": 0, **self._progress(len(questions) - len(remaining), len(questions))})
+            "probe_count": 0, **await self._progress(session.id, len(questions) - len(remaining), len(questions))})
 
     async def _answered_question_ids(self, session_id) -> set:
         res = await self.db.execute(
@@ -211,7 +229,7 @@ class ConversationOrchestrator:
         remaining = [q for q in questions if q.id not in answered_q]
         if not remaining:
             return TurnResult(content=await self._closing(framework, len(questions)),
-                              metadata={"kind": "complete", **self._progress(len(questions), len(questions))},
+                              metadata={"kind": "complete", **await self._progress(session.id, len(questions), len(questions))},
                               done=True)
 
         last_meta = last_meta or {}
@@ -234,7 +252,7 @@ class ConversationOrchestrator:
             return TurnResult(content=content, metadata={
                 "kind": "followup", "control_id": str(current.control_id),
                 "question_id": str(current.id), "probe_count": probe_count + 1,
-                **self._progress(len(answered_q), len(questions))})
+                **await self._progress(session.id, len(answered_q), len(questions))})
 
         # Accept: persist the answer for this control.
         self.db.add(AssessmentAnswer(
@@ -249,13 +267,13 @@ class ConversationOrchestrator:
         still = [q for q in questions if q.id not in answered_q]
         if not still:
             return TurnResult(content=await self._closing(framework, len(questions)),
-                              metadata={"kind": "complete", **self._progress(len(questions), len(questions))},
+                              metadata={"kind": "complete", **await self._progress(session.id, len(questions), len(questions))},
                               done=True)
         nxt = still[0]
         content = await self._ack_and_next(ctrl, nxt, framework, position)
         return TurnResult(content=content, metadata={
             "kind": "question", "control_id": str(nxt.control_id), "question_id": str(nxt.id),
-            "probe_count": 0, **self._progress(len(answered_q), len(questions))})
+            "probe_count": 0, **await self._progress(session.id, len(answered_q), len(questions))})
 
 
 def get_orchestrator(db) -> ConversationOrchestrator:
