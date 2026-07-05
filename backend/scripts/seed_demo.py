@@ -1,17 +1,24 @@
 """
-Seed a lot of realistic GRC demo data.
+Seed realistic GRC demo data with POSITION-BASED question sets.
 
-Targets whatever DATABASE_URL points to — run against a DEV/test database, not
-production, unless you explicitly intend to. Scores/vulnerabilities are written
-directly (no live LLM/NVD calls) so it is fast and deterministic.
+Each SME position (HR, IT, Network, Security, Compliance/DPO, Finance,
+Operations, Developer …) is mapped to the controls relevant to its role, across
+EVERY framework — so a member only sees the questions that concern their job.
 
-Usage:
+Idempotent: it first removes any prior demo data (orgs with a DEMO* invite code
+and frameworks tagged "(Demo)") so re-running never accumulates duplicates. It
+never touches real (non-demo) data. The global permission catalog is seeded only
+if empty.
+
+Targets whatever DATABASE_URL points to. Usage:
     DATABASE_URL="postgresql+psycopg://postgres:postgres@127.0.0.1:5432/amenly_dev" \
         PYTHONPATH="$PWD" .venv/bin/python scripts/seed_demo.py
 """
 import asyncio
 import random
 from datetime import datetime, timedelta
+
+from sqlalchemy import select, text
 
 import app.database.base  # noqa: F401 - register all mappers
 from app.auth.security import get_password_hash
@@ -32,25 +39,81 @@ from app.models.permissions import PermissionModel, ROLE_PERMISSIONS, RolePermis
 random.seed(42)  # deterministic
 
 ORGS = [
-    ("Acme Financial", "Egypt", ["Engineering", "Security", "Compliance"]),
-    ("Globex Health", "European Union", ["IT", "Privacy", "Operations"]),
-    ("Initech Retail", "United States", ["Infrastructure", "Risk"]),
-    ("Umbrella Energy", "Egypt", ["OT Security", "Network"]),
+    ("Acme Financial", "Egypt", "acme"),
+    ("Globex Health", "European Union", "globex"),
+    ("Initech Retail", "United States", "initech"),
+    ("Umbrella Energy", "Egypt", "umbrella"),
 ]
-POSITIONS = ["Sysadmin", "Network Engineer", "Security Analyst", "DevOps Engineer", "Compliance Officer"]
+
+# Standard positions in small/medium companies: (title, department, domain, email-slug)
+POSITION_CATALOG = [
+    ("IT Administrator", "IT", "it", "it"),
+    ("Network Engineer", "IT", "network", "network"),
+    ("Software Developer", "Engineering", "dev", "dev"),
+    ("Security Officer", "Security", "security", "security"),
+    ("SOC Analyst", "Security", "security", "soc"),
+    ("Compliance Officer", "Compliance", "compliance", "compliance"),
+    ("Data Protection Officer", "Compliance", "privacy", "dpo"),
+    ("HR Manager", "Human Resources", "hr", "hr"),
+    ("Finance Manager", "Finance", "finance", "finance"),
+    ("Operations Manager", "Operations", "operations", "ops"),
+]
+
 FRAMEWORKS = [
     ("ISO 27001", "standard", "information_security"),
     ("NIST CSF", "standard", "cybersecurity"),
     ("PCI DSS", "standard", "payment_security"),
     ("GDPR", "regulation", "data_protection"),
 ]
-CONTROLS = [
-    ("A.9.4.3", "Password management", "server", "Password policy (length, complexity, MFA, lockout)"),
-    ("A.13.1.1", "Network controls", "firewall", "Firewall rules, segmentation, default-deny"),
-    ("A.12.6.1", "Vulnerability management", "server", "Patch cadence, scanning, remediation SLAs"),
-    ("A.8.1.1", "Asset inventory", "workstation", "Asset register completeness and ownership"),
-    ("A.12.4.1", "Event logging", "siem", "Log collection, retention, monitoring"),
+
+# Controls tagged with the position DOMAINS they apply to. A control shows up in
+# a member's assessment only if their position's domain is in this list.
+# (code, title, [domains], device_category, config_focus)
+CONTROL_CATALOG = [
+    ("AC-2", "User access management", ["it", "security"], "server",
+     "Account provisioning, least privilege, periodic access reviews"),
+    ("SI-2", "Patch & vulnerability management", ["it"], "server",
+     "Patch cadence, scanning coverage, remediation SLAs"),
+    ("CP-9", "Backup & recovery", ["it", "operations"], "server",
+     "Backup schedule, encryption, tested restores"),
+    ("SC-7", "Network segmentation & firewalls", ["network"], "firewall",
+     "Firewall rules, VLAN segmentation, default-deny"),
+    ("SC-8", "Encryption in transit / remote access", ["network", "dev"], "network",
+     "TLS everywhere, VPN and MFA for remote access"),
+    ("SA-11", "Secure development lifecycle", ["dev"], "application",
+     "Code review, SAST/DAST, secrets handling"),
+    ("SA-15", "Third-party & dependency security", ["dev", "security"], "application",
+     "Software composition analysis, dependency updates, SBOM"),
+    ("IR-4", "Incident response", ["security", "operations"], "siem",
+     "IR plan, defined roles, tabletop exercises"),
+    ("AU-6", "Logging & monitoring", ["security", "it"], "siem",
+     "Central logging, retention, alerting"),
+    ("RA-3", "Risk assessment", ["security", "compliance"], None,
+     "Risk register, likelihood/impact scoring, treatment plans"),
+    ("PL-2", "Policies & governance", ["compliance", "security"], None,
+     "Approved policies, review cadence, clear ownership"),
+    ("AT-2", "Security awareness training", ["hr", "compliance"], None,
+     "Onboarding training, phishing simulations, completion records"),
+    ("PS-3", "Personnel screening", ["hr"], None,
+     "Background checks, references, confidentiality agreements"),
+    ("PS-4", "Joiners / movers / leavers", ["hr", "it"], None,
+     "Timely access provisioning and revocation on role change or exit"),
+    ("DP-1", "Data protection & privacy", ["privacy", "compliance"], None,
+     "Lawful basis, data mapping, DPIAs"),
+    ("DP-2", "Data retention & disposal", ["privacy"], None,
+     "Retention schedule, secure disposal"),
+    ("DP-3", "Data subject rights & consent", ["privacy"], None,
+     "Consent capture, DSAR handling within deadlines"),
+    ("FI-1", "Segregation of duties", ["finance", "compliance"], None,
+     "SoD matrix, approval limits, conflict checks"),
+    ("FI-2", "Financial controls & fraud prevention", ["finance"], None,
+     "Reconciliations, dual approvals, audit trail"),
+    ("OP-1", "Business continuity & disaster recovery", ["operations", "it"], None,
+     "BCP/DR plan, RTO/RPO targets, DR tests"),
+    ("OP-3", "Vendor & third-party risk", ["operations", "compliance"], None,
+     "Vendor due diligence, contract clauses, ongoing monitoring"),
 ]
+
 ASSET_KINDS = [
     ("server", "Web Server", "Apache httpd 2.4 on Ubuntu 20.04", {"product": "apache", "version": "2.4"}),
     ("database", "Primary DB", "MySQL 5.7 database", {"product": "mysql", "version": "5.7"}),
@@ -69,222 +132,244 @@ CVE_POOL = [
 ]
 
 
+async def clear_prior_demo(db):
+    """Remove data from a previous demo run so re-running is idempotent.
+    Only demo-tagged rows are touched (DEMO* invite codes, '(Demo)' frameworks)."""
+    await db.execute(text("DELETE FROM organizations WHERE invite_code LIKE 'DEMO%'"))
+    await db.execute(text("DELETE FROM frameworks WHERE name LIKE '% (Demo)'"))
+    await db.commit()
+
+
 async def main():
     async with AsyncSessionLocal() as db:
+        await clear_prior_demo(db)
+
         counts = {k: 0 for k in (
             "orgs", "users", "join_requests", "frameworks", "assessments", "sessions",
             "answers", "chat_messages", "infra_assets", "vulns", "connections",
             "assets", "risks", "documents", "doc_chunks",
-            "permissions", "role_permissions", "user_permissions",
+            "permissions", "role_permissions", "user_permissions", "control_positions",
         )}
 
-        # ── Permission catalog (global) ──────────────────────────────
+        # ── Permission catalog (global, idempotent) ──────────────────
+        existing = set((await db.execute(select(PermissionModel.name))).scalars().all())
         perm_models = {}
         for p in Permission:
+            if p.value in existing:
+                continue
             pm = PermissionModel(name=p.value, description=p.value.replace("_", " ").title(),
                                  category=p.value.split("_")[0])
             db.add(pm); await db.flush()
             perm_models[p.value] = pm
             counts["permissions"] += 1
-        for role, perms in ROLE_PERMISSIONS.items():
-            for p in perms:
-                db.add(RolePermission(role=role, permission_id=perm_models[p.value].id))
-                counts["role_permissions"] += 1
+        if perm_models:  # only seed role map when we just created the catalog
+            for role, perms in ROLE_PERMISSIONS.items():
+                for p in perms:
+                    if p.value in perm_models:
+                        db.add(RolePermission(role=role, permission_id=perm_models[p.value].id))
+                        counts["role_permissions"] += 1
 
-        # Shared framework catalog (global, not org-specific). Names are tagged
-        # "(Demo)" so this data never collides with an existing real catalog when
-        # seeded into a populated database.
+        # ── Framework catalog (global): controls + one AI question each ──
         frameworks = {}
         for name, ftype, cat in FRAMEWORKS:
             fw = Framework(name=f"{name} (Demo)", framework_type=ftype, category=cat,
-                           region="Global", description=f"{name} controls")
+                           region="Global", description=f"{name} demo control set")
             db.add(fw); await db.flush()
             frameworks[name] = fw
             counts["frameworks"] += 1
-            for code, title, dev, focus in CONTROLS:
+            fw._controls = []
+            for order, (code, title, domains, device, focus) in enumerate(CONTROL_CATALOG):
                 ctrl = FrameworkControl(framework_id=fw.id, code=code, title=title,
-                                        description=f"{title} for {name}", guidance=f"Implement {title}.")
+                                        description=f"{title} — {name}", guidance=f"Implement {title}.")
                 db.add(ctrl); await db.flush()
-                fw._controls = getattr(fw, "_controls", [])
-                fw._controls.append((ctrl, dev, focus))
+                q = AIQuestion(
+                    control_id=ctrl.id,
+                    question_text=f"For {title}: describe how your team implements and evidences this control.",
+                    config_focus=focus, expected_evidence="Config, policy, or screenshots",
+                    device_category=device, order_index=order)
+                db.add(q); await db.flush()
+                fw._controls.append({"ctrl": ctrl, "q": q, "domains": domains})
 
-        for oi, (oname, region, dept_names) in enumerate(ORGS):
+        # ── Organizations ────────────────────────────────────────────
+        for oi, (oname, region, slug) in enumerate(ORGS):
             org = Organization(name=oname, region=region, profile_completed=True,
-                               invite_code=f"DEMO{oi}{random.randint(100,999)}")
+                               invite_code=f"DEMO{oi}{random.randint(100, 999)}")
             db.add(org); await db.flush()
             counts["orgs"] += 1
 
-            positions = []
-            for dname in dept_names:
-                dept = Department(organization_id=org.id, name=dname); db.add(dept); await db.flush()
-                for pname in random.sample(POSITIONS, k=random.randint(2, 3)):
-                    pos = Position(department_id=dept.id, name=pname); db.add(pos); await db.flush()
-                    positions.append(pos)
+            # Departments (distinct) + one position per catalog entry.
+            depts = {}
+            for dname in {d for _, d, _, _ in POSITION_CATALOG}:
+                dep = Department(organization_id=org.id, name=dname)
+                db.add(dep); await db.flush()
+                depts[dname] = dep
 
-            # Admin (oversight, no position) + members with positions.
-            admin = User(organization_id=org.id, email=f"admin@{oname.split()[0].lower()}-demo.com",
+            admin = User(organization_id=org.id, email=f"admin@{slug}-demo.com",
                          hashed_password=get_password_hash("Test@1234"), full_name=f"{oname} Admin",
                          role=UserRole.ORG_ADMIN, is_active=True)
             db.add(admin); await db.flush(); counts["users"] += 1
-            members = []
-            for mi in range(random.randint(4, 6)):
-                pos = random.choice(positions)
-                m = User(organization_id=org.id, email=f"user{mi}@{oname.split()[0].lower()}-demo.com",
-                         hashed_password=get_password_hash("Test@1234"), full_name=f"Member {mi}",
-                         role=UserRole.ORG_MEMBER, is_active=True, position_id=pos.id)
-                db.add(m); await db.flush(); members.append(m); counts["users"] += 1
 
-            # Pending join requests (people awaiting admin approval).
+            # One member per position (email = role slug) so each role is covered.
+            members = []  # (user, domain)
+            for title, dname, domain, pslug in POSITION_CATALOG:
+                pos = Position(department_id=depts[dname].id, name=title, level="Senior")
+                db.add(pos); await db.flush()
+                m = User(organization_id=org.id, email=f"{pslug}@{slug}-demo.com",
+                         hashed_password=get_password_hash("Test@1234"), full_name=f"{title}",
+                         role=UserRole.ORG_MEMBER, is_active=True, position_id=pos.id)
+                db.add(m); await db.flush()
+                members.append((m, domain, pos))
+                counts["users"] += 1
+
+            # Pending join requests + custom permission grants.
             for ri in range(random.randint(1, 3)):
                 db.add(OrganizationJoinRequest(
-                    organization_id=org.id, email=f"applicant{ri}@{oname.split()[0].lower()}-demo.com",
+                    organization_id=org.id, email=f"applicant{ri}@{slug}-demo.com",
                     hashed_password=get_password_hash("Test@1234"), full_name=f"Applicant {ri}",
                     status=random.choice([JoinRequestStatus.PENDING, JoinRequestStatus.PENDING,
                                           JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED])))
                 counts["join_requests"] += 1
-
-            # Custom per-user permission grants (extend a couple of members).
-            for m in random.sample(members, k=min(2, len(members))):
-                db.add(UserRolePermission(
-                    user_id=m.id, permissions=[Permission.VIEW_DASHBOARD.value],
-                    granted_by_id=admin.id, is_active=True, notes="Granted dashboard visibility."))
+            for m, _, _ in random.sample(members, k=2):
+                db.add(UserRolePermission(user_id=m.id, permissions=[Permission.VIEW_DASHBOARD.value],
+                                          granted_by_id=admin.id, is_active=True,
+                                          notes="Granted dashboard visibility."))
                 counts["user_permissions"] += 1
 
-            # Map controls -> positions + questions for the org's chosen framework.
+            # Framework for this org + association of a small catalog.
             fw_key = random.choice([f[0] for f in FRAMEWORKS])
             fw = frameworks[fw_key]
-
-            # Associate a realistic catalog of frameworks with the org (incl. the
-            # one it will be assessed against) so /frameworks/ is populated.
-            assoc = {fw_key} | set(random.sample([f[0] for f in FRAMEWORKS], k=2))
-            for fname in assoc:
+            for fname in {fw_key} | set(random.sample([f[0] for f in FRAMEWORKS], k=2)):
                 await db.execute(organization_frameworks.insert().values(
                     organization_id=org.id, framework_id=frameworks[fname].id))
-            questions = []
-            for ctrl, dev, focus in fw._controls:
-                # Map every control to every position (weights vary) so each member
-                # gets a full, position-scoped question set.
-                for pos in positions:
-                    db.add(ControlPosition(control_id=ctrl.id, position_id=pos.id,
-                                           importance_weight=round(random.uniform(1.0, 3.0), 1)))
-                q = AIQuestion(control_id=ctrl.id, question_text=f"Describe how you implement {ctrl.title}.",
-                               config_focus=focus, expected_evidence="Config/screenshots",
-                               device_category=dev, order_index=len(questions))
-                db.add(q); await db.flush()
-                questions.append(q)
 
-            # An assessment campaign with baseline + remediation answers (before/after).
-            completed = oi < 2  # first two orgs fully completed
+            # POSITION-BASED control mapping: each control -> only the positions
+            # whose domain matches. This is what ties question sets to roles.
+            for c in fw._controls:
+                for m, domain, pos in members:
+                    if domain in c["domains"]:
+                        weight = 3.0 if domain == c["domains"][0] else 1.5
+                        db.add(ControlPosition(control_id=c["ctrl"].id, position_id=pos.id,
+                                               importance_weight=weight))
+                        counts["control_positions"] += 1
+
+            # Assessment campaign with position-scoped before/after answers.
+            completed = oi < 2
             assessment = Assessment(
-                organization_id=org.id, framework_id=fw.id, name=f"{fw.name} Assessment 2026",
+                organization_id=org.id, framework_id=fw.id, name=f"{fw_key} Assessment 2026",
                 status=AssessmentStatus.COMPLETED if completed else AssessmentStatus.IN_PROGRESS,
                 current_phase=AssessmentPhase.COMPLETED if completed else AssessmentPhase.BASELINE,
-                launched_by_id=admin.id, launched_at=datetime.utcnow() - timedelta(days=20),
-            )
+                launched_by_id=admin.id, launched_at=datetime.utcnow() - timedelta(days=20))
             db.add(assessment); await db.flush(); counts["assessments"] += 1
 
-            baseline_scores, remediation_scores = [], []
-            for m in members:
-                sess = AssessmentSession(assessment_id=assessment.id, user_id=m.id,
-                                         status=AssessmentStatus.COMPLETED,
-                                         phase=AssessmentPhase.COMPLETED if completed else AssessmentPhase.BASELINE,
-                                         completed_at=datetime.utcnow() - timedelta(days=random.randint(1, 15)))
+            base_scores, rem_scores = [], []
+            for m, domain, pos in members:
+                # Questions for THIS member = controls mapped to their domain.
+                my_controls = [c for c in fw._controls if domain in c["domains"]]
+                if not my_controls:
+                    continue
+                sess = AssessmentSession(
+                    assessment_id=assessment.id, user_id=m.id, status=AssessmentStatus.COMPLETED,
+                    phase=AssessmentPhase.COMPLETED if completed else AssessmentPhase.BASELINE,
+                    completed_at=datetime.utcnow() - timedelta(days=random.randint(1, 15)))
                 db.add(sess); await db.flush(); counts["sessions"] += 1
 
-                # A short chat transcript per session (greeting + Q/A turns).
                 db.add(ChatMessage(session_id=sess.id, sender_type="ai",
-                                   message_text="Welcome to your compliance assessment. Let's begin.",
+                                   message_text=f"Welcome. This assessment covers your {pos.name} responsibilities.",
                                    message_metadata={"source": "assessment_greeting"}))
                 counts["chat_messages"] += 1
-                for turn in range(random.randint(2, 4)):
+
+                for c in my_controls:
+                    base = random.randint(10, 55)
+                    db.add(AssessmentAnswer(
+                        session_id=sess.id, question_id=c["q"].id, position_id=pos.id,
+                        phase=AssessmentPhase.BASELINE, answer_text="Current state described.",
+                        compliance_score=base, status=ControlStatus.PARTIALLY_IMPLEMENTED,
+                        ai_feedback="Gaps identified for this control.",
+                        remediation="Harden the configuration and document evidence."))
+                    base_scores.append(base); counts["answers"] += 1
                     db.add(ChatMessage(session_id=sess.id, sender_type="user",
-                                       message_text=f"Our configuration for item {turn} is documented in the runbook."))
+                                       message_text=f"For {c['ctrl'].title}, our current setup is documented."))
                     db.add(ChatMessage(session_id=sess.id, sender_type="ai",
-                                       message_text="Thanks — noted. Here is guidance to strengthen it.",
+                                       message_text="Noted — here is how to strengthen it.",
                                        message_metadata={"confidence": round(random.uniform(0.6, 0.95), 2)}))
                     counts["chat_messages"] += 2
-
-                for q in random.sample(questions, k=min(3, len(questions))):
-                    base = random.randint(10, 55)
-                    db.add(AssessmentAnswer(session_id=sess.id, question_id=q.id, position_id=m.position_id,
-                                            phase=AssessmentPhase.BASELINE, answer_text="Initial state described.",
-                                            compliance_score=base, status=ControlStatus.PARTIALLY_IMPLEMENTED,
-                                            ai_feedback="Gaps found.", remediation="Harden the configuration."))
-                    baseline_scores.append(base); counts["answers"] += 1
                     if completed:
                         rem = min(100, base + random.randint(30, 50))
-                        db.add(AssessmentAnswer(session_id=sess.id, question_id=q.id, position_id=m.position_id,
-                                                phase=AssessmentPhase.REMEDIATION, answer_text="Remediated with controls.",
-                                                compliance_score=rem, status=ControlStatus.FULLY_IMPLEMENTED,
-                                                ai_feedback="Now compliant."))
-                        remediation_scores.append(rem); counts["answers"] += 1
+                        db.add(AssessmentAnswer(
+                            session_id=sess.id, question_id=c["q"].id, position_id=pos.id,
+                            phase=AssessmentPhase.REMEDIATION, answer_text="Remediated with controls in place.",
+                            compliance_score=rem, status=ControlStatus.FULLY_IMPLEMENTED,
+                            ai_feedback="Now compliant."))
+                        rem_scores.append(rem); counts["answers"] += 1
 
-            assessment.baseline_score = round(sum(baseline_scores) / len(baseline_scores), 1) if baseline_scores else None
-            if remediation_scores:
-                assessment.remediation_score = round(sum(remediation_scores) / len(remediation_scores), 1)
+            assessment.baseline_score = round(sum(base_scores) / len(base_scores), 1) if base_scores else None
+            if rem_scores:
+                assessment.remediation_score = round(sum(rem_scores) / len(rem_scores), 1)
                 assessment.overall_score = assessment.remediation_score
                 assessment.closed_at = datetime.utcnow() - timedelta(days=1)
 
-            # Infrastructure assets + connections + vulnerabilities.
-            assets = []
+            # Infrastructure map: assets + vulnerabilities + connections.
+            pos_objs = [p for _, _, p in members]
+            infra = []
             for atype, aname, adesc, ameta in random.sample(ASSET_KINDS, k=random.randint(4, 6)):
                 risk = random.choice([25, 45, 65, 95])
                 a = InfrastructureAsset(
-                    organization_id=org.id, assessment_session_id=None, asset_type=atype,
-                    asset_name=f"{aname} {random.randint(1,9)}", description=adesc, asset_metadata=ameta,
-                    position_id=random.choice(positions).id, ip_address=f"10.0.{oi}.{random.randint(2,254)}",
-                    risk_score=risk, compliance_score=100 - risk,
-                    status="critical" if risk >= 70 else "warning" if risk >= 40 else "secure",
-                )
-                db.add(a); await db.flush(); assets.append(a); counts["infra_assets"] += 1
+                    organization_id=org.id, asset_type=atype, asset_name=f"{aname} {random.randint(1, 9)}",
+                    description=adesc, asset_metadata=ameta, position_id=random.choice(pos_objs).id,
+                    ip_address=f"10.0.{oi}.{random.randint(2, 254)}", risk_score=risk,
+                    compliance_score=100 - risk,
+                    status="critical" if risk >= 70 else "warning" if risk >= 40 else "secure")
+                db.add(a); await db.flush(); infra.append(a); counts["infra_assets"] += 1
                 for cve_id, title, cvss, sev in random.sample(CVE_POOL, k=random.randint(0, 3)):
-                    db.add(Vulnerability(organization_id=org.id, asset_id=a.id, cve_id=cve_id, title=title,
-                                         description=f"{title} affecting {aname}", severity=sev, cvss_score=cvss,
-                                         remediation="Apply vendor patch.", source=VulnerabilitySource.NVD,
-                                         reference_url=f"https://nvd.nist.gov/vuln/detail/{cve_id}"))
+                    db.add(Vulnerability(
+                        organization_id=org.id, asset_id=a.id, cve_id=cve_id, title=title,
+                        description=f"{title} affecting {aname}", severity=sev, cvss_score=cvss,
+                        remediation="Apply vendor patch.", source=VulnerabilitySource.NVD,
+                        reference_url=f"https://nvd.nist.gov/vuln/detail/{cve_id}"))
                     counts["vulns"] += 1
-            for i in range(len(assets) - 1):
-                db.add(AssetConnection(organization_id=org.id, source_asset_id=assets[i].id,
-                                       target_asset_id=assets[i + 1].id,
+            for i in range(len(infra) - 1):
+                db.add(AssetConnection(organization_id=org.id, source_asset_id=infra[i].id,
+                                       target_asset_id=infra[i + 1].id,
                                        connection_type=random.choice(["network", "dependency", "data_flow"])))
                 counts["connections"] += 1
 
-            # Governance asset register (main Asset table) + linked risks.
+            # Governance asset register + risks.
             for atype in random.sample(list(AssetType), k=random.randint(3, 5)):
                 crit = random.choice(list(RiskSeverity))
-                main_asset = Asset(organization_id=org.id, name=f"{atype.value.title()} Asset {random.randint(1,99)}",
-                                   type=atype, criticality=crit, owner_id=random.choice(members).id,
-                                   properties={"location": region, "department": random.choice(dept_names)})
-                db.add(main_asset); await db.flush(); counts["assets"] += 1
+                asset = Asset(organization_id=org.id, name=f"{atype.value.title()} Asset {random.randint(1, 99)}",
+                              type=atype, criticality=crit, owner_id=random.choice(members)[0].id,
+                              properties={"location": region})
+                db.add(asset); await db.flush(); counts["assets"] += 1
                 for _ in range(random.randint(1, 3)):
-                    prob = round(random.uniform(0.2, 0.95), 2)
-                    imp = round(random.uniform(0.3, 0.98), 2)
-                    sev = (RiskSeverity.CRITICAL if prob * imp > 0.6 else
-                           RiskSeverity.HIGH if prob * imp > 0.4 else
-                           RiskSeverity.MEDIUM if prob * imp > 0.2 else RiskSeverity.LOW)
-                    db.add(Risk(asset_id=main_asset.id, title=f"Risk on {main_asset.name}",
+                    prob, imp = round(random.uniform(0.2, 0.95), 2), round(random.uniform(0.3, 0.98), 2)
+                    sev = (RiskSeverity.CRITICAL if prob * imp > 0.6 else RiskSeverity.HIGH if prob * imp > 0.4
+                           else RiskSeverity.MEDIUM if prob * imp > 0.2 else RiskSeverity.LOW)
+                    db.add(Risk(asset_id=asset.id, title=f"Risk on {asset.name}",
                                 description="Identified during assessment review.",
                                 probability=prob, impact=imp, severity=sev,
                                 mitigation_plan="Apply compensating controls and monitor."))
                     counts["risks"] += 1
 
-            # Source documents for the RAG corpus + their chunks.
+            # RAG documents + chunks.
             for di in range(random.randint(2, 4)):
-                doc = Document(organization_id=org.id, filename=f"{fw.name}_policy_{di}.pdf",
+                doc = Document(organization_id=org.id, filename=f"{fw_key}_policy_{di}.pdf",
                                file_type="application/pdf", s3_key=f"org/{org.id}/doc_{di}.pdf",
                                is_processed=True)
                 db.add(doc); await db.flush(); counts["documents"] += 1
                 for ci in range(random.randint(3, 6)):
                     db.add(DocumentChunk(document_id=doc.id, chunk_index=ci,
-                                         content=f"Policy section {ci}: controls and procedures for {fw.name}.",
-                                         metadata_json={"page": ci + 1, "framework": fw.name}))
+                                         content=f"Policy section {ci}: controls for {fw_key}.",
+                                         metadata_json={"page": ci + 1, "framework": fw_key}))
                     counts["doc_chunks"] += 1
 
         await db.commit()
-        print("Seed complete:")
+        print("Seed complete (position-based question sets):")
         for k, v in counts.items():
-            print(f"  {k:14} {v}")
-        print("\nLogin for any org admin: admin@<org>-demo.com / Test@1234  (members: user0@<org>-demo.com ...)")
+            print(f"  {k:18} {v}")
+        print("\nDemo logins (password Test@1234):")
+        print("  admin@<org>-demo.com   e.g. admin@acme-demo.com")
+        print("  role members:  it@ / network@ / dev@ / security@ / soc@ / compliance@ /")
+        print("                 dpo@ / hr@ / finance@ / ops@  + <org>-demo.com")
 
 
 if __name__ == "__main__":
