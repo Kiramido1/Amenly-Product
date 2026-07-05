@@ -134,7 +134,21 @@ CVE_POOL = [
 
 async def clear_prior_demo(db):
     """Remove data from a previous demo run so re-running is idempotent.
-    Only demo-tagged rows are touched (DEMO* invite codes, '(Demo)' frameworks)."""
+    Only demo-tagged rows are touched (DEMO* invite codes, '(Demo)' frameworks).
+
+    assessment_answers.position_id and .question_id are NOT ondelete=CASCADE, so
+    they would block deleting demo positions/questions — delete those answers
+    (and their sessions/assessments) explicitly first, then cascade the rest.
+    """
+    demo_orgs = "SELECT id FROM organizations WHERE invite_code LIKE 'DEMO%'"
+    await db.execute(text(
+        f"DELETE FROM assessment_answers WHERE session_id IN "
+        f"(SELECT s.id FROM assessment_sessions s JOIN assessments a ON s.assessment_id=a.id "
+        f"WHERE a.organization_id IN ({demo_orgs}))"))
+    await db.execute(text(
+        f"DELETE FROM assessment_sessions WHERE assessment_id IN "
+        f"(SELECT id FROM assessments WHERE organization_id IN ({demo_orgs}))"))
+    await db.execute(text(f"DELETE FROM assessments WHERE organization_id IN ({demo_orgs})"))
     await db.execute(text("DELETE FROM organizations WHERE invite_code LIKE 'DEMO%'"))
     await db.execute(text("DELETE FROM frameworks WHERE name LIKE '% (Demo)'"))
     await db.commit()
