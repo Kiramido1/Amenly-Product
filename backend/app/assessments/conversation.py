@@ -29,9 +29,12 @@ from app.models.identity import Organization, Position, User
 logger = logging.getLogger(__name__)
 
 # How many follow-up probes per control before we accept the answer and move on.
-MAX_PROBES = 2
-# An answer scoring at/above this is considered complete enough to advance.
-SUFFICIENT_SCORE = 60.0
+# Higher = the auditor digs for every detail before advancing.
+MAX_PROBES = 4
+# An answer must score at/above this (out of 100) to be considered thorough
+# enough to advance — the auditor keeps probing for the missing specifics until
+# the control is well covered, which is what lifts the framework score.
+SUFFICIENT_SCORE = 80.0
 
 INTERVIEWER_SYSTEM = (
     "You are Amenly, a senior GRC compliance auditor conducting a live, spoken "
@@ -172,14 +175,20 @@ class ConversationOrchestrator:
     async def _followup(self, question, answer_text, feedback) -> str:
         ctrl = question.control
         text = await self._phrase(
-            f"The employee just answered about '{ctrl.title}' but details are missing. "
-            f"What's still unclear: {feedback or 'concrete configuration and evidence'}. "
-            f"Their answer was: \"{answer_text[:400]}\". "
-            f"Acknowledge briefly, then ask ONE focused follow-up to get the missing specifics. "
+            f"You are auditing '{ctrl.code} {ctrl.title}' and the employee's answer is not yet "
+            f"complete enough to be considered compliant. "
+            f"Details this control needs: {question.config_focus or ctrl.guidance or 'concrete configuration and process'}. "
+            f"Evidence to look for: {question.expected_evidence or 'settings, screenshots, policy references'}. "
+            f"What is still missing: {feedback or 'specific, verifiable details'}. "
+            f"Their answer so far: \"{answer_text[:400]}\". "
+            f"Acknowledge briefly, then ask a focused follow-up for the SPECIFIC missing details "
+            f"(exact settings, numbers, frequencies, tools, evidence). You may gently note that "
+            f"sharing these specifics strengthens their compliance coverage. "
             f"Write only your spoken message (1-3 sentences).")
         if not text:
-            text = ("Thanks — could you go a bit deeper? Specifically, what exact settings or "
-                    "evidence can you point to for this?")
+            text = (f"Thanks — to fully cover this I need a bit more detail. Specifically: "
+                    f"{question.config_focus or 'the exact settings, frequency, and evidence'}? "
+                    f"The more specific you are, the stronger your compliance coverage.")
         return text
 
     async def _ack_and_next(self, done_ctrl, next_question, framework, position) -> str:
