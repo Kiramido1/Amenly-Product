@@ -2,59 +2,65 @@ import { memo } from 'react'
 import { motion } from 'framer-motion'
 
 /**
- * Chat message bubble with markdown-like bold support.
- * role: 'system' | 'user'
+ * Audit-console chat bubble. The AI is the auditor (left); the member answers
+ * (right). **bold** is supported inline.
  */
 const MessageBubble = ({ message }) => {
   const isSystem = message.role === 'system' || message.role === 'ai'
 
-  // Simple bold text parser: **text** → <strong>
   const renderText = (text) => {
     if (!text) return null
-    const parts = text.split(/(\*\*[^*]+\*\*)/g)
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-semibold text-white/95">{part.slice(2, -2)}</strong>
-      }
-      return <span key={i}>{part}</span>
-    })
+    return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+      part.startsWith('**') && part.endsWith('**')
+        ? <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>
+        : <span key={i}>{part}</span>
+    )
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       layout
-      className={`flex items-end gap-3 mb-5 ${isSystem ? 'justify-start' : 'justify-end'}`}
+      className={`flex items-start gap-3.5 mb-6 ${isSystem ? 'justify-start' : 'justify-end'}`}
     >
-      {/* System Avatar — App Logo */}
+      {/* Auditor avatar */}
       {isSystem && (
-        <div className="w-10 h-10 rounded-xl bg-[#144272]/15 border border-[#144272]/20 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm shadow-[#144272]/10">
-          <img src="/flux-2-max-20251222_b_Prompt__NanoBanana__-removebg-preview.png" alt="Amenly" className="w-[34px] h-[34px] object-contain drop-shadow-md" />
+        <div className="mt-0.5 w-9 h-9 rounded-[11px] bg-[#0E1116] ring-1 ring-inset ring-[#2C74B3]/25 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <img src="/flux-2-max-20251222_b_Prompt__NanoBanana__-removebg-preview.png" alt="Amenly Auditor" className="w-[30px] h-[30px] object-contain" />
         </div>
       )}
 
-      {/* Bubble */}
-      <div
-        className={`max-w-[75%] px-5 py-3.5 text-[15px] leading-relaxed break-words overflow-wrap-anywhere ${
-          isSystem
-            ? 'bg-white/[0.02] border border-white/[0.04] text-white/80 rounded-2xl rounded-bl-md shadow-sm'
-            : 'bg-gradient-to-br from-[#144272] to-[#0A2647] text-white/95 rounded-2xl rounded-br-md shadow-md shadow-[#144272]/8 border border-[#144272]/20'
-        }`}
-      >
-        {isSystem && message.category && (
-          <span className="inline-block text-[10px] text-[#2C74B3]/80 font-semibold uppercase tracking-wider mb-1.5 bg-[#2C74B3]/[0.08] px-2.5 py-0.5 rounded-full border border-[#2C74B3]/15">
-            {message.category}
-          </span>
+      <div className={`max-w-[76%] min-w-0 ${isSystem ? '' : 'flex flex-col items-end'}`}>
+        {/* Auditor identity + audit tag on the AI side */}
+        {isSystem && (
+          <div className="flex items-center gap-2 mb-1.5 pl-1">
+            <span className="font-display text-[11px] font-semibold tracking-wide text-white/55">Amenly Auditor</span>
+            {message.category && (
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-[#5F9BD8] bg-[#2C74B3]/[0.1] border border-[#2C74B3]/20 px-1.5 py-[3px] rounded-md leading-none">
+                {message.category}
+              </span>
+            )}
+          </div>
         )}
-        <div>{renderText(message.text)}</div>
+
+        <div
+          className={`py-3 text-[14.5px] leading-[1.65] break-words [overflow-wrap:anywhere] transition-colors ${
+            isSystem
+              ? 'bg-[#0D1015] border border-white/[0.06] text-white/82 rounded-2xl rounded-tl-md'
+              : 'bg-gradient-to-br from-[#205295] to-[#123a63] text-white rounded-2xl rounded-tr-md border border-white/[0.08] shadow-[0_2px_20px_-8px_rgba(44,116,179,0.5)]'
+          }`}
+          style={{ paddingLeft: '1.05rem', paddingRight: '1.05rem' }}
+        >
+          {renderText(message.text)}
+        </div>
       </div>
 
-      {/* User Avatar */}
+      {/* Member avatar */}
       {!isSystem && (
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#144272] to-[#0A2647] border border-[#144272]/30 flex items-center justify-center flex-shrink-0 text-sm font-bold text-white/90 shadow-sm">
+        <div className="mt-0.5 w-9 h-9 rounded-[11px] bg-[#14171C] border border-white/[0.08] flex items-center justify-center flex-shrink-0 font-display text-[13px] font-semibold text-white/85">
           {message.userInitial || 'U'}
         </div>
       )}

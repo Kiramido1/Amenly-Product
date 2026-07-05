@@ -117,82 +117,69 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
     <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-chat">
       <div className="p-6 space-y-5">
 
-        {/* Score Circle */}
+        {/* Compliance gauge */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-center"
+          initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-center"
         >
-          <div className="relative w-32 h-32 mx-auto mb-4">
-            {/* Background ring */}
-            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
+          <div className="relative w-36 h-36 mx-auto mb-3">
+            {effHasScore && (
+              <div className="absolute inset-4 rounded-full blur-2xl opacity-30" style={{ background: scoreRingColor }} />
+            )}
+            <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor={scoreRingColor} stopOpacity="0.6" />
+                  <stop offset="100%" stopColor={scoreRingColor} />
+                </linearGradient>
+              </defs>
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="6" />
               <motion.circle
-                cx="60" cy="60" r="52"
-                fill="none"
-                stroke={scoreRingColor}
-                strokeWidth="8"
-                strokeLinecap="round"
+                cx="60" cy="60" r="52" fill="none" stroke="url(#gaugeGrad)" strokeWidth="6" strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 52}
                 initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
-                animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - score / 100) }}
-                transition={{ duration: 1.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - (effHasScore ? score : 0) / 100) }}
+                transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
               />
             </svg>
-            {/* Score text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <motion.span
-                key={score}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className={`text-3xl font-bold ${scoreColor}`}
-              >
-                {effHasScore ? `${score}%` : '—'}
+              <motion.span key={score} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                className={`font-display text-[40px] leading-none font-semibold tabular-nums ${scoreColor}`}>
+                {effHasScore ? score : '—'}
               </motion.span>
-              <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold mt-0.5">
-                Compliance
-              </span>
+              <span className="font-mono text-[9px] text-white/30 uppercase tracking-[0.2em] mt-1.5">Compliance</span>
             </div>
           </div>
-
-          <p className="text-xs text-white/30">
-            {effHasScore ? 'Live score, updated as you answer' : 'Score will appear as you answer'}
+          <p className="text-[11px] text-white/35">
+            {effHasScore ? 'Live score — updated as you answer' : 'Your score appears as you answer'}
           </p>
         </motion.div>
 
-        {/* Divider */}
-        <div className="h-[1px] bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
-
-        {/* Risk Level */}
-        <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/35 font-medium">Risk Level</span>
-            <motion.span
-              key={riskLevel}
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className={`text-sm font-bold ${riskColor}`}
-            >
-              {riskLevel}
-            </motion.span>
+        {/* Risk + progress metric rows */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="p-3.5 rounded-xl bg-white/[0.015] border border-white/[0.05]">
+            <div className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em] mb-1.5">Risk level</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: effHasScore ? scoreRingColor : 'rgba(255,255,255,0.2)' }} />
+              <span className="font-display text-[15px] font-semibold" style={{ color: effHasScore ? scoreRingColor : 'rgba(255,255,255,0.4)' }}>{riskLevel}</span>
+            </div>
+          </div>
+          <div className="p-3.5 rounded-xl bg-white/[0.015] border border-white/[0.05]">
+            <div className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em] mb-1.5">Controls</div>
+            <span className="font-display text-[15px] font-semibold text-white/85 tabular-nums">
+              {live?.total ? `${live.done}/${live.total}` : `${progress}%`}
+            </span>
           </div>
         </div>
 
-        {/* Progress */}
-        <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-white/35 font-medium">Progress</span>
-            <span className="text-xs text-white/20 tabular-nums">{progress}%</span>
+        <div className="px-3.5 pt-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em]">Interview progress</span>
+            <span className="text-[11px] text-white/45 tabular-nums font-medium">{progress}%</span>
           </div>
-          <div className="h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-[#2C74B3] to-[#144272] rounded-full"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-            />
+          <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+            <motion.div className="h-full rounded-full bg-gradient-to-r from-[#2C74B3] to-[#5F9BD8]"
+              animate={{ width: `${progress}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
           </div>
         </div>
 
@@ -202,7 +189,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
         {/* Framework */}
         {framework && (
           <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
-            <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold block mb-2.5">Framework</span>
+            <span className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em] block mb-2.5">Framework</span>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-[#144272]/10 border border-[#144272]/20 flex items-center justify-center flex-shrink-0">
                 <svg className="w-4.5 h-4.5 text-[#2C74B3]/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +207,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
         {/* Company Info */}
         {session.companyName && (
           <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
-            <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold block mb-3">Organization</span>
+            <span className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em] block mb-3">Organization</span>
             <div className="space-y-2.5">
               <div className="flex items-center gap-2.5">
                 <svg className="w-3.5 h-3.5 text-white/20 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,7 +246,7 @@ const ProgressPanel = ({ session, answers, currentStep, questionIndex, isComplet
         {/* Answer Breakdown */}
         {!hasLive && answeredCount > 0 && (
           <div className="p-4 rounded-xl bg-white/[0.015] border border-white/[0.04]">
-            <span className="text-[10px] text-white/25 uppercase tracking-wider font-semibold block mb-3">Answers</span>
+            <span className="font-mono text-[9px] text-white/30 uppercase tracking-[0.14em] block mb-3">Answers</span>
             <div className="grid grid-cols-3 gap-2">
               <div className="text-center p-2.5 rounded-lg bg-emerald-500/[0.04] border border-emerald-500/10">
                 <motion.span

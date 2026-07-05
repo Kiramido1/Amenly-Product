@@ -15,6 +15,10 @@ export default {
         },
         silver: '#C0C0C0',
       },
+      fontFamily: {
+        display: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
     },
   },
   plugins: [],

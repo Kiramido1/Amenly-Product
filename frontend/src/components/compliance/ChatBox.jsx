@@ -159,16 +159,18 @@ const ChatBox = ({ session, framework, onComplete, onBack, onProgress }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
             )}
-            <span className="text-xs text-white/40 font-medium truncate">AI Compliance Interview · {frameworkName}</span>
-            <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
+            <span className="font-display text-sm font-semibold text-white/85 truncate">AI Compliance Interview</span>
+            <span className="hidden sm:inline font-mono text-[10px] text-white/30 uppercase tracking-wider whitespace-nowrap">{frameworkName}</span>
+            <span className={`flex items-center gap-1.5 font-mono text-[9.5px] font-medium px-2 py-[3px] rounded-md border whitespace-nowrap uppercase tracking-wider ${
               isComplete ? 'text-emerald-400 bg-emerald-500/[0.08] border-emerald-500/15'
               : isConnected ? 'text-[#5F9BD8] bg-[#2C74B3]/[0.1] border-[#2C74B3]/20'
               : 'text-amber-400 bg-amber-500/[0.08] border-amber-500/15'}`}>
-              {isComplete ? 'Completed' : isConnected ? 'AI live' : isConnecting ? 'Connecting' : 'Offline'}
+              {isConnected && !isComplete && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+              {isComplete ? 'Completed' : isConnected ? 'Live' : isConnecting ? 'Connecting' : 'Offline'}
             </span>
           </div>
-          <span className="text-xs text-white/30 font-medium tabular-nums whitespace-nowrap">
-            {progress.total ? `${progress.done}/${progress.total} controls · ${progress.percent}%` : `${progress.percent}%`}
+          <span className="font-mono text-[11px] text-white/40 tabular-nums whitespace-nowrap">
+            {progress.total ? `${progress.done}/${progress.total} · ${progress.percent}%` : `${progress.percent}%`}
           </span>
         </div>
         <div className="relative h-1 bg-white/[0.03] rounded-full overflow-hidden">
