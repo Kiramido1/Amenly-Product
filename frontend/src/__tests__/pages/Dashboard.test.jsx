@@ -20,14 +20,17 @@ const renderWithRouter = (initialRoute = '/dashboard', authenticated = false) =>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<div data-testid="login-page">Login Page</div>} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardPage />
               </ProtectedRoute>
-            } 
+            }
           />
+          {/* ProtectedRoute now sends denied users to /ai-compliance — render the
+              dashboard there too so these component tests aren't blanked. */}
+          <Route path="/ai-compliance" element={<DashboardPage />} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>

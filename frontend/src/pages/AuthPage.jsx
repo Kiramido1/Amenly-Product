@@ -63,7 +63,8 @@ const LoginForm = ({ onSwitch }) => {
             navigate('/dashboard')
           }
         } else {
-          navigate('/dashboard')
+          // Members work in the assessment; the dashboard is admin-only.
+          navigate('/ai-compliance')
         }
       } else {
         setApiError(result.message || 'Invalid credentials')

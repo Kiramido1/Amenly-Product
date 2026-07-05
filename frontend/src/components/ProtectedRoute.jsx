@@ -63,7 +63,10 @@ const ProtectedRoute = ({ children, requirePermission = null, requireAnyPermissi
   }
 
   if (!permissionCheck.hasAccess) {
-    return <Navigate to="/dashboard" state={{ from: location }} replace />
+    // Members (and anyone lacking access to an admin page) belong on the
+    // assessment. Never redirect to /dashboard here — that page is admin-only
+    // and would create a redirect loop.
+    return <Navigate to="/ai-compliance" state={{ from: location }} replace />
   }
 
   return children

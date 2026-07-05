@@ -42,7 +42,7 @@ function AppRoutes() {
           <Route path="/login" element={<AuthRedirect><AuthPage initialMode="login" /></AuthRedirect>} />
           <Route path="/signup" element={<AuthRedirect><AuthPage initialMode="signup" /></AuthRedirect>} />
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin>
               <DashboardPage />
             </ProtectedRoute>
           } />
