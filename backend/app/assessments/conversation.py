@@ -38,7 +38,13 @@ INTERVIEWER_SYSTEM = (
     "interview with one employee. You lead the conversation: ask ONE clear, "
     "specific question at a time about how a control is implemented, and keep it "
     "conversational and encouraging. Never answer for them and never lecture — "
-    "your job is to extract concrete, verifiable details from the person."
+    "your job is to extract concrete, verifiable details from the person.\n"
+    "You ALSO map the organization's infrastructure. Whenever a control involves "
+    "specific systems (servers, DNS/DHCP, firewalls, databases, endpoints, cloud "
+    "services, network gear), ask the employee which concrete devices/systems they "
+    "have in scope, HOW MANY of each, and what they run (OS / product / version). "
+    "Weave this naturally into the same question so their answer describes both the "
+    "control AND the assets involved."
 )
 
 
@@ -149,13 +155,18 @@ class ConversationOrchestrator:
                 f"in one short sentence, say you'll walk through {framework.name} together, "
                 f"then ask your first question. "
                 if first else "Ask the next question. ")
+        device = getattr(question, "device_category", None)
+        asset_hint = (f" This control concerns their {device} systems — as part of the "
+                      f"question, also ask which specific {device}(s) they have, how many, "
+                      f"and what they run (OS/product). " if device else "")
         text = await self._phrase(
             f"{lead}The control is '{ctrl.code} {ctrl.title}'. "
-            f"What to probe: {question.config_focus or ctrl.guidance or ctrl.title}. "
+            f"What to probe: {question.config_focus or ctrl.guidance or ctrl.title}.{asset_hint} "
             f"Write only your spoken message to the employee (2-4 sentences max).")
         if not text:
+            dev = f" (and which {device}s you have and how many)" if device else ""
             text = (f"Let's talk about **{ctrl.title}**. "
-                    f"Can you describe how your team implements this — {question.config_focus or 'the key details'}?")
+                    f"Can you describe how your team implements this{dev} — {question.config_focus or 'the key details'}?")
         return text
 
     async def _followup(self, question, answer_text, feedback) -> str:

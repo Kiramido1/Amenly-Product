@@ -91,8 +91,12 @@ class AssetExtractionService:
 
 Extract ONLY infrastructure assets that are mentioned. Do not invent or hallucinate assets.
 
+COUNTS: if a quantity is mentioned (e.g. "3 DNS servers", "two firewalls", "a couple of
+domain controllers"), output a SEPARATE asset entry for EACH instance and number them
+(e.g. "DNS Server 1", "DNS Server 2", "DNS Server 3"). Capture any OS/product/version.
+
 Asset types to look for:
-- server: Physical or virtual servers (e.g., "web server", "database server", "application server")
+- server: Physical or virtual servers, incl. DNS, DHCP, mail, web, domain controllers, file servers (e.g., "web server", "DNS server", "database server", "application server")
 - database: Database systems (e.g., "PostgreSQL", "MySQL", "MongoDB", "Redis")
 - firewall: Network firewalls (e.g., "Cisco ASA", "Palo Alto", "AWS WAF")
 - api: API endpoints or services (e.g., "REST API", "GraphQL API", "internal API")
