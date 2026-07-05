@@ -5,6 +5,8 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '../../context/AuthContext'
 import AuthPage from '../../pages/AuthPage'
 import { clearAccessToken, clearRefreshToken } from '../../api/client'
+import { server } from '../mocks/server'
+import { http, HttpResponse } from 'msw'
 
 // Helper to render with router and auth
 const renderWithRouter = (initialRoute = '/login') => {
@@ -36,8 +38,10 @@ describe('LoginPage - Authentication', () => {
     await user.type(screen.getByLabelText(/password/i), 'AdminPassword123!')
     await user.click(screen.getByRole('button', { name: /log in/i }))
 
+    // Navigation uses React Router (MemoryRouter), which does not touch
+    // window.location — assert the destination route rendered instead.
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/dashboard')
+      expect(screen.getByText('Dashboard')).toBeInTheDocument()
     })
   })
 
@@ -71,9 +75,11 @@ describe('LoginPage - Authentication', () => {
   })
 
   test('[4] Login: network offline → show "Connection failed" message', async () => {
-    // Mock fetch to simulate network failure
-    const originalFetch = global.fetch
-    global.fetch = vi.fn(() => Promise.reject(new Error('Network error')))
+    // axios uses XMLHttpRequest, not fetch — simulate the network failure at the
+    // MSW layer so the request actually rejects.
+    server.use(
+      http.post('http://localhost:8001/api/v1/auth/login', () => HttpResponse.error())
+    )
 
     const user = userEvent.setup()
     renderWithRouter()
@@ -85,8 +91,6 @@ describe('LoginPage - Authentication', () => {
     await waitFor(() => {
       expect(screen.getByText(/connection failed|something went wrong|network/i)).toBeInTheDocument()
     })
-
-    global.fetch = originalFetch
   })
 
   test('[5] Login: loading state → button disabled during API call', async () => {

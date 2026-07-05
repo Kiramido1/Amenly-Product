@@ -88,12 +88,12 @@ const LoginForm = ({ onSwitch }) => {
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Email Address</label>
+          <label htmlFor="login-email" className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Email Address</label>
           <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </div>
-            <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors({ ...errors, email: '' }) }}
+            <input id="login-email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors({ ...errors, email: '' }) }}
               className={inputBase(errors.email)} placeholder="you@example.com" autoComplete="email" />
           </div>
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
@@ -101,14 +101,14 @@ const LoginForm = ({ onSwitch }) => {
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium text-gray-500 tracking-wider">Password</label>
+            <label htmlFor="login-password" className="text-xs font-medium text-gray-500 tracking-wider">Password</label>
             <a href="#" className="text-xs text-[#2C74B3] hover:text-white transition-colors">Forgot password?</a>
           </div>
           <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
-            <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors({ ...errors, password: '' }) }}
+            <input id="login-password" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors({ ...errors, password: '' }) }}
               className={`${inputBase(errors.password)} pr-10`} placeholder="••••••••" autoComplete="current-password" />
             <EyeIcon show={showPw} toggle={() => setShowPw(!showPw)} />
           </div>
@@ -296,12 +296,12 @@ const SignupForm = ({ onSwitch }) => {
             icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /> },
         ].map((field) => (
           <div key={field.name}>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">{field.label}</label>
+            <label htmlFor={`signup-${field.name}`} className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">{field.label}</label>
             <div className="relative">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">{field.icon}</svg>
               </div>
-              <input name={field.name} type={field.type} value={formData[field.name]} onChange={handleChange}
+              <input id={`signup-${field.name}`} name={field.name} type={field.type} value={formData[field.name]} onChange={handleChange}
                 className={inputBase(errors[field.name])} placeholder={field.placeholder} autoComplete={field.autoComplete} />
             </div>
             {errors[field.name] && <p className="mt-1 text-xs text-red-400">{errors[field.name]}</p>}
@@ -309,12 +309,12 @@ const SignupForm = ({ onSwitch }) => {
         ))}
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Password</label>
+          <label htmlFor="signup-password" className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Password</label>
           <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
-            <input name="password" type={showPw ? 'text' : 'password'} value={formData.password} onChange={handleChange}
+            <input id="signup-password" name="password" type={showPw ? 'text' : 'password'} value={formData.password} onChange={handleChange}
               className={`${inputBase(errors.password)} pr-10`} placeholder="Min. 8 characters" autoComplete="new-password" />
             <EyeIcon show={showPw} toggle={() => setShowPw(!showPw)} />
           </div>
@@ -322,12 +322,12 @@ const SignupForm = ({ onSwitch }) => {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Confirm Password</label>
+          <label htmlFor="signup-confirmPassword" className="block text-xs font-medium text-gray-500 mb-1.5 tracking-wider">Confirm Password</label>
           <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
             </div>
-            <input name="confirmPassword" type={showConfirm ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange}
+            <input id="signup-confirmPassword" name="confirmPassword" type={showConfirm ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange}
               className={`${inputBase(errors.confirmPassword)} pr-10`} placeholder="••••••••" autoComplete="new-password" />
             <EyeIcon show={showConfirm} toggle={() => setShowConfirm(!showConfirm)} />
           </div>
@@ -427,9 +427,11 @@ const AuthPage = ({ initialMode = 'login' }) => {
           className="absolute inset-0 flex flex-col justify-center items-center px-16 py-12 bg-black"
           animate={{ x: isLogin ? '0%' : '-100%', opacity: isLogin ? 1 : 0 }}
           transition={{ duration, ease }}
+          aria-hidden={!isLogin}
+          inert={!isLogin ? '' : undefined}
         >
           <div className="w-full max-w-sm">
-            <LoginForm onSwitch={() => setMode('signup')} />
+            {isLogin && <LoginForm onSwitch={() => setMode('signup')} />}
           </div>
         </motion.div>
 
@@ -468,9 +470,11 @@ const AuthPage = ({ initialMode = 'login' }) => {
           initial={{ x: '100%', opacity: 0 }}
           animate={{ x: isLogin ? '100%' : '0%', opacity: isLogin ? 0 : 1 }}
           transition={{ duration, ease }}
+          aria-hidden={isLogin}
+          inert={isLogin ? '' : undefined}
         >
           <div className="w-full max-w-sm">
-            <SignupForm onSwitch={() => setMode('login')} />
+            {!isLogin && <SignupForm onSwitch={() => setMode('login')} />}
           </div>
         </motion.div>
       </div>

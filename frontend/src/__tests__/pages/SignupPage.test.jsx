@@ -53,8 +53,9 @@ describe('SignupPage - Registration', () => {
 
     await user.click(screen.getByRole('button', { name: /register/i }))
 
+    // MemoryRouter navigation doesn't touch window.location — assert the route.
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/dashboard')
+      expect(screen.getByText('Dashboard')).toBeInTheDocument()
     }, { timeout: 5000 })
   })
 
@@ -114,8 +115,9 @@ describe('SignupPage - Form Validation', () => {
 
     await user.click(screen.getByRole('button', { name: /register/i }))
 
+    // Submitting an empty form surfaces "required" errors on multiple fields.
     await waitFor(() => {
-      expect(screen.getByText(/required/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/required/i).length).toBeGreaterThan(0)
     })
   })
 

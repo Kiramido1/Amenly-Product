@@ -40,9 +40,10 @@ export const frameworkHandlers = [
     // Apply pagination
     const paginated = filtered.slice(skip, skip + limit)
 
+    // Match the real backend: data is an object with a `frameworks` array.
     return HttpResponse.json({
       success: true,
-      data: paginated
+      data: { frameworks: paginated, total: filtered.length, skip, limit },
     })
   }),
 
@@ -58,7 +59,7 @@ export const frameworkHandlers = [
   http.get('http://localhost:8001/api/v1/frameworks/types', () => {
     return HttpResponse.json({
       success: true,
-      data: ['regulation', 'standard']
+      data: { types: ['regulation', 'standard'] }
     })
   }),
 
@@ -66,7 +67,7 @@ export const frameworkHandlers = [
   http.get('http://localhost:8001/api/v1/frameworks/categories', () => {
     return HttpResponse.json({
       success: true,
-      data: ['data_protection', 'financial', 'healthcare', 'security']
+      data: { categories: ['data_protection', 'financial', 'healthcare', 'security'] }
     })
   }),
 
@@ -74,7 +75,7 @@ export const frameworkHandlers = [
   http.get('http://localhost:8001/api/v1/frameworks/regions', () => {
     return HttpResponse.json({
       success: true,
-      data: ['United States', 'Global', 'European Union', 'United Kingdom']
+      data: { regions: ['United States', 'Global', 'European Union', 'United Kingdom'] }
     })
   }),
 

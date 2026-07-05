@@ -9,15 +9,15 @@ describe('Frameworks API - List', () => {
     const result = await frameworksApi.listFrameworks()
 
     expect(result.success).toBe(true)
-    expect(Array.isArray(result.data)).toBe(true)
-    expect(result.data.length).toBeGreaterThan(0)
+    expect(Array.isArray(result.data.frameworks)).toBe(true)
+    expect(result.data.frameworks.length).toBeGreaterThan(0)
   })
 
   test('[14] Filter by framework_type=regulation returns only regulations', async () => {
     const result = await frameworksApi.listFrameworks({ framework_type: 'regulation' })
 
     expect(result.success).toBe(true)
-    result.data.forEach(fw => {
+    result.data.frameworks.forEach(fw => {
       expect(fw.framework_type).toBe('regulation')
     })
   })
@@ -26,7 +26,7 @@ describe('Frameworks API - List', () => {
     const result = await frameworksApi.listFrameworks({ is_mandatory: 'true' })
 
     expect(result.success).toBe(true)
-    result.data.forEach(fw => {
+    result.data.frameworks.forEach(fw => {
       expect(fw.is_mandatory).toBe(true)
     })
   })
@@ -35,7 +35,7 @@ describe('Frameworks API - List', () => {
     const result = await frameworksApi.listFrameworks({ search: 'GDPR' })
 
     expect(result.success).toBe(true)
-    result.data.forEach(fw => {
+    result.data.frameworks.forEach(fw => {
       expect(
         fw.name.toLowerCase().includes('gdpr') ||
         fw.description.toLowerCase().includes('gdpr')
@@ -116,23 +116,23 @@ describe('Frameworks API - Filters', () => {
     const result = await frameworksApi.getFrameworkTypes()
 
     expect(result.success).toBe(true)
-    expect(Array.isArray(result.data)).toBe(true)
-    expect(result.data).toContain('regulation')
-    expect(result.data).toContain('standard')
+    expect(Array.isArray(result.data.types)).toBe(true)
+    expect(result.data.types).toContain('regulation')
+    expect(result.data.types).toContain('standard')
   })
 
   test('getFrameworkCategories returns array of categories', async () => {
     const result = await frameworksApi.getFrameworkCategories()
 
     expect(result.success).toBe(true)
-    expect(Array.isArray(result.data)).toBe(true)
+    expect(Array.isArray(result.data.categories)).toBe(true)
   })
 
   test('getFrameworkRegions returns array of regions', async () => {
     const result = await frameworksApi.getFrameworkRegions()
 
     expect(result.success).toBe(true)
-    expect(Array.isArray(result.data)).toBe(true)
+    expect(Array.isArray(result.data.regions)).toBe(true)
   })
 })
 

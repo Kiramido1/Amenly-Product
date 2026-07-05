@@ -2,6 +2,24 @@ import '@testing-library/jest-dom'
 import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { server } from './mocks/server'
 
+// jsdom lacks these browser APIs that framer-motion (whileInView) and recharts
+// (ResponsiveContainer) rely on — provide no-op mocks so components render.
+class MockObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return [] }
+}
+global.IntersectionObserver = MockObserver
+global.ResizeObserver = MockObserver
+if (!window.matchMedia) {
+  window.matchMedia = (query) => ({
+    matches: false, media: query, onchange: null,
+    addEventListener: () => {}, removeEventListener: () => {},
+    addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false,
+  })
+}
+
 // Mock window.location for navigation tests
 const originalLocation = window.location
 delete window.location
@@ -59,7 +77,10 @@ afterEach(() => {
   server.resetHandlers()
   sessionStorageMock.clear()
   localStorageMock.clear()
-  window.location.href = '/'
+  // Reset to a FULL absolute URL — a bare '/' breaks MSW's URL resolver
+  // (`new URL(reqUrl, '/')` throws "Invalid base URL: /") for every request
+  // made after the first test in a file.
+  window.location.href = 'http://localhost:3000/'
   window.location.pathname = '/'
 })
 

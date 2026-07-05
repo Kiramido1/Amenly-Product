@@ -8,9 +8,11 @@ describe('useFrameworks Hook', () => {
   test('useFrameworks returns initial state', () => {
     const { result } = renderHook(() => useFrameworks())
 
+    // The hook auto-fetches on mount, so data is still empty on first render
+    // and it is already loading (isLoading flips true in the mount effect).
     expect(result.current.frameworks).toEqual([])
     expect(result.current.stats).toBeNull()
-    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isLoading).toBe(true)
     expect(result.current.error).toBeNull()
   })
 
@@ -60,7 +62,7 @@ describe('useFrameworks Hook', () => {
       http.get('http://localhost:8001/api/v1/frameworks/', () => {
         return HttpResponse.json({
           success: true,
-          data: [{ id: 'new', name: 'New Framework', framework_type: 'standard', is_mandatory: false }]
+          data: { frameworks: [{ id: 'new', name: 'New Framework', framework_type: 'standard', is_mandatory: false }] }
         })
       })
     )
