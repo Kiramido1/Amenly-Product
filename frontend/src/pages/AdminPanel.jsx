@@ -16,6 +16,7 @@ import {
   closeCampaign,
   listCampaignSessions,
   getCampaignOverview,
+  getMemberSessionChat,
 } from '../api/assessments'
 
 const EASE = [0.25, 0.46, 0.45, 0.94]
@@ -285,6 +286,18 @@ const CampaignTab = () => {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [transcript, setTranscript] = useState(null)   // { loading, member, status, messages } | null
+
+  const openTranscript = useCallback(async (sessionId) => {
+    if (!selected) return
+    setTranscript({ loading: true })
+    try {
+      const res = await getMemberSessionChat(selected, sessionId)
+      setTranscript({ loading: false, ...(res?.data || {}) })
+    } catch {
+      setTranscript({ loading: false, error: 'Could not load this transcript.', messages: [] })
+    }
+  }, [selected])
 
   const loadList = useCallback(async () => {
     try {
@@ -450,19 +463,81 @@ const CampaignTab = () => {
           <div className="px-4 py-8 text-center text-sm text-white/40">No member sessions yet.</div>
         ) : (
           sessions.map((s) => (
-            <div key={s.session_id} className="px-4 py-3 grid grid-cols-12 gap-2 items-center border-t border-white/[0.04]">
+            <button
+              key={s.session_id}
+              onClick={() => openTranscript(s.session_id)}
+              className="w-full text-left px-4 py-3 grid grid-cols-12 gap-2 items-center border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors group"
+              title="View this member's interview transcript"
+            >
               <div className="col-span-4 min-w-0">
-                <div className="text-sm text-white truncate">{s.user_full_name || s.user_email}</div>
+                <div className="text-sm text-white truncate flex items-center gap-1.5">
+                  {s.user_full_name || s.user_email}
+                  <svg className="w-3.5 h-3.5 text-white/20 group-hover:text-[#5F9BD8] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.9 9.9 0 01-4-.84L3 20l1.05-3.15A7.8 7.8 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                </div>
                 {s.user_full_name && <div className="text-[11px] text-white/35 truncate">{s.user_email}</div>}
               </div>
               <div className="col-span-3 text-xs text-white/55 truncate">{s.position_name || '—'}</div>
               <div className="col-span-2"><StatusBadge status={s.status} phase={s.phase} /></div>
               <div className="col-span-1 text-right text-xs text-white/55">{s.answers_count}</div>
               <div className={`col-span-2 text-right text-sm font-semibold ${scoreColor(s.avg_score)}`}>{fmtScore(s.avg_score)}</div>
-            </div>
+            </button>
           ))
         )}
       </div>
+
+      {/* Member transcript modal */}
+      <AnimatePresence>
+        {transcript && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setTranscript(null)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            />
+            <motion.div
+              initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 240 }}
+              className="fixed inset-y-0 right-0 w-full max-w-lg bg-[#080808] border-l border-white/[0.08] z-50 flex flex-col"
+            >
+              <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-[10px] text-white/40 uppercase tracking-wider">Interview transcript</div>
+                  <div className="text-sm text-white font-semibold truncate">
+                    {transcript.member?.full_name || transcript.member?.email || 'Member'}
+                    {transcript.member?.position_name && <span className="text-white/40 font-normal"> · {transcript.member.position_name}</span>}
+                  </div>
+                </div>
+                <button onClick={() => setTranscript(null)} className="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center flex-shrink-0" aria-label="Close">
+                  <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+                {transcript.loading ? (
+                  <div className="text-center text-sm text-white/40 py-10">Loading transcript…</div>
+                ) : transcript.error ? (
+                  <div className="text-center text-sm text-rose-300/80 py-10">{transcript.error}</div>
+                ) : (transcript.messages?.length ?? 0) === 0 ? (
+                  <div className="text-center text-sm text-white/40 py-10">This member has no chat messages yet.</div>
+                ) : (
+                  transcript.messages.map((m) => {
+                    const isAI = m.sender_type === 'ai'
+                    return (
+                      <div key={m.id} className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
+                        <div className={`max-w-[85%] px-3.5 py-2.5 text-[13.5px] leading-relaxed rounded-2xl border ${
+                          isAI ? 'bg-[#0D1015] border-white/[0.06] text-white/80 rounded-tl-md'
+                               : 'bg-gradient-to-br from-[#205295] to-[#123a63] border-white/[0.08] text-white rounded-tr-md'}`}>
+                          <div className={`text-[9px] uppercase tracking-wider mb-1 ${isAI ? 'text-[#5F9BD8]' : 'text-white/50'}`}>{isAI ? 'Auditor' : 'Member'}</div>
+                          {m.message_text}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

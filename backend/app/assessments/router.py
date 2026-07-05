@@ -467,6 +467,47 @@ async def list_campaign_sessions(
 
 
 @router.get(
+    "/{assessment_id}/sessions/{session_id}/chat",
+    response_model=GenericResponse,
+    dependencies=[Depends(require_permission(Permission.VIEW_ALL_SESSIONS))],
+)
+async def get_member_session_chat(
+    assessment_id: UUID,
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Read a member's full interview transcript for the assessment (Admin only)."""
+    assessment_service = AssessmentService(db)
+    await _get_admin_assessment(assessment_service, assessment_id, current_user)
+    session = await assessment_service.get_session_for_org(
+        session_id=session_id,
+        organization_id=current_user.organization_id,
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    member = session.user
+    position = getattr(member, "position", None)
+    messages = [ChatMessageResponse.model_validate(m) for m in session.chat_messages]
+    return {
+        "success": True,
+        "message": "Transcript retrieved successfully",
+        "data": {
+            "session_id": session_id,
+            "member": {
+                "id": member.id,
+                "full_name": getattr(member, "full_name", None),
+                "email": member.email,
+                "position_name": position.name if position else None,
+            },
+            "status": str(session.status.value if hasattr(session.status, "value") else session.status),
+            "messages": messages,
+        },
+    }
+
+
+@router.get(
     "/{assessment_id}/overview",
     response_model=GenericResponse,
     dependencies=[Depends(require_any_permission(

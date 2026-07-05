@@ -83,3 +83,9 @@ export const getCampaignOverview = async (assessmentId) => {
   const response = await api.get(`/assessments/${assessmentId}/overview`)
   return response.data
 }
+
+// Admin: read a specific member's full interview transcript.
+export const getMemberSessionChat = async (assessmentId, sessionId) => {
+  const response = await api.get(`/assessments/${assessmentId}/sessions/${sessionId}/chat`)
+  return response.data
+}

@@ -254,6 +254,26 @@ class AssessmentService:
 
         return session
 
+    async def get_session_for_org(
+        self, session_id: UUID, organization_id: UUID
+    ) -> AssessmentSession | None:
+        """Admin view: a member's session + chat transcript, scoped to the org."""
+        result = await self.db.execute(
+            select(AssessmentSession)
+            .join(Assessment, AssessmentSession.assessment_id == Assessment.id)
+            .where(
+                and_(
+                    AssessmentSession.id == session_id,
+                    Assessment.organization_id == organization_id,
+                )
+            )
+            .options(
+                selectinload(AssessmentSession.chat_messages),
+                selectinload(AssessmentSession.user).selectinload(User.position),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_questions_for_position(
         self,
         framework_id: UUID,
