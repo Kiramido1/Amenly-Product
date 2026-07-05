@@ -9,9 +9,7 @@ import structlog
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.rag.context_retrieval import DynamicContextRetrieval
-from app.ai.rag.rag_service import get_rag_service
-from app.ai.rag.schemas import RAGQueryRequest
+from app.assessments.conversation import get_orchestrator
 from app.assessments.service import AssessmentService
 from app.database.session import get_db
 from app.models.chat import ChatMessage
@@ -155,6 +153,34 @@ async def assessment_chat_websocket(
                 "messages": history_messages,
             })
 
+        orchestrator = get_orchestrator(db)
+
+        # Track the metadata of the last AI turn (which control is under discussion
+        # and how many times it has been probed) so the interview can resume.
+        last_ai_meta = None
+        for msg in reversed(session.chat_messages):
+            if msg.sender_type == "ai" and (msg.message_metadata or {}).get("kind"):
+                last_ai_meta = msg.message_metadata
+                break
+
+        # If the AI has not asked a question yet, open the interview: the AI leads.
+        already_asked = any(
+            m.sender_type == "ai" and (m.message_metadata or {}).get("kind") in ("question", "followup")
+            for m in session.chat_messages
+        )
+        if not already_asked:
+            opening = await orchestrator.opening_message(session)
+            ai_open = ChatMessage(session_id=session_id, sender_type="ai",
+                                  message_text=opening.content, message_metadata=opening.metadata)
+            db.add(ai_open)
+            await db.commit()
+            await db.refresh(ai_open)
+            last_ai_meta = opening.metadata
+            await websocket.send_json({
+                "type": "message", "sender": "ai", "content": opening.content,
+                "metadata": opening.metadata, "timestamp": ai_open.created_at.isoformat(),
+            })
+
         # Message loop
         while True:
             # Receive message from client
@@ -203,143 +229,29 @@ async def assessment_chat_websocket(
                         "timestamp": user_message.created_at.isoformat(),
                     })
 
-                    # Send typing indicator
-                    await websocket.send_json({
-                        "type": "typing",
-                        "sender": "ai",
-                        "is_typing": True,
-                    })
+                    # AI-driven interview: judge the answer, then probe or advance.
+                    await websocket.send_json({"type": "typing", "sender": "ai", "is_typing": True})
 
-                    # Generate AI response using RAG with dynamic context retrieval
-                    try:
-                        # Get user's position and framework
-                        if user.position_id and session.assessment:
-                            # Use dynamic context retrieval for position-specific queries
-                            context_retrieval = DynamicContextRetrieval(db)
+                    result = await orchestrator.handle_answer(session, content, last_ai_meta)
 
-                            # Retrieve chunks with position-specific context
-                            chunks, control_summary = await context_retrieval.retrieve_with_control_context(
-                                query=content,
-                                position_id=user.position_id,
-                                framework_id=session.assessment.framework_id,
-                                org_id=str(user.organization_id),
-                                top_k=5,
-                                score_threshold=0.5,
-                            )
-
-                            # Build enhanced prompt with control context
-                            enhanced_query = f"{content}\n\nContext: {control_summary}" if control_summary else content
-
-                            # Use RAG service with retrieved chunks
-                            rag_service = get_rag_service()
-                            rag_request = RAGQueryRequest(
-                                question=enhanced_query,
-                                framework=None,
-                                top_k=len(chunks),
-                                score_threshold=0.5,
-                                include_metadata=True,
-                            )
-
-                            rag_answer = await rag_service.query(
-                                request=rag_request,
-                                org_id=str(user.organization_id),
-                            )
-
-                            # Extract AI response text
-                            ai_response_text = rag_answer.full_text if rag_answer.full_text else rag_answer.summary
-
-                            # Build metadata with sources
-                            metadata = {
-                                "source": "rag_dynamic",
-                                "confidence": rag_answer.confidence_score,
-                                "sources_count": len(rag_answer.sources),
-                                "retrieved_chunks": rag_answer.retrieved_chunks,
-                                "processing_time_ms": rag_answer.processing_time_ms,
-                                "position_specific": True,
-                                "control_context_used": len(control_summary) > 0,
-                            }
-
-                            # Include source references
-                            if rag_answer.sources:
-                                metadata["sources"] = [
-                                    {
-                                        "framework": source.framework,
-                                        "section": source.section,
-                                        "control_id": source.control_id,
-                                        "relevance": source.relevance_score,
-                                    }
-                                    for source in rag_answer.sources[:3]
-                                ]
-                        else:
-                            # Fallback to generic RAG if no position assigned
-                            rag_service = get_rag_service()
-                            rag_request = RAGQueryRequest(
-                                question=content,
-                                framework=None,
-                                top_k=5,
-                                score_threshold=0.5,
-                                include_metadata=True,
-                            )
-
-                            rag_answer = await rag_service.query(
-                                request=rag_request,
-                                org_id=str(user.organization_id),
-                            )
-
-                            ai_response_text = rag_answer.full_text if rag_answer.full_text else rag_answer.summary
-
-                            metadata = {
-                                "source": "rag_generic",
-                                "confidence": rag_answer.confidence_score,
-                                "sources_count": len(rag_answer.sources),
-                                "retrieved_chunks": rag_answer.retrieved_chunks,
-                                "processing_time_ms": rag_answer.processing_time_ms,
-                                "position_specific": False,
-                            }
-
-                            if rag_answer.sources:
-                                metadata["sources"] = [
-                                    {
-                                        "framework": source.framework,
-                                        "section": source.section,
-                                        "control_id": source.control_id,
-                                        "relevance": source.relevance_score,
-                                    }
-                                    for source in rag_answer.sources[:3]
-                                ]
-
-                    except Exception as e:
-                        logger.error("rag_query_failed", error=str(e))
-                        # Fallback response if RAG fails
-                        ai_response_text = "I apologize, but I encountered an error processing your question. Please try again."
-                        metadata = {"source": "error", "error": str(e)}
-
-                    # Save AI message to database
                     ai_message = ChatMessage(
-                        session_id=session_id,
-                        sender_type="ai",
-                        message_text=ai_response_text,
-                        message_metadata=metadata,
-                    )
+                        session_id=session_id, sender_type="ai",
+                        message_text=result.content, message_metadata=result.metadata)
                     db.add(ai_message)
                     await db.commit()
                     await db.refresh(ai_message)
+                    last_ai_meta = result.metadata
 
-                    # Send typing indicator stopped
+                    await websocket.send_json({"type": "typing", "sender": "ai", "is_typing": False})
                     await websocket.send_json({
-                        "type": "typing",
-                        "sender": "ai",
-                        "is_typing": False,
+                        "type": "message", "sender": "ai", "content": result.content,
+                        "metadata": result.metadata, "timestamp": ai_message.created_at.isoformat(),
                     })
 
-                    # Send AI response to client
-                    await websocket.send_json({
-                        "type": "message",
-                        "sender": "ai",
-                        "content": ai_response_text,
-                        "metadata": metadata,
-                        "timestamp": ai_message.created_at.isoformat(),
-                    })
+                    if result.done:
+                        await assessment_service.complete_session(session_id)
+                        await assessment_service.update_assessment_score(session.assessment_id)
+                        await websocket.send_json({"type": "complete", "metadata": result.metadata})
 
                     logger.info(
                         "chat_message_processed",
