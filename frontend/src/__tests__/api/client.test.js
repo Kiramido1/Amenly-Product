@@ -110,7 +110,9 @@ describe('API Client - Interceptors', () => {
     // Mock window.location.href assignment
     const locationAssignSpy = vi.fn()
     Object.defineProperty(window, 'location', {
-      value: { href: '', assign: locationAssignSpy, pathname: '/' },
+      // Use a full URL — an empty href breaks MSW's URL resolver, so the request
+      // would error before returning 401 and the refresh flow would never run.
+      value: { href: 'http://localhost:3000/', assign: locationAssignSpy, pathname: '/' },
       writable: true
     })
 
@@ -224,7 +226,8 @@ describe('API Client - Token Refresh Flow', () => {
     // Mock window.location
     const originalLocation = window.location
     delete window.location
-    window.location = { href: '', pathname: '/' }
+    // Full URL — an empty href breaks MSW's URL resolver (see setup.js).
+    window.location = { href: 'http://localhost:3000/', pathname: '/' }
 
     server.use(
       http.get('http://localhost:8001/api/v1/protected', () => {

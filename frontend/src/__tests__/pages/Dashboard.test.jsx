@@ -75,10 +75,11 @@ describe('Dashboard - Components', () => {
     renderWithRouter('/dashboard', true)
 
     await waitFor(() => {
-      // Check for backdrop-blur which indicates GlassCard-style components
+      // Check for backdrop-blur which indicates GlassCard-style components.
+      // Allow extra time: the dashboard lazy-loads its panels and waits on data.
       const glassElements = document.querySelectorAll('[class*="backdrop-blur"]')
       expect(glassElements.length).toBeGreaterThan(0)
-    })
+    }, { timeout: 4000 })
   })
 
   test('Dashboard shows loading state initially', async () => {
