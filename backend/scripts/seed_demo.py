@@ -17,15 +17,17 @@ import app.database.base  # noqa: F401 - register all mappers
 from app.auth.security import get_password_hash
 from app.database.session import AsyncSessionLocal
 from app.models.assessments import Assessment, AssessmentAnswer, AssessmentSession
-from app.models.chat import AssetConnection, InfrastructureAsset, Vulnerability
+from app.models.assets_risks import Asset, Document, DocumentChunk, Risk
+from app.models.chat import AssetConnection, ChatMessage, InfrastructureAsset, Vulnerability
 from app.models.compliance import (
     AIQuestion, ControlPosition, Framework, FrameworkControl, organization_frameworks,
 )
 from app.models.enums import (
-    AssessmentPhase, AssessmentStatus, ControlStatus, RiskSeverity,
-    UserRole, VulnerabilitySource,
+    AssessmentPhase, AssessmentStatus, AssetType, ControlStatus, JoinRequestStatus,
+    Permission, RiskSeverity, UserRole, VulnerabilitySource,
 )
-from app.models.identity import Department, Organization, Position, User
+from app.models.identity import Department, Organization, OrganizationJoinRequest, Position, User
+from app.models.permissions import PermissionModel, ROLE_PERMISSIONS, RolePermission, UserRolePermission
 
 random.seed(42)  # deterministic
 
@@ -69,7 +71,25 @@ CVE_POOL = [
 
 async def main():
     async with AsyncSessionLocal() as db:
-        counts = {k: 0 for k in ("orgs", "users", "frameworks", "assessments", "sessions", "answers", "assets", "vulns", "connections")}
+        counts = {k: 0 for k in (
+            "orgs", "users", "join_requests", "frameworks", "assessments", "sessions",
+            "answers", "chat_messages", "infra_assets", "vulns", "connections",
+            "assets", "risks", "documents", "doc_chunks",
+            "permissions", "role_permissions", "user_permissions",
+        )}
+
+        # ── Permission catalog (global) ──────────────────────────────
+        perm_models = {}
+        for p in Permission:
+            pm = PermissionModel(name=p.value, description=p.value.replace("_", " ").title(),
+                                 category=p.value.split("_")[0])
+            db.add(pm); await db.flush()
+            perm_models[p.value] = pm
+            counts["permissions"] += 1
+        for role, perms in ROLE_PERMISSIONS.items():
+            for p in perms:
+                db.add(RolePermission(role=role, permission_id=perm_models[p.value].id))
+                counts["role_permissions"] += 1
 
         # Shared framework catalog (global, not org-specific).
         frameworks = {}
@@ -112,6 +132,22 @@ async def main():
                          role=UserRole.ORG_MEMBER, is_active=True, position_id=pos.id)
                 db.add(m); await db.flush(); members.append(m); counts["users"] += 1
 
+            # Pending join requests (people awaiting admin approval).
+            for ri in range(random.randint(1, 3)):
+                db.add(OrganizationJoinRequest(
+                    organization_id=org.id, email=f"applicant{ri}@{oname.split()[0].lower()}.com",
+                    hashed_password=get_password_hash("Test@1234"), full_name=f"Applicant {ri}",
+                    status=random.choice([JoinRequestStatus.PENDING, JoinRequestStatus.PENDING,
+                                          JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED])))
+                counts["join_requests"] += 1
+
+            # Custom per-user permission grants (extend a couple of members).
+            for m in random.sample(members, k=min(2, len(members))):
+                db.add(UserRolePermission(
+                    user_id=m.id, permissions=[Permission.VIEW_DASHBOARD.value],
+                    granted_by_id=admin.id, is_active=True, notes="Granted dashboard visibility."))
+                counts["user_permissions"] += 1
+
             # Map controls -> positions + questions for the org's chosen framework.
             fw = frameworks[random.choice([f[0] for f in FRAMEWORKS])]
 
@@ -151,6 +187,20 @@ async def main():
                                          phase=AssessmentPhase.COMPLETED if completed else AssessmentPhase.BASELINE,
                                          completed_at=datetime.utcnow() - timedelta(days=random.randint(1, 15)))
                 db.add(sess); await db.flush(); counts["sessions"] += 1
+
+                # A short chat transcript per session (greeting + Q/A turns).
+                db.add(ChatMessage(session_id=sess.id, sender_type="ai",
+                                   message_text="Welcome to your compliance assessment. Let's begin.",
+                                   message_metadata={"source": "assessment_greeting"}))
+                counts["chat_messages"] += 1
+                for turn in range(random.randint(2, 4)):
+                    db.add(ChatMessage(session_id=sess.id, sender_type="user",
+                                       message_text=f"Our configuration for item {turn} is documented in the runbook."))
+                    db.add(ChatMessage(session_id=sess.id, sender_type="ai",
+                                       message_text="Thanks — noted. Here is guidance to strengthen it.",
+                                       message_metadata={"confidence": round(random.uniform(0.6, 0.95), 2)}))
+                    counts["chat_messages"] += 2
+
                 for q in random.sample(questions, k=min(3, len(questions))):
                     base = random.randint(10, 55)
                     db.add(AssessmentAnswer(session_id=sess.id, question_id=q.id, position_id=m.position_id,
@@ -183,7 +233,7 @@ async def main():
                     risk_score=risk, compliance_score=100 - risk,
                     status="critical" if risk >= 70 else "warning" if risk >= 40 else "secure",
                 )
-                db.add(a); await db.flush(); assets.append(a); counts["assets"] += 1
+                db.add(a); await db.flush(); assets.append(a); counts["infra_assets"] += 1
                 for cve_id, title, cvss, sev in random.sample(CVE_POOL, k=random.randint(0, 3)):
                     db.add(Vulnerability(organization_id=org.id, asset_id=a.id, cve_id=cve_id, title=title,
                                          description=f"{title} affecting {aname}", severity=sev, cvss_score=cvss,
@@ -195,6 +245,37 @@ async def main():
                                        target_asset_id=assets[i + 1].id,
                                        connection_type=random.choice(["network", "dependency", "data_flow"])))
                 counts["connections"] += 1
+
+            # Governance asset register (main Asset table) + linked risks.
+            for atype in random.sample(list(AssetType), k=random.randint(3, 5)):
+                crit = random.choice(list(RiskSeverity))
+                main_asset = Asset(organization_id=org.id, name=f"{atype.value.title()} Asset {random.randint(1,99)}",
+                                   type=atype, criticality=crit, owner_id=random.choice(members).id,
+                                   properties={"location": region, "department": random.choice(dept_names)})
+                db.add(main_asset); await db.flush(); counts["assets"] += 1
+                for _ in range(random.randint(1, 3)):
+                    prob = round(random.uniform(0.2, 0.95), 2)
+                    imp = round(random.uniform(0.3, 0.98), 2)
+                    sev = (RiskSeverity.CRITICAL if prob * imp > 0.6 else
+                           RiskSeverity.HIGH if prob * imp > 0.4 else
+                           RiskSeverity.MEDIUM if prob * imp > 0.2 else RiskSeverity.LOW)
+                    db.add(Risk(asset_id=main_asset.id, title=f"Risk on {main_asset.name}",
+                                description="Identified during assessment review.",
+                                probability=prob, impact=imp, severity=sev,
+                                mitigation_plan="Apply compensating controls and monitor."))
+                    counts["risks"] += 1
+
+            # Source documents for the RAG corpus + their chunks.
+            for di in range(random.randint(2, 4)):
+                doc = Document(organization_id=org.id, filename=f"{fw.name}_policy_{di}.pdf",
+                               file_type="application/pdf", s3_key=f"org/{org.id}/doc_{di}.pdf",
+                               is_processed=True)
+                db.add(doc); await db.flush(); counts["documents"] += 1
+                for ci in range(random.randint(3, 6)):
+                    db.add(DocumentChunk(document_id=doc.id, chunk_index=ci,
+                                         content=f"Policy section {ci}: controls and procedures for {fw.name}.",
+                                         metadata_json={"page": ci + 1, "framework": fw.name}))
+                    counts["doc_chunks"] += 1
 
         await db.commit()
         print("Seed complete:")
