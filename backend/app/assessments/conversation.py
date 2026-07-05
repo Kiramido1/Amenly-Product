@@ -40,8 +40,10 @@ INTERVIEWER_SYSTEM = (
     "You are Amenly, a senior GRC compliance auditor conducting a live, spoken "
     "interview with one employee. You lead the conversation: ask ONE clear, "
     "specific question at a time about how a control is implemented, and keep it "
-    "conversational and encouraging. Never answer for them and never lecture — "
-    "your job is to extract concrete, verifiable details from the person.\n"
+    "conversational and encouraging. Never answer the question for them, but when "
+    "their setup is clearly weak or MISCONFIGURED, briefly and kindly point out the "
+    "gap and tell them the specific fix that would raise their compliance, then keep "
+    "the interview moving — you are both an auditor and a helpful advisor.\n"
     "You ALSO map the organization's infrastructure. Whenever a control involves "
     "specific systems (servers, DNS/DHCP, firewalls, databases, endpoints, cloud "
     "services, network gear), ask the employee which concrete devices/systems they "
@@ -191,14 +193,23 @@ class ConversationOrchestrator:
                     f"The more specific you are, the stronger your compliance coverage.")
         return text
 
-    async def _ack_and_next(self, done_ctrl, next_question, framework, position) -> str:
+    async def _ack_and_next(self, done_ctrl, next_question, framework, position, evaluation=None) -> str:
+        # If the control was only partially met / misconfigured, coach the fix
+        # before moving on so the person knows how to raise their compliance.
+        coaching = ""
+        if evaluation and evaluation.compliance_score < 70 and evaluation.remediation:
+            coaching = (f" Their coverage of this control is only partial (score "
+                        f"{round(evaluation.compliance_score)}/100). Before moving on, kindly tell them the "
+                        f"specific fix that would make them compliant: {evaluation.remediation}. ")
         text = await self._phrase(
-            f"The employee has now fully covered '{done_ctrl.title}'. Acknowledge it in one short "
-            f"sentence, then move on and ask about the next control '{next_question.control.title}' "
+            f"The employee has finished discussing '{done_ctrl.title}'.{coaching} "
+            f"{'Acknowledge briefly' if coaching else 'Acknowledge that it is well covered'}, then move on and "
+            f"ask about the next control '{next_question.control.title}' "
             f"(probe: {next_question.config_focus or next_question.control.title}). "
-            f"Write only your spoken message (2-3 sentences).")
+            f"Write only your spoken message (2-4 sentences).")
         if not text:
-            text = (f"Got it — that covers {done_ctrl.title}. Now, about **{next_question.control.title}**: "
+            fix = f" To strengthen it, {evaluation.remediation}" if coaching else ""
+            text = (f"Got it — that covers {done_ctrl.title}.{fix} Now, about **{next_question.control.title}**: "
                     f"how do you handle {next_question.config_focus or 'this'}?")
         return text
 
@@ -290,7 +301,7 @@ class ConversationOrchestrator:
                               metadata={"kind": "complete", **await self._progress(session.id, len(questions), len(questions))},
                               done=True)
         nxt = still[0]
-        content = await self._ack_and_next(ctrl, nxt, framework, position)
+        content = await self._ack_and_next(ctrl, nxt, framework, position, evaluation)
         return TurnResult(content=content, metadata={
             "kind": "question", "control_id": str(nxt.control_id), "question_id": str(nxt.id),
             "probe_count": 0, **await self._progress(session.id, len(answered_q), len(questions))})
