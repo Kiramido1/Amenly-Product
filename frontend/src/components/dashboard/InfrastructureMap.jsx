@@ -127,13 +127,23 @@ const InfrastructureMap = () => {
           ;(byAsset[v.asset_id] ||= []).push(v)
         }
 
-        const transformedAssets = nodes.map((n) => ({
+        // Lay every node out inside the visible 0–100% box. The backend's
+        // fallback layout is 5-per-row, so 28 assets spill to grid_y > 100%
+        // (rows 5–6) and get clipped. Recompute a wide grid (≈7 columns) that
+        // always fits all N nodes within margins, regardless of count.
+        const total = nodes.length
+        const cols = Math.max(1, Math.min(7, Math.ceil(Math.sqrt(total * 2))))
+        const rows = Math.max(1, Math.ceil(total / cols))
+        const xAt = (c) => (cols === 1 ? 50 : 8 + c * (84 / (cols - 1)))
+        const yAt = (r) => (rows === 1 ? 50 : 10 + r * (80 / (rows - 1)))
+
+        const transformedAssets = nodes.map((n, idx) => ({
           id: n.id,
           name: n.name,
           type: toDisplayAssetType(n.type),
           status: n.status || 'secure',
-          gridX: n.grid_x,
-          gridY: n.grid_y,
+          gridX: xAt(idx % cols),
+          gridY: yAt(Math.floor(idx / cols)),
           risk_score: n.risk_score ?? 0,
           compliance_score: n.compliance_score ?? 100,
           department: 'Unassigned',
@@ -234,8 +244,8 @@ const InfrastructureMap = () => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative w-full overflow-hidden" 
-          style={{ paddingBottom: '42%' }}
+          className="relative w-full overflow-hidden"
+          style={{ paddingBottom: '50%' }}
         >
           {/* Static grid pattern background */}
           <motion.div
