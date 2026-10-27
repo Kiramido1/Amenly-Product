@@ -4,6 +4,7 @@ from app.ai.rag.router import router as rag_router
 from app.api.v1.frameworks import router as frameworks_router
 from app.api.v1.permissions import router as permissions_router
 from app.api.v1.users import router as users_router
+from app.api.v1.utils import router as utils_router
 from app.assessments.router import router as assessments_router
 from app.assets.router import router as assets_router
 from app.auth.router import router as auth_router
@@ -21,3 +22,4 @@ api_router.include_router(rag_router, prefix="/rag", tags=["RAG System"])
 api_router.include_router(assessments_router, prefix="/assessments", tags=["Assessments"])
 api_router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(assets_router, prefix="/assets", tags=["Infrastructure Assets"])
+api_router.include_router(utils_router, prefix="/utils", tags=["Utilities"])
