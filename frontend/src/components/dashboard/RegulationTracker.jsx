@@ -16,10 +16,21 @@ const REQ_COLORS = {
   'non-compliant': '#ef4444',
 }
 
+// Map an org region string to a CountryIcon key.
+const regionToCountry = (region) => {
+  const r = (region || '').toLowerCase()
+  if (r.includes('egypt')) return 'egypt'
+  if (r.includes('saudi') || r.includes('ksa')) return 'saudi'
+  if (r.includes('emirat') || r.includes('uae')) return 'uae'
+  if (r.includes('europe') || r === 'eu' || r.includes('european')) return 'eu'
+  return 'global'
+}
+
 const RegulationTracker = () => {
   const [expandedId, setExpandedId] = useState(null)
   const [frameworks, setFrameworks] = useState([])
   const [frameworkScores, setFrameworkScores] = useState({})
+  const [regulation, setRegulation] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -36,7 +47,16 @@ const RegulationTracker = () => {
         setFrameworks(frameworksRes.value.data?.frameworks || [])
       }
       if (complianceRes.status === 'fulfilled') {
-        setFrameworkScores(complianceRes.value.data?.framework_scores || {})
+        const d = complianceRes.value.data || {}
+        setFrameworkScores(d.framework_scores || {})
+        // The org's region drives the national regulation it is assessed against.
+        if (d.region && d.regulation_score != null) {
+          setRegulation({
+            region: d.region,
+            name: d.regulation_name || `${d.region} regulations`,
+            score: Math.round(d.regulation_score),
+          })
+        }
       }
     }
 
@@ -75,7 +95,32 @@ const RegulationTracker = () => {
     })
   }, [frameworkScores, frameworks])
 
-  const visibleRegulations = regulations.length ? regulations : [{
+  // Country regulation (default entry) — driven by the organization's region,
+  // measured automatically via the assessment's regulation-alignment score.
+  const countryRegulation = useMemo(() => {
+    if (!regulation) return null
+    const score = regulation.score
+    const status = score >= 85 ? 'Compliant' : score >= 50 ? 'Partial' : 'Non-Compliant'
+    const reqStatus = score >= 85 ? 'compliant' : score >= 50 ? 'partial' : 'non-compliant'
+    return {
+      id: 'country-regulation',
+      country: regionToCountry(regulation.region),
+      label: regulation.region,
+      law: regulation.name,
+      status,
+      progress: score,
+      requirements: [
+        { name: 'Regulatory alignment score', status: reqStatus, score },
+        { name: 'Data-protection & privacy controls', status: reqStatus, score },
+      ],
+      lastAudit: 'From assessment',
+      nextAudit: 'Continuous',
+    }
+  }, [regulation])
+
+  const allRegulations = countryRegulation ? [countryRegulation, ...regulations] : regulations
+
+  const visibleRegulations = allRegulations.length ? allRegulations : [{
     id: 'empty',
     country: 'global',
     label: 'No Frameworks',

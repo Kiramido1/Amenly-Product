@@ -25,6 +25,27 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
+def _regulation_for_region(region: str | None) -> str:
+    """Map an organization's region to the national data-protection regulation
+    its assessment is measured against."""
+    r = (region or "").strip().lower()
+    if not r or r == "global":
+        return "Regional data-protection regulations"
+    if "egypt" in r:
+        return "Egypt PDPL — Law No. 151 of 2020"
+    if "saudi" in r or "ksa" in r:
+        return "Saudi PDPL"
+    if "emirat" in r or "uae" in r:
+        return "UAE PDPL"
+    if "european" in r or r == "eu" or "europe" in r:
+        return "EU GDPR"
+    if "united states" in r or r == "us" or r == "usa":
+        return "US (HIPAA / CCPA)"
+    if "united kingdom" in r or r == "uk":
+        return "UK GDPR / DPA 2018"
+    return f"{region} data-protection regulations"
+
+
 @router.get(
     "/overview",
     response_model=GenericResponse,
@@ -217,6 +238,19 @@ async def get_compliance_dashboard(
         for fw, scores in framework_scores.items()
     }
 
+    # Country-regulation view: the org's region drives which national regulation
+    # the assessment is measured against, and the regulation-alignment score is
+    # the average of each assessment's region-regulation score. This lets the
+    # dashboard show the country's regulation + its score automatically instead
+    # of only the (region-agnostic) framework.
+    org_row = (await db.execute(
+        select(Organization.region).where(Organization.id == org_id)
+    )).first()
+    region = org_row[0] if org_row else None
+    reg_scores = [a.regulation_score for a in assessments if a.regulation_score is not None]
+    regulation_score = round(sum(reg_scores) / len(reg_scores), 2) if reg_scores else None
+    regulation_name = _regulation_for_region(region)
+
     return {
         "success": True,
         "message": "Compliance dashboard retrieved successfully",
@@ -225,6 +259,9 @@ async def get_compliance_dashboard(
             "total_assessments": len(assessments),
             "scored_assessments": len(scored_assessments),
             "framework_scores": framework_averages,
+            "region": region,
+            "regulation_name": regulation_name,
+            "regulation_score": regulation_score,
             "assessments": [
                 {
                     "id": str(a.id),

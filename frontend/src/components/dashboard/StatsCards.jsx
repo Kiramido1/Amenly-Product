@@ -1,6 +1,7 @@
 import { memo, useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { getDashboardOverview, getComplianceDashboard } from '../../api/dashboard'
+import { getInfrastructureMap } from '../../api/assets'
 import { FRAMEWORK_META } from '../../constants/assetConstants'
 
 const AnimatedCounter = ({ target, duration = 1.8, suffix = '' }) => {
@@ -37,16 +38,31 @@ const StatsCards = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const overviewData = await getDashboardOverview()
-        if (overviewData.success && overviewData.data) {
-          const overviewStats = overviewData.data.stats || {}
-          setStats({
-            overallCompliance: Math.round(overviewStats.avg_compliance_score || overviewStats.completion_rate || 0),
-            riskAverage: overviewStats.total_risks ? Math.min(100, overviewStats.total_risks * 10) : 0,
-            totalAssets: overviewStats.total_assets || 0,
-            criticalAssets: overviewStats.total_risks || 0,
-          })
-        }
+        // Compliance comes from the assessment/overview; the asset stats come
+        // from the REAL infrastructure map (nodes carry live risk_score/status
+        // and CVE counts) so Risk/Total/Critical reflect the actual scan — the
+        // governance Asset/Risk tables the overview used are a different source
+        // and were empty here, showing 0/27.
+        const [overviewData, mapData] = await Promise.all([
+          getDashboardOverview().catch(() => null),
+          getInfrastructureMap().catch(() => null),
+        ])
+
+        const overviewStats = overviewData?.data?.stats || {}
+        const nodes = mapData?.data?.nodes || []
+        const isCritical = (n) => n.status === 'critical' || (n.risk_score ?? 0) >= 70
+        const riskAvg = nodes.length
+          ? Math.round(nodes.reduce((s, n) => s + (n.risk_score ?? 0), 0) / nodes.length)
+          : 0
+
+        setStats({
+          overallCompliance: Math.round(
+            overviewStats.avg_compliance_score || overviewStats.completion_rate || 0
+          ),
+          riskAverage: riskAvg,
+          totalAssets: nodes.length || overviewStats.total_assets || 0,
+          criticalAssets: nodes.filter(isCritical).length,
+        })
 
         const complianceData = await getComplianceDashboard()
         if (complianceData.success && complianceData.data?.framework_scores) {

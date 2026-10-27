@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { STEPS, STEP_META } from '../data/chatFlowData'
 import { useAuth } from '../hooks/useAuth'
 import { getMyOrganization } from '../api/organizations'
+import { listAssessments } from '../api/assessments'
 import ErrorBoundary from '../components/ErrorBoundary'
 import Footer from '../components/Footer'
 
@@ -38,12 +39,9 @@ const ProfilePendingScreen = () => (
         </svg>
       </div>
       <h2 className="text-2xl font-bold text-white mb-3">Assessment not ready yet</h2>
-      <p className="text-white/45 text-sm leading-relaxed mb-6">
+      <p className="text-white/45 text-sm leading-relaxed">
         Your organization admin needs to complete the company profile before the assessment can begin. You'll be able to start as soon as it's set up.
       </p>
-      <Link to="/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/70 hover:text-white hover:border-[#2C74B3]/40 transition-all text-sm">
-        Back to Dashboard
-      </Link>
     </div>
   </motion.div>
 )
@@ -101,6 +99,26 @@ const AIComplianceChat = () => {
 
   const currentStepIndex = STEP_META.findIndex(s => s.key === step)
   const showPanel = step === STEPS.SECURITY_QUESTIONS || step === STEPS.SUMMARY
+
+  // Non-admin members go straight to their own assessment interview — no welcome
+  // screen, no framework picker. We resolve the org's assessment framework and
+  // jump directly into the chat so a member only ever sees their interview.
+  useEffect(() => {
+    if (isAdmin || orgLoading || !profileComplete || step !== STEPS.WELCOME) return
+    let active = true
+    listAssessments()
+      .then((res) => {
+        const a = (res?.data?.assessments || [])[0]
+        if (!active || !a?.framework_id) return
+        setSession((prev) => ({
+          ...prev,
+          framework: { id: a.framework_id, name: a.framework?.name || a.name || 'your framework' },
+        }))
+        setStep(STEPS.SECURITY_QUESTIONS)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [isAdmin, orgLoading, profileComplete, step])
 
   // After the intro: admins without a completed profile do onboarding first;
   // everyone else jumps straight to framework selection.
@@ -212,7 +230,9 @@ const AIComplianceChat = () => {
             </motion.div>
           </Link>
 
-          {/* Steps indicator (desktop) */}
+          {/* Steps indicator (desktop) — only for admins running the wizard;
+              members go straight into their interview. */}
+          {isAdmin && (
           <motion.div
             className="hidden md:flex items-center gap-0.5"
             initial={{ opacity: 0, y: -8 }}
@@ -256,6 +276,7 @@ const AIComplianceChat = () => {
               </div>
             ))}
           </motion.div>
+          )}
 
           {/* Right section */}
           <motion.div
@@ -271,6 +292,7 @@ const AIComplianceChat = () => {
               </div>
               <span className="text-[10px] text-emerald-400/80 font-semibold tracking-wide">ONLINE</span>
             </div>
+            {isAdmin && (
             <Link
               to="/dashboard"
               className="group px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium text-white/50 hover:text-white/90 rounded-lg border border-white/[0.06] hover:border-[#144272]/40 hover:bg-white/[0.02] transition-all duration-300"
@@ -282,6 +304,7 @@ const AIComplianceChat = () => {
                 <span className="hidden sm:inline">Dashboard</span>
               </span>
             </Link>
+            )}
           </motion.div>
         </div>
         <motion.div
@@ -308,7 +331,9 @@ const AIComplianceChat = () => {
                   ) : (
                     <AnimatePresence mode="wait">
                       {step === STEPS.WELCOME && (
-                        <WelcomeScreen key="welcome" onStart={handleStart} />
+                        isAdmin
+                          ? <WelcomeScreen key="welcome" onStart={handleStart} />
+                          : <LoadingFallback key="welcome-loading" />
                       )}
                       {step === STEPS.COMPANY_PROFILE && (
                         <StepForm key="company" initialData={profileInitial} onComplete={handleCompanyComplete} onBack={handleBack} />
@@ -317,7 +342,7 @@ const AIComplianceChat = () => {
                         <FrameworkSelector key="framework" onSelect={handleFrameworkSelect} selected={session.framework?.id} onBack={handleBack} />
                       )}
                       {(step === STEPS.SECURITY_QUESTIONS || step === STEPS.SUMMARY) && (
-                        <ChatBox key="chat" session={session} framework={session.framework} onComplete={handleComplete} onBack={handleBack} onProgress={setLiveProgress} />
+                        <ChatBox key="chat" session={session} framework={session.framework} onComplete={handleComplete} onBack={isAdmin ? handleBack : undefined} onProgress={setLiveProgress} />
                       )}
                     </AnimatePresence>
                   )}

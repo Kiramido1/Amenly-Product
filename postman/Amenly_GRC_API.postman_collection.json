@@ -1,0 +1,674 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-2026-4a1a-9f2e-amenlygrc0001",
+    "name": "Amenly GRC API",
+    "description": "Professional, ready-to-run collection for the Amenly GRC compliance platform.\n\n## How to run\n1. Import this file into Postman.\n2. The collection ships with working defaults in **Collection Variables** (baseUrl = http://localhost:8001/api/v1, and the Zedny demo credentials). Adjust `host`, `adminEmail`, `adminPassword`, `memberEmail`, `memberPassword` if needed.\n3. Run the whole collection with the **Collection Runner** (Runner honours folder order): Auth → Organization → Frameworks → Assessments → Session → Dashboard → Infrastructure → Access-control. Login requests auto-save `accessToken` / `memberToken`; later requests auto-chain `orgId`, `frameworkId`, `assessmentId`, `sessionId`, `questionId`.\n\n## Notes\n- Collection-level auth is `Bearer {{accessToken}}` (admin). Member-scoped requests override it with `Bearer {{memberToken}}`.\n- Requests that invoke the LLM (Submit answer) are slower (~5-10s) and marked accordingly.\n- The live interview runs over WebSocket (`/ws/assessments/{sessionId}/chat`) which Postman's WS request type can open separately; REST endpoints below cover everything else.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Runs after EVERY request in the collection.",
+          "pm.test('Response time is reasonable (< 15s)', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(15000);",
+          "});",
+          "pm.test('Response is valid JSON', function () {",
+          "  pm.response.to.be.withBody;",
+          "  pm.response.to.be.json;",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "host", "value": "http://localhost:8001", "type": "string" },
+    { "key": "baseUrl", "value": "{{host}}/api/v1", "type": "string" },
+    { "key": "adminEmail", "value": "admin@zedny.com", "type": "string" },
+    { "key": "adminPassword", "value": "Test@1234", "type": "string" },
+    { "key": "memberEmail", "value": "it@zedny.com", "type": "string" },
+    { "key": "memberPassword", "value": "Test@1234", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "memberToken", "value": "", "type": "string" },
+    { "key": "orgId", "value": "", "type": "string" },
+    { "key": "frameworkId", "value": "", "type": "string" },
+    { "key": "assessmentId", "value": "", "type": "string" },
+    { "key": "sessionId", "value": "", "type": "string" },
+    { "key": "questionId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{host}}/health", "host": ["{{host}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('status is healthy', () => pm.expect(j.status).to.eql('healthy'));"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register (create org + admin)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"owner@newco-demo.com\",\n  \"password\": \"Test@1234\",\n  \"full_name\": \"New Co Admin\",\n  \"organization_name\": \"New Co (Postman)\",\n  \"department_name\": \"IT\",\n  \"position_name\": \"IT Administrator\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "description": "Creates a brand-new org + admin. Optional: only run when you want a fresh org (writes data). Disabled from the happy-path chain by default."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "// Accept 201 (created) or 409 (already exists) so re-runs don't fail.",
+                "pm.test('created or already exists', () => pm.expect([200,201,409]).to.include(pm.response.code));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Login (admin)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('returns access_token + refresh_token', () => {",
+                "  pm.expect(j).to.have.property('access_token').that.is.a('string');",
+                "  pm.expect(j).to.have.property('refresh_token').that.is.a('string');",
+                "});",
+                "pm.collectionVariables.set('accessToken', j.access_token);",
+                "pm.collectionVariables.set('refreshToken', j.refresh_token);"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Login (member)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{memberEmail}}\",\n  \"password\": \"{{memberPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.collectionVariables.set('memberToken', j.access_token);",
+                "pm.test('member token saved', () => pm.expect(j.access_token).to.be.a('string'));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Get me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const d = pm.response.json().data || pm.response.json();",
+                "pm.test('returns the current user with a role', () => {",
+                "  const u = d.user || d;",
+                "  pm.expect(u).to.have.property('email');",
+                "  pm.expect(u).to.have.property('role');",
+                "});"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "pm.test('returns a new access_token', () => pm.expect(j.access_token).to.be.a('string'));",
+                "if (j.access_token) pm.collectionVariables.set('accessToken', j.access_token);"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Organization",
+      "item": [
+        {
+          "name": "Get my organization",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/orgs/me", "host": ["{{baseUrl}}"], "path": ["orgs", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const d = pm.response.json().data || {};",
+                "const org = d.organization || d;",
+                "pm.test('org has name + region', () => {",
+                "  pm.expect(org).to.have.property('name');",
+                "  pm.expect(org).to.have.property('region');",
+                "});",
+                "if (org.id) pm.collectionVariables.set('orgId', org.id);"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "List departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/orgs/departments", "host": ["{{baseUrl}}"], "path": ["orgs", "departments"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "List join requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/orgs/join-requests", "host": ["{{baseUrl}}"], "path": ["orgs", "join-requests"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK (admin only)', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Frameworks",
+      "item": [
+        {
+          "name": "List frameworks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/frameworks/", "host": ["{{baseUrl}}"], "path": ["frameworks", ""] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const d = pm.response.json().data || {};",
+                "const list = d.frameworks || [];",
+                "pm.test('returns a framework list', () => pm.expect(list).to.be.an('array'));",
+                "// Prefer an ISO 27001 framework; else take the first.",
+                "const iso = list.find(f => /27001/.test(f.name)) || list[0];",
+                "if (iso && iso.id) pm.collectionVariables.set('frameworkId', iso.id);"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Assessments (Admin)",
+      "item": [
+        {
+          "name": "List assessments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments", "host": ["{{baseUrl}}"], "path": ["assessments"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const d = pm.response.json().data || {};",
+                "const list = d.assessments || [];",
+                "pm.test('returns assessments', () => pm.expect(list).to.be.an('array'));",
+                "if (list[0]) {",
+                "  pm.collectionVariables.set('assessmentId', list[0].id);",
+                "  if (list[0].framework_id) pm.collectionVariables.set('frameworkId', list[0].framework_id);",
+                "}"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Create assessment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Assessment {{$timestamp}}\",\n  \"framework_id\": \"{{frameworkId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/assessments", "host": ["{{baseUrl}}"], "path": ["assessments"] },
+            "description": "Creates a new assessment (admin only). Writes data. Requires {{frameworkId}} from 'List frameworks'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('201 Created', () => pm.expect([200,201]).to.include(pm.response.code));",
+                "const d = pm.response.json().data || {};",
+                "const a = d.assessment || {};",
+                "pm.test('assessment has id + framework_id', () => {",
+                "  pm.expect(a).to.have.property('id');",
+                "});",
+                "// Do NOT overwrite assessmentId used by the happy path unless empty.",
+                "if (a.id && !pm.collectionVariables.get('assessmentId')) pm.collectionVariables.set('assessmentId', a.id);"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Get assessment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const a = (pm.response.json().data || {}).assessment || {};",
+                "pm.test('matches requested id', () => pm.expect(a.id).to.eql(pm.collectionVariables.get('assessmentId')));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Campaign overview (before/after)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}/overview", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}", "overview"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const o = (pm.response.json().data || {}).overview || {};",
+                "pm.test('overview exposes before/after fields', () => {",
+                "  pm.expect(o).to.have.property('baseline_score');",
+                "  pm.expect(o).to.have.property('remediation_score');",
+                "  pm.expect(o).to.have.property('region');",
+                "});"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "List campaign sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}/sessions", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}", "sessions"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const s = (pm.response.json().data || {}).sessions || [];",
+                "pm.test('returns per-member session summaries', () => pm.expect(s).to.be.an('array'));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Launch campaign",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}/launch", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}", "launch"] },
+            "description": "Admin lifecycle: opens the baseline phase. Writes state."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Assessment Session (Member)",
+      "item": [
+        {
+          "name": "Start my session",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}/sessions/start", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}", "sessions", "start"] },
+            "description": "Member starts their own position-scoped session. Requires member login + {{assessmentId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('201 Created', () => pm.expect([200,201]).to.include(pm.response.code));",
+                "const d = pm.response.json().data || {};",
+                "const s = d.session || {};",
+                "pm.test('session started with id', () => pm.expect(s).to.have.property('id'));",
+                "if (s.id) pm.collectionVariables.set('sessionId', s.id);",
+                "const qs = d.questions || [];",
+                "if (qs[0] && qs[0].id) pm.collectionVariables.set('questionId', qs[0].id);"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Get my session",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/sessions/{{sessionId}}", "host": ["{{baseUrl}}"], "path": ["assessments", "sessions", "{{sessionId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Submit answer (AI-evaluated) [slow ~5-10s]",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"session_id\": \"{{sessionId}}\",\n  \"question_id\": \"{{questionId}}\",\n  \"answer_text\": \"We enforce MFA on all admin accounts via Azure AD, review access quarterly with sign-off, and apply least-privilege RBAC. We run 2 Windows Server 2019 domain controllers.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/assessments/answers", "host": ["{{baseUrl}}"], "path": ["assessments", "answers"] },
+            "description": "Invokes the LLM evaluation engine — expect 5-10s. Returns a compliance score + remediation + regulation note."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('201 Created', () => pm.expect([200,201]).to.include(pm.response.code));",
+                "const a = (pm.response.json().data || {}).answer || {};",
+                "pm.test('answer scored by AI', () => {",
+                "  pm.expect(a).to.have.property('compliance_score');",
+                "  pm.expect(a.compliance_score).to.be.at.least(0);",
+                "  pm.expect(a.compliance_score).to.be.at.most(100);",
+                "});"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "Get chat history",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/sessions/{{sessionId}}/chat", "host": ["{{baseUrl}}"], "path": ["assessments", "sessions", "{{sessionId}}", "chat"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const m = (pm.response.json().data || {}).messages || [];",
+                "pm.test('returns a message list', () => pm.expect(m).to.be.an('array'));"
+              ] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Dashboard (Admin)",
+      "item": [
+        {
+          "name": "Overview",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/overview", "host": ["{{baseUrl}}"], "path": ["dashboard", "overview"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json().data || {};",
+              "pm.test('has stats', () => pm.expect(d).to.have.property('stats'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Compliance (region + regulation)",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/compliance", "host": ["{{baseUrl}}"], "path": ["dashboard", "compliance"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json().data || {};",
+              "pm.test('exposes region + regulation_score', () => {",
+              "  pm.expect(d).to.have.property('region');",
+              "  pm.expect(d).to.have.property('regulation_score');",
+              "  pm.expect(d).to.have.property('framework_scores');",
+              "});"
+            ] } }
+          ]
+        },
+        {
+          "name": "Assets dashboard",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/assets", "host": ["{{baseUrl}}"], "path": ["dashboard", "assets"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Risks dashboard",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/risks", "host": ["{{baseUrl}}"], "path": ["dashboard", "risks"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Infrastructure & Vulnerabilities",
+      "item": [
+        {
+          "name": "Infrastructure map (nodes + edges)",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/assets/map", "host": ["{{baseUrl}}"], "path": ["assets", "map"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json().data || {};",
+              "pm.test('map has nodes + edges', () => {",
+              "  pm.expect(d).to.have.property('nodes');",
+              "  pm.expect(d.nodes).to.be.an('array');",
+              "  pm.expect(d).to.have.property('edges');",
+              "});"
+            ] } }
+          ]
+        },
+        {
+          "name": "List vulnerabilities",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/assets/vulnerabilities", "host": ["{{baseUrl}}"], "path": ["assets", "vulnerabilities"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json().data || {};",
+              "const v = d.vulnerabilities || [];",
+              "pm.test('returns a vulnerability list', () => pm.expect(v).to.be.an('array'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Asset statistics",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/assets/statistics", "host": ["{{baseUrl}}"], "path": ["assets", "statistics"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Scan vulnerabilities (NVD) [slow]",
+          "request": {
+            "method": "POST", "header": [],
+            "url": { "raw": "{{baseUrl}}/assets/scan-vulnerabilities", "host": ["{{baseUrl}}"], "path": ["assets", "scan-vulnerabilities"] },
+            "description": "Triggers an NVD CVE scan over the org's infrastructure assets. Network-bound and slower; may hit NVD rate limits."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Access control (negative tests)",
+      "item": [
+        {
+          "name": "No token -> 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('rejects unauthenticated request (401)', () => pm.expect(pm.response.code).to.eql(401));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Member on admin dashboard -> 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/compliance", "host": ["{{baseUrl}}"], "path": ["dashboard", "compliance"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('member is forbidden from admin dashboard (403)', () => pm.expect(pm.response.code).to.eql(403));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Member cannot launch a campaign -> 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{memberToken}}", "type": "string" }] },
+            "method": "POST", "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/{{assessmentId}}/launch", "host": ["{{baseUrl}}"], "path": ["assessments", "{{assessmentId}}", "launch"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('member cannot run admin lifecycle (403)', () => pm.expect(pm.response.code).to.eql(403));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Invalid login -> 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"wrong-password\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('bad credentials rejected (401)', () => pm.expect(pm.response.code).to.eql(401));"
+            ] } }
+          ]
+        }
+      ]
+    }
+  ]
+}
