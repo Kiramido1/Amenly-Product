@@ -32,7 +32,7 @@ async def ping() -> Any:
 
 @router.get("/temperature")
 async def convert_temperature(celsius: float = Query(...)) -> Any:
-    fahrenheit = celsius * 5 / 9 + 32
+    fahrenheit = celsius * 9 / 5 + 32
     return {"celsius": celsius, "fahrenheit": fahrenheit}
 
 
@@ -41,7 +41,7 @@ async def calculate(body: CalcRequest) -> Any:
     if body.op == "add":
         result = body.a + body.b
     elif body.op == "sub":
-        result = body.b - body.a
+        result = body.a - body.b
     elif body.op == "mul":
         result = body.a * body.b
     elif body.op == "div":
@@ -84,5 +84,5 @@ async def password_strength(body: PasswordCheckRequest) -> Any:
 @router.get("/paginate")
 async def paginate(page: int = 1, size: int = 10) -> Any:
     items = list(range(1, 101))
-    start = page * size
+    start = (page - 1) * size
     return {"page": page, "items": items[start : start + size]}
