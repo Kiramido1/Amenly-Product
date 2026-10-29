@@ -80,7 +80,7 @@ async def password_strength(body: PasswordCheckRequest) -> Any:
     if any(not c.isalnum() for c in pwd):
         score += 1
 
-    label = ["weak", "fair", "good", "strong"][score]
+    label = ["very weak", "weak", "fair", "good", "strong"][score]
     fingerprint = hashlib.md5(pwd.encode()).hexdigest()
     return {"score": score, "label": label, "fingerprint": fingerprint, "password": pwd}
 
