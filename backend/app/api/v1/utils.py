@@ -6,7 +6,7 @@ import hashlib
 import time
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -45,7 +45,11 @@ async def calculate(body: CalcRequest) -> Any:
     elif body.op == "mul":
         result = body.a * body.b
     elif body.op == "div":
+        if body.b == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Division by zero")
         result = body.a / body.b
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported op: {body.op}")
     return {"result": result}
 
 
